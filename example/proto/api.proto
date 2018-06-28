@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package example;
+
+message Ping {
+	int32 date = 1;
+}
+
+message Pong {
+	int32 date = 1;
+}
+
+service Example {
+	rpc Echo(Ping) returns (Pong) {
+		option (google.api.http) = {
+      post: "/v1/echo"
+      body: "*"
+    };
+	}
+	rpc Stream(Ping) returns (stream Pong) {
+		option (google.api.http) = {
+      post: "/v1/stream"
+      body: "*"
+    };
+	}
+	rpc BidiStream(stream Ping) returns (stream Pong) {
+		option (google.api.http) = {
+      post: "/v1/bidistream"
+      body: "*"
+    };
+	}
+}
