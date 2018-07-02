@@ -11,6 +11,9 @@ function createGrpcGateway(config) {
   const app = express();
   expressWs(app);
 
+  app.set('etag', false);
+  app.set('x-powered-by', false);
+
   if (config.cors) {
     app.use(cors({
       methods: ['GET', 'POST'],
