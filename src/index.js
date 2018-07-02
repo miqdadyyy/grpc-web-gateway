@@ -2,6 +2,7 @@ const _ = require('lodash');
 const grpc = require('grpc');
 const protoLoader = require('@grpc/proto-loader');
 const express = require('express');
+const cors = require('cors');
 const expressWs = require('express-ws');
 const bodyParser = require('body-parser');
 const createMetadata = require('./createMetadata');
@@ -9,6 +10,14 @@ const createMetadata = require('./createMetadata');
 function createGrpcGateway(config) {
   const app = express();
   expressWs(app);
+
+  if (config.cors) {
+    app.use(cors({
+      methods: ['GET', 'POST'],
+      allowedHeaders: ['accept', 'content-type', 'authorization'],
+      maxAge: 24 * 60 * 60
+    }));
+  }
 
   const definition = protoLoader.loadSync(config.protoRoot, {
     keepCase: false,
@@ -120,6 +129,30 @@ function createGrpcGateway(config) {
             }
           });
         });
+      }
+    });
+  });
+
+  app.use((req, res, next) => {
+    res.status(404);
+    res.json({
+      ok: false,
+      payload: {
+        code: 404,
+        message: 'Not Found'
+      }
+    });
+  });
+
+  app.use((error, req, res, next) => {
+    console.error(error);
+
+    res.status(500);
+    res.json({
+      ok: false,
+      payload: {
+        code: 500,
+        message: 'Internal Error'
       }
     });
   });
