@@ -1,7 +1,6 @@
 const _ = require('lodash');
 const grpc = require('grpc');
 const protoLoader = require('@grpc/proto-loader');
-const schema = require('protocol-buffers-schema')
 const express = require('express');
 const expressWs = require('express-ws');
 const bodyParser = require('body-parser');

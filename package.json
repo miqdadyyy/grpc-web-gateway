@@ -15,7 +15,6 @@
     "express-ws": "4.0.0",
     "grpc": "1.12.4",
     "lodash": "4.17.10",
-    "protocol-buffers-schema": "3.3.2",
     "ws": "5.2.1"
   }
 }
