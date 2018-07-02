@@ -3,7 +3,7 @@
  * @flow
  */
 
-class WebSocketConnection {
+class WebSocketTransport {
   ws: WebSocket;
   queue: ArrayBuffer[];
 
@@ -15,7 +15,6 @@ class WebSocketConnection {
   }
 
   handleOpen() {
-    while ()
   }
 
   send(payload: ArrayBuffer): void {

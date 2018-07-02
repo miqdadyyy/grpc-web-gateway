@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-package example;
-
 message Ping {
 	int32 date = 1;
 }
@@ -11,7 +9,8 @@ message Pong {
 }
 
 service Test {
-	rpc Echo(Ping) returns (Pong) {}
-	rpc Stream(Ping) returns (stream Pong) {}
+	rpc Unary(Ping) returns (Pong) {}
+	rpc ServerStream(Ping) returns (stream Pong) {}
+	rpc ClientStream(stream Ping) returns (Pong) {}
 	rpc BidiStream(stream Ping) returns (stream Pong) {}
 }

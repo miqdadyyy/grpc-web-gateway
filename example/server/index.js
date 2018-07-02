@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const startGrpcServer = require('./grpc');
-const createGrpcGateway = require('../../src/server');
+import http from 'http';
+import startGrpcServer from './grpc';
+import createGateway from '../../src/server/createServer';
 
 const apiHost = 'localhost:3000';
 const protoRoot = path.resolve(__dirname, '../proto/api.proto');
@@ -12,11 +13,14 @@ startGrpcServer({
   listen: apiHost
 });
 
-const gateway = createGrpcGateway({
-  apiHost,
-  protoRoot
+const app = express();
+const server = http.createServer(app);
+
+createGateway({
+  server,
+  api: apiHost
 });
 
-gateway.use(express.static(path.resolve(__dirname, '../dist')));
+app.use(express.static(path.resolve(__dirname, '../dist')));
 
-gateway.listen(8080);
+server.listen(8080);

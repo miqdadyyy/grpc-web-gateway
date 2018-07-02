@@ -9,7 +9,7 @@
     "build-example": "webpack --config example/webpack.config.js",
     "preexample": "npm run build-example",
     "example": "node example/server/index.js",
-    "build": "pbjs -t static-module --es6 -o src/shared/signaling.js src/proto/signaling.proto"
+    "build": "pbjs -t static-module --es6 -o src/shared/signaling.js src/shared/signaling.proto"
   },
   "author": "Nikita Gusakov <gusnkt@gmail.com>",
   "license": "Apache-2.0",
@@ -23,6 +23,7 @@
     "lodash": "4.17.10",
     "protocol-buffers-schema": "3.3.2",
     "uuid": "^3.3.2",
+    "webpack-node-externals": "^1.7.2",
     "ws": "5.2.1"
   },
   "devDependencies": {

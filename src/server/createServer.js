@@ -3,17 +3,20 @@
  * @flow
  */
 
-import WebSocket from 'ws';
+import type { Server as HttpServer } from 'http';
+import { Server as WebSocketServer } from 'ws';
 import { Client as GrpcClient, credentials as grpcCredentials } from 'grpc';
 import { Request, Response } from '../shared/signaling';
 
 type Config = {
   api: string,
-  port: number
+  server: HttpServer
 };
 
 function createServer(config: Config) {
-  const wss = new WebSocket.Server(config);
+  const wss = new WebSocketServer({
+    server: config.server
+  });
 
   wss.on('connection', (ws) => {
     const grpc = new GrpcClient(config.port, credentials.createInsecure());
@@ -27,6 +30,8 @@ function createServer(config: Config) {
       grpc.close();
     });
   });
+
+  return wss;
 }
 
 export default createServer;

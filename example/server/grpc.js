@@ -2,39 +2,57 @@ const path = require('path');
 const grpc = require('grpc');
 const protoLoader = require('@grpc/proto-loader');
 
-class EchoService {
-  echo(call, callback) {
-    console.log(call);
-    callback(null, call.request);
+class TestService {
+  unary(call, callback) {
+    console.log(`[grpc] unary: ${call.request}`);
+    callback(null, { date: Date.now() });
   }
 
-  stream(call) {
-    setInterval(() => call.write({ date: Date.now() }), 1000);
+  serverStream(call) {
+    console.log(`[grpc] serverStream: ${call.request}`);
+    const iid = setInterval(() => call.write({ date: Date.now() }), 1000);
+    setTimeout(() => {
+      clearInterval(iid);
+      call.end();
+      console.log(`[grpc] serverStream ended`);
+    });
+  }
+
+  clientStream(call, callback) {
+    call.on('data', (message) => {
+      console.log(`[grpc] clientStream: ${message}`);
+    });
+    call.on('end', () => {
+      callback(null, { date: Date.now() });
+      console.log(`[grpc] clientStream ended`);
+    });
   }
 
   bidiStream(call) {
-    call.write({ date: Date.now() })
-    setInterval(() => call.write({ date: Date.now() }), 1000);
+    const iid = setInterval(() => call.write({ date: Date.now() }), 1000);
 
-    call.on('data', (point) => {
-      console.log(point);
-      call.write(point)
+    call.on('data', (message) => {
+      console.log(`[grpc] bidiStream: ${message}`);
     });
 
-    call.on('end', () => call.end());
+    call.on('end', () => {
+      clearInterval(iid);
+      call.end()
+      console.log(`[grpc] bidiStream ended`);
+    });
   }
 }
 
-function createGrpcServer({ protoRoot, listen }) {
+function startGrpcServer({ protoRoot, listen }) {
   const definition = protoLoader.loadSync(protoRoot, { keepCase: false });
   const descriptor = grpc.loadPackageDefinition(definition);
 
   const server = new grpc.Server();
 
-  server.addService(descriptor.example.Example.service, new EchoService());
+  server.addService(descriptor.Test.service, new TestService());
 
   server.bind(listen, grpc.ServerCredentials.createInsecure());
   server.start();
 }
 
-module.exports = createGrpcServer;
+export default startGrpcServer;
