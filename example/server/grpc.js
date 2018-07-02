@@ -4,6 +4,7 @@ const protoLoader = require('@grpc/proto-loader');
 
 class EchoService {
   echo(call, callback) {
+    console.log(call);
     callback(null, call.request);
   }
 
@@ -24,12 +25,16 @@ class EchoService {
   }
 }
 
-const definition = protoLoader.loadSync(path.join(__dirname, 'proto/api.proto'), { keepCase: false });
-const descriptor = grpc.loadPackageDefinition(definition);
+function createGrpcServer({ protoRoot, listen }) {
+  const definition = protoLoader.loadSync(protoRoot, { keepCase: false });
+  const descriptor = grpc.loadPackageDefinition(definition);
 
-const server = new grpc.Server();
+  const server = new grpc.Server();
 
-server.addService(descriptor.example.Example.service, new EchoService());
+  server.addService(descriptor.example.Example.service, new EchoService());
 
-server.bind('localhost:3000', grpc.ServerCredentials.createInsecure());
-server.start();
+  server.bind(listen, grpc.ServerCredentials.createInsecure());
+  server.start();
+}
+
+module.exports = createGrpcServer;

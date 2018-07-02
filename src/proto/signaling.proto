@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+message Request {
+  string id = 1;
+  oneof body {
+     UnaryRequestBody unary = 2;
+     PushRequestBody push = 3;
+     EndRequestBody end = 4;
+  }
+}
+
+message UnaryRequestBody {
+  string method = 1;
+  bytes payload = 2;
+  map<string, string> metadata = 3;
+}
+
+message PushRequestBody {
+  bytes payload = 1;
+}
+
+message EndRequestBody {}
+
+
+message Response {
+  string id = 1;
+  oneof body {
+     PushResponseBody push = 2;
+     EndResponseBody end = 3;
+  }
+}
+
+message PushResponseBody {
+  bytes payload = 1;
+}
+
+message EndResponseBody {}
