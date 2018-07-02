@@ -14,7 +14,8 @@ function createGrpcGateway(config) {
     keepCase: false,
     longs: String,
     enums: String,
-    defaults: true
+    defaults: true,
+    includeDirs: config.protoInclude
   });
 
   const package = grpc.loadPackageDefinition(definition);
