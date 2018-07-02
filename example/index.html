@@ -7,12 +7,16 @@
 <body>
 <script type="text/javascript">
 
-fetch('/example.Example/Echo', {
-  method: 'POST'
-})
-  .then((res) => res.json())
-  .then(console.log.bind(console, 'echo response'))
-  .catch(console.error.bind(console))
+// fetch('/example.Example/Echo', {
+//   method: 'POST',
+//   body: JSON.stringify({ date: Date.now() }),
+//   headers: {
+//     'content-type': 'application/json'
+//   }
+// })
+//   .then((res) => res.json())
+//   .then(console.log.bind(console, 'echo response'))
+//   .catch(console.error.bind(console))
 
 const ws = new WebSocket('ws://localhost:8080/example.Example/BidiStream');
 
