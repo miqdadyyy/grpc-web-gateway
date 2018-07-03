@@ -42,6 +42,7 @@ function createGrpcGateway(config) {
         };
 
         if (methodDefinition.requestStream && methodDefinition.responseStream) {
+          console.log(`register ${methodDefinition.path}`);
           app.ws(methodDefinition.path, (ws, req) => {
             const service = createService();
             const metadata = createMetadata(req);
@@ -76,6 +77,7 @@ function createGrpcGateway(config) {
             });
           });
         } else if (methodDefinition.responseStream) {
+          console.log(`register ${methodDefinition.path}`);
           app.post(methodDefinition.path, jsonParser, (req, res) => {
             const service = createService();
             const metadata = createMetadata(req);
@@ -105,6 +107,7 @@ function createGrpcGateway(config) {
             });
           });
         } else if (methodDefinition.requestStream) {
+          console.log(`register ${methodDefinition.path}`);
           app.post(methodDefinition.path, (req, res) => {
             res.status(501);
             res.json({
@@ -116,6 +119,7 @@ function createGrpcGateway(config) {
             });
           });
         } else {
+          console.log(`register ${methodDefinition.path}`);
           app.post(methodDefinition.path, jsonParser, (req, res) => {
             const service = createService();
             const metadata = createMetadata(req);
