@@ -5,11 +5,18 @@ const express = require('express');
 const cors = require('cors');
 const expressWs = require('express-ws');
 const bodyParser = require('body-parser');
+const pino = require('pino');
 const createMetadata = require('./createMetadata');
+const mapErrorToHttp = require('./mapErrorToHttp');
 
 function createGrpcGateway(config) {
   const app = express();
   expressWs(app);
+
+  app.logger = pino({
+    name: 'grpc-gateway',
+    level: config.logLevel || 'debug'
+  });
 
   app.set('etag', false);
   app.set('x-powered-by', false);
@@ -26,10 +33,12 @@ function createGrpcGateway(config) {
 
   _.forEach(config.protoFiles, (protoRoot) => {
     const definition = protoLoader.loadSync(protoRoot, {
-      keepCase: false,
       longs: String,
       enums: String,
+      bytes: String,
+      arrays: true,
       defaults: true,
+      keepCase: false,
       includeDirs: config.protoInclude
     });
     const package = grpc.loadPackageDefinition(definition);
@@ -41,8 +50,8 @@ function createGrpcGateway(config) {
           return new Service(config.apiHost, grpc.credentials.createInsecure());
         };
 
+        app.logger.debug(`register route ${methodDefinition.path}`);
         if (methodDefinition.requestStream && methodDefinition.responseStream) {
-          console.log(`register ${methodDefinition.path}`);
           app.ws(methodDefinition.path, (ws, req) => {
             const service = createService();
             const metadata = createMetadata(req);
@@ -60,7 +69,7 @@ function createGrpcGateway(config) {
               if (error) {
                 call.end();
                 ws.close();
-                console.error(error);
+                app.logger.error(error);
               }
             };
 
@@ -69,7 +78,7 @@ function createGrpcGateway(config) {
             });
 
             call.on('error', (error) => {
-              ws.send(JSON.stringify({ ok: false, payload: error }), handleSendError);
+              ws.send(JSON.stringify({ ok: false, payload: mapErrorToHttp(error) }), handleSendError);
             });
 
             call.on('end', () => {
@@ -77,7 +86,6 @@ function createGrpcGateway(config) {
             });
           });
         } else if (methodDefinition.responseStream) {
-          console.log(`register ${methodDefinition.path}`);
           app.post(methodDefinition.path, jsonParser, (req, res) => {
             const service = createService();
             const metadata = createMetadata(req);
@@ -105,9 +113,12 @@ function createGrpcGateway(config) {
               sendHeaders();
               res.end();
             });
+
+            req.on('close', () => {
+              call.cancel();
+            });
           });
         } else if (methodDefinition.requestStream) {
-          console.log(`register ${methodDefinition.path}`);
           app.post(methodDefinition.path, (req, res) => {
             res.status(501);
             res.json({
@@ -119,21 +130,29 @@ function createGrpcGateway(config) {
             });
           });
         } else {
-          console.log(`register ${methodDefinition.path}`);
           app.post(methodDefinition.path, jsonParser, (req, res) => {
             const service = createService();
             const metadata = createMetadata(req);
 
-            service[methodDefinition.originalName](req.body, metadata, (error, response) => {
+            const method = service[methodDefinition.originalName];
+            const call = method.call(service, req.body, metadata, (error, response) => {
               if (error) {
-                res.status(500);
+                const outError = mapErrorToHttp(error);
+                res.status(outError.status);
                 res.json({
                   ok: false,
-                  payload: error
+                  payload: outError
                 });
               } else {
-                res.json(response);
+                res.json({
+                  ok: true,
+                  payload: response
+                });
               }
+            });
+
+            req.on('close', () => {
+              call.cancel();
             });
           });
         }
@@ -153,7 +172,7 @@ function createGrpcGateway(config) {
   });
 
   app.use((error, req, res, next) => {
-    console.error(error);
+    app.logger.error(error);
 
     res.status(500);
     res.json({

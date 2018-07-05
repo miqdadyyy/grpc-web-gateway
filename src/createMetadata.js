@@ -1,14 +1,24 @@
 const { Metadata } = require('grpc');
 
-function createMetadata(req) {
-  const metadata = new Metadata();
+function parseTicket(req) {
   const auth = req.header('authorization');
   if (auth) {
-    if (auth.startsWith('Bearer')) {
-      metadata.set('x-auth-ticket', auth.slice(7));
-    } else if (auth.startsWith('Basic')) {
-      metadata.set('x-auth-ticket', Buffer.from(auth.slice(6), 'base64').toString('utf-8'));
-    }
+    return auth;
+  }
+
+  const ws = req.header('Sec-WebSocket-Protocol');
+  if (ws) {
+    return Buffer.from(ws, 'base64').toString('utf-8');
+  }
+
+  return null;
+}
+
+function createMetadata(req) {
+  const metadata = new Metadata();
+  const ticket = parseTicket(req);
+  if (ticket) {
+    metadata.set('x-auth-ticket', ticket);
   }
 
   return metadata;
