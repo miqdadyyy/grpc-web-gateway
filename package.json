@@ -4,7 +4,10 @@
   "description": "gRPC to json gateway",
   "main": "src/index.js",
   "scripts": {
-    "test": "exit 0"
+    "test": "exit 0",
+    "preversion": "npm test",
+    "postversion": "npm publish",
+    "postpublish": "git push --follow-tags"
   },
   "author": "Nikita Gusakov <gusnkt@gmail.com>",
   "license": "Apache-2.0",
