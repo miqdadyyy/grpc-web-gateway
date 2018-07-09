@@ -46,9 +46,7 @@ function createGrpcGateway(config) {
     _.forEach(definition, (serviceDefinition, serviceName) => {
       _.forEach(serviceDefinition, (methodDefinition) => {
         const Service = _.get(package, serviceName);
-        const createService = () => {
-          return new Service(config.apiHost, grpc.credentials.createInsecure());
-        };
+        const createService = () => new Service(config.apiHost, grpc.credentials.createInsecure());
 
         app.logger.debug(`register route ${methodDefinition.path}`);
         if (methodDefinition.requestStream && methodDefinition.responseStream) {
@@ -57,15 +55,7 @@ function createGrpcGateway(config) {
             const metadata = createMetadata(req);
             const call = service[methodDefinition.originalName](metadata);
 
-            ws.on('message', (message) => {
-              call.write(JSON.parse(message));
-            });
-
-            ws.on('close', () => {
-              call.end();
-            });
-
-            const handleSendError = (error) => {
+            const handleError = (error) => {
               if (error) {
                 call.end();
                 ws.close();
@@ -73,12 +63,27 @@ function createGrpcGateway(config) {
               }
             };
 
+            ws.on('message', (json) => {
+              try {
+                const message = JSON.parse(json);
+                call.write(message);
+              } catch (error) {
+                handleError(error);
+              }
+            });
+
+            ws.on('close', () => {
+              call.end();
+            });
+
             call.on('data', (message) => {
-              ws.send(JSON.stringify({ ok: true, payload: message }), handleSendError);
+              const json = JSON.stringify({ ok: true, payload: message });
+              ws.send(json, handleError);
             });
 
             call.on('error', (error) => {
-              ws.send(JSON.stringify({ ok: false, payload: mapErrorToHttp(error) }), handleSendError);
+              const json = JSON.stringify({ ok: false, payload: mapErrorToHttp(error) });
+              ws.send(json, handleError);
             });
 
             call.on('end', () => {
