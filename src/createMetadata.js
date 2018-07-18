@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const { Metadata } = require('grpc');
 
 function parseTicket(req) {
@@ -14,14 +15,25 @@ function parseTicket(req) {
   return null;
 }
 
-function createMetadata(req) {
-  const metadata = new Metadata();
-  const ticket = parseTicket(req);
-  if (ticket) {
-    metadata.set('x-auth-ticket', ticket);
-  }
+function createMetadataMapper(filter) {
+  return (req) => {
+    const metadata = new Metadata();
 
-  return metadata;
+    if (filter) {
+      _.forOwn(req.headers, (value, key) => {
+        if (filter(key, value)) {
+          metadata.set(key, value);
+        }
+      });
+    }
+
+    const ticket = parseTicket(req);
+    if (ticket) {
+      metadata.set('x-auth-ticket', ticket);
+    }
+
+    return metadata;
+  };
 }
 
-module.exports = createMetadata;
+module.exports = createMetadataMapper;

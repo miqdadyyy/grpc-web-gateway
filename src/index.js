@@ -6,7 +6,7 @@ const cors = require('cors');
 const expressWs = require('express-ws');
 const bodyParser = require('body-parser');
 const pino = require('pino');
-const createMetadata = require('./createMetadata');
+const createMetadataMapper = require('./createMetadata');
 const mapErrorToHttp = require('./mapErrorToHttp');
 
 function createGrpcGateway(config) {
@@ -29,9 +29,11 @@ function createGrpcGateway(config) {
     }));
   }
 
+  const createMetadata = createMetadataMapper(config.filterHeaders);
+
   const jsonParser = bodyParser.json();
 
-  _.forEach(config.protoFiles, (protoRoot) => {
+  _.forOwn(config.protoFiles, (protoRoot) => {
     const definition = protoLoader.loadSync(protoRoot, {
       longs: String,
       enums: String,
@@ -43,8 +45,8 @@ function createGrpcGateway(config) {
     });
     const package = grpc.loadPackageDefinition(definition);
 
-    _.forEach(definition, (serviceDefinition, serviceName) => {
-      _.forEach(serviceDefinition, (methodDefinition) => {
+    _.forOwn(definition, (serviceDefinition, serviceName) => {
+      _.forOwn(serviceDefinition, (methodDefinition) => {
         const Service = _.get(package, serviceName);
         const createService = () => new Service(config.apiHost, grpc.credentials.createInsecure());
 
