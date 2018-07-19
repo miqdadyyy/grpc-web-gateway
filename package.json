@@ -1,6 +1,6 @@
 {
   "name": "@dlghq/grpc-web-gateway",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "gRPC to json gateway",
   "main": "src/index.js",
   "scripts": {
