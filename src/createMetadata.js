@@ -7,9 +7,8 @@ function parseTicket(req) {
     return auth;
   }
 
-  const ws = req.header('Sec-WebSocket-Protocol');
-  if (ws) {
-    return Buffer.from(ws, 'base64').toString('utf-8');
+  if (req.query && req.query.token) {
+    return req.query.token;
   }
 
   return null;
