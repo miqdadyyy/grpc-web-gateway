@@ -23,9 +23,10 @@ function createGrpcGateway(config) {
 
   if (config.cors) {
     app.use(cors({
+      origin: config.cors.origin,
+      maxAge: 24 * 60 * 60,
       methods: ['GET', 'POST'],
-      allowedHeaders: ['accept', 'content-type', 'authorization'],
-      maxAge: 24 * 60 * 60
+      allowedHeaders: ['accept', 'content-type', 'authorization']
     }));
   }
 
