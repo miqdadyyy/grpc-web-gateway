@@ -6,6 +6,7 @@ const cors = require('cors');
 const expressWs = require('express-ws');
 const bodyParser = require('body-parser');
 const pino = require('pino');
+const createInterval = require('./utils/createInterval');
 const createMetadataMapper = require('./createMetadata');
 const mapErrorToHttp = require('./mapErrorToHttp');
 
@@ -107,23 +108,30 @@ function createGrpcGateway(config) {
               }
             };
 
-            call.on('data', (message) => {
+            const write = (message) => {
               sendHeaders();
-              res.write(JSON.stringify({ ok: true, payload: message }) + '\n');
+              res.write(JSON.stringify(message) + '\n');
+            };
+
+            const cancelPing = createInterval(60000, () => write({ ping: true }));
+
+            call.on('data', (message) => {
+              write({ ok: true, payload: message });
             });
 
             call.on('error', (error) => {
-              sendHeaders();
-              res.write(JSON.stringify({ ok: false, payload: error }) + '\n');
+              write({ ok: false, payload: error });
             });
 
             call.on('end', () => {
               sendHeaders();
               res.end();
+              cancelPing();
             });
 
             req.on('close', () => {
               call.cancel();
+              cancelPing();
             });
           });
         } else if (methodDefinition.requestStream) {
