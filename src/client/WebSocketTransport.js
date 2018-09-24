@@ -1,30 +1,59 @@
 /*
- * Copyright 2017 dialog LLC <info@dlg.im>
+ * Copyright 2018 dialog LLC <info@dlg.im>
  * @flow
  */
 
-class WebSocketTransport {
-  ws: WebSocket;
-  queue: ArrayBuffer[];
+import { type RpcTransport, RpcError } from './types';
+import Kefir, { type Observable } from 'kefir';
+
+class WebSocketTransport implements RpcTransport {
+  queue: Array<Uint8Array>;
+  socket: WebSocket;
 
   constructor(endpoint: string) {
-    const ws = new WebSocket(endpoint);
-    ws.onopen = () => this.handleOpen();
-    this.ws = new WebSocket(endpoint);
     this.queue = [];
+
+    const socket = new WebSocket(endpoint);
+    socket.binaryType = 'arraybuffer';
+    socket.onopen = () => this.handleOpen();
+
+    this.socket = socket;
   }
 
   handleOpen() {
+    if (this.queue.length) {
+      this.queue.forEach((message) => this.send(message));
+      this.queue = [];
+    }
   }
 
-  send(payload: ArrayBuffer): void {
-    switch (this.ws.readyState) {
+  start(): Observable<Uint8Array, RpcError> {
+    return Kefir.stream((emitter) => {
+      this.socket.onclose = () => emitter.end();
+      this.socket.onerror = (event) => {
+        console.error(event);
+        emitter.error(new RpcError('UNKNOWN', 'WebSocket error'));
+      };
+      this.socket.onmessage = (event) => {
+        if (event.data instanceof ArrayBuffer) {
+          emitter.value(new Uint8Array(event.data));
+        } else {
+          emitter.error(new RpcError('SERIALIZATION_MISMATCH', 'Incoming message should be ArrayBuffer'));
+        }
+      };
+
+      return () => this.socket.close();
+    });
+  }
+
+  send(message: Uint8Array): void {
+    switch (this.socket.readyState) {
       case WebSocket.CONNECTING:
-        this.queue.push(payload);
+        this.queue.push(message);
         break;
 
       case WebSocket.OPEN:
-        this.ws.send(payload);
+        this.socket.send(message);
         break;
 
       default:
@@ -33,4 +62,4 @@ class WebSocketTransport {
   }
 }
 
-export default WebSocketConnection;
+export default WebSocketTransport;

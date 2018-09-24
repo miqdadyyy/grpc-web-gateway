@@ -1,5 +1,7 @@
 const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin')
+const HtmlPlugin = require('html-webpack-plugin');
+const NodemonPlugin = require('nodemon-webpack-plugin');
+const createNodeExternals = require('webpack-node-externals');
 
 const babel = {
   test: /\.js$/,
@@ -24,7 +26,7 @@ module.exports = [{
     rules: [babel]
   },
   plugins: [
-    new HtmlWebpackPlugin({
+    new HtmlPlugin({
       title: 'gRPC Web Gateway'
     })
   ]
@@ -43,5 +45,8 @@ module.exports = [{
     __dirname: false,
     __filename: false
   },
-  externals: require('webpack-node-externals')()
+  externals: createNodeExternals(),
+  plugins: [
+    new NodemonPlugin()
+  ]
 }];

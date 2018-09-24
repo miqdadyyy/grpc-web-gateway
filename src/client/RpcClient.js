@@ -1,29 +1,72 @@
 /*
- * Copyright 2017 dialog LLC <info@dlg.im>
+ * Copyright 2018 dialog LLC <info@dlg.im>
  * @flow
  */
 
-import type { Transport } from './types';
+import type { RpcTransport, RpcCall, UnaryRequest } from './types';
 import uuid from 'uuid/v4';
+import Kefir from 'kefir';
 import { Request, Response } from '../shared/signaling';
+import UnaryCall from './UnaryCall';
 
 class RpcClient {
-  transport: Transport;
-  requests: Map<string, RpcRequest>;
+  transport: RpcTransport;
+  calls: Map<string, RpcCall>;
 
-  constructor(transport: Transport) {
+  constructor(transport: RpcTransport) {
     this.transport = transport;
-    this.requests = new Map();
+    this.calls = new Map();
+
+    this.transport.start()
+      .map((bytes) => Response.decode(bytes))
+      .observe({
+        value: (res) => {
+          const call = this.calls.get(res.id);
+          if (call) {
+            call.onMessage(res);
+          } else {
+            console.error('Unhandled incoming message: ', res);
+          }
+        },
+        error(error) {
+          console.log('error:', error);
+        },
+        end() {
+          console.log('end');
+        },
+      });
   }
 
-  makeUnaryRequest(method: string, payload: Uint8Array, metadata: { [key: string]: string }) {
-    const id = uuid();
-    const message = Request.encode({ id, unary: { method, payload, metadata } }).finish();
-    this.transport.send(message);
+  makeUnaryRequest(request: UnaryRequest) {
+    return Kefir.stream((emitter) => {
+      const id = uuid();
+
+      const call = new UnaryCall(this.transport, emitter);
+      this.calls.set(id, call);
+
+      call.start(id, request);
+
+      return () => {
+        call.cancel(id);
+        this.calls.delete(id);
+      };
+    });
   }
 
-  makeServerStreamRequest() {
+  makeServerStreamRequest(request: UnaryRequest) {
+    return Kefir.stream((emitter) => {
+      const id = uuid();
 
+      const call = new UnaryCall(this.transport, emitter);
+      this.calls.set(id, call);
+
+      call.start(id, request);
+
+      return () => {
+        call.cancel(id);
+        this.calls.delete(id);
+      };
+    });
   }
 
   makeClientStreamRequest() {

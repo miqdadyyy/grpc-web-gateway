@@ -1,18 +1,40 @@
 syntax = "proto3";
 
+enum Status {
+  UNKNOWN = 0;
+  OK = 1;
+  CANCELLED = 2;
+  INVALID_ARGUMENT = 3;
+  DEADLINE_EXCEEDED = 4;
+  NOT_FOUND = 5;
+  ALREADY_EXISTS = 6;
+  PERMISSION_DENIED = 7;
+  UNAUTHENTICATED = 8;
+  RESOURCE_EXHAUSTED = 9;
+  FAILED_PRECONDITION = 10;
+  ABORTED = 11;
+  OUT_OF_RANGE = 12;
+  UNIMPLEMENTED = 13;
+  INTERNAL = 14;
+  UNAVAILABLE = 15;
+  DATA_LOSS = 16;
+}
+
 message Request {
   string id = 1;
   oneof body {
      UnaryRequestBody unary = 2;
      PushRequestBody push = 3;
      EndRequestBody end = 4;
+     CancelRequestBody cancel = 5;
   }
 }
 
 message UnaryRequestBody {
-  string method = 1;
-  bytes payload = 2;
-  map<string, string> metadata = 3;
+  string service = 1;
+  string method = 2;
+  bytes payload = 3;
+  map<string, string> metadata = 4;
 }
 
 message PushRequestBody {
@@ -21,13 +43,19 @@ message PushRequestBody {
 
 message EndRequestBody {}
 
+message CancelRequestBody {}
 
 message Response {
   string id = 1;
   oneof body {
-     PushResponseBody push = 2;
-     EndResponseBody end = 3;
+     UnaryResponseBody unary = 2;
+     PushResponseBody push = 3;
+     EndResponseBody end = 4;
   }
+}
+
+message UnaryResponseBody {
+  bytes payload = 1;
 }
 
 message PushResponseBody {

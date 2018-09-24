@@ -1,4 +1,4 @@
-/*eslint-disable block-scoped-var, no-redeclare, no-control-regex, no-prototype-builtins*/
+/*eslint-disable block-scoped-var, id-length, no-control-regex, no-magic-numbers, no-prototype-builtins, no-redeclare, no-shadow, no-var, sort-vars*/
 import * as $protobuf from "protobufjs/minimal";
 
 // Common aliases
@@ -6,6 +6,50 @@ const $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.
 
 // Exported root namespace
 const $root = $protobuf.roots["default"] || ($protobuf.roots["default"] = {});
+
+/**
+ * Status enum.
+ * @exports Status
+ * @enum {string}
+ * @property {number} UNKNOWN=0 UNKNOWN value
+ * @property {number} OK=1 OK value
+ * @property {number} CANCELLED=2 CANCELLED value
+ * @property {number} INVALID_ARGUMENT=3 INVALID_ARGUMENT value
+ * @property {number} DEADLINE_EXCEEDED=4 DEADLINE_EXCEEDED value
+ * @property {number} NOT_FOUND=5 NOT_FOUND value
+ * @property {number} ALREADY_EXISTS=6 ALREADY_EXISTS value
+ * @property {number} PERMISSION_DENIED=7 PERMISSION_DENIED value
+ * @property {number} UNAUTHENTICATED=8 UNAUTHENTICATED value
+ * @property {number} RESOURCE_EXHAUSTED=9 RESOURCE_EXHAUSTED value
+ * @property {number} FAILED_PRECONDITION=10 FAILED_PRECONDITION value
+ * @property {number} ABORTED=11 ABORTED value
+ * @property {number} OUT_OF_RANGE=12 OUT_OF_RANGE value
+ * @property {number} UNIMPLEMENTED=13 UNIMPLEMENTED value
+ * @property {number} INTERNAL=14 INTERNAL value
+ * @property {number} UNAVAILABLE=15 UNAVAILABLE value
+ * @property {number} DATA_LOSS=16 DATA_LOSS value
+ */
+$root.Status = (function() {
+    const valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "UNKNOWN"] = 0;
+    values[valuesById[1] = "OK"] = 1;
+    values[valuesById[2] = "CANCELLED"] = 2;
+    values[valuesById[3] = "INVALID_ARGUMENT"] = 3;
+    values[valuesById[4] = "DEADLINE_EXCEEDED"] = 4;
+    values[valuesById[5] = "NOT_FOUND"] = 5;
+    values[valuesById[6] = "ALREADY_EXISTS"] = 6;
+    values[valuesById[7] = "PERMISSION_DENIED"] = 7;
+    values[valuesById[8] = "UNAUTHENTICATED"] = 8;
+    values[valuesById[9] = "RESOURCE_EXHAUSTED"] = 9;
+    values[valuesById[10] = "FAILED_PRECONDITION"] = 10;
+    values[valuesById[11] = "ABORTED"] = 11;
+    values[valuesById[12] = "OUT_OF_RANGE"] = 12;
+    values[valuesById[13] = "UNIMPLEMENTED"] = 13;
+    values[valuesById[14] = "INTERNAL"] = 14;
+    values[valuesById[15] = "UNAVAILABLE"] = 15;
+    values[valuesById[16] = "DATA_LOSS"] = 16;
+    return values;
+})();
 
 export const Request = $root.Request = (() => {
 
@@ -17,6 +61,7 @@ export const Request = $root.Request = (() => {
      * @property {IUnaryRequestBody|null} [unary] Request unary
      * @property {IPushRequestBody|null} [push] Request push
      * @property {IEndRequestBody|null} [end] Request end
+     * @property {ICancelRequestBody|null} [cancel] Request cancel
      */
 
     /**
@@ -66,17 +111,25 @@ export const Request = $root.Request = (() => {
      */
     Request.prototype.end = null;
 
+    /**
+     * Request cancel.
+     * @member {ICancelRequestBody|null|undefined} cancel
+     * @memberof Request
+     * @instance
+     */
+    Request.prototype.cancel = null;
+
     // OneOf field names bound to virtual getters and setters
     let $oneOfFields;
 
     /**
      * Request body.
-     * @member {"unary"|"push"|"end"|undefined} body
+     * @member {"unary"|"push"|"end"|"cancel"|undefined} body
      * @memberof Request
      * @instance
      */
     Object.defineProperty(Request.prototype, "body", {
-        get: $util.oneOfGetter($oneOfFields = ["unary", "push", "end"]),
+        get: $util.oneOfGetter($oneOfFields = ["unary", "push", "end", "cancel"]),
         set: $util.oneOfSetter($oneOfFields)
     });
 
@@ -112,6 +165,8 @@ export const Request = $root.Request = (() => {
             $root.PushRequestBody.encode(message.push, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
         if (message.end != null && message.hasOwnProperty("end"))
             $root.EndRequestBody.encode(message.end, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+        if (message.cancel != null && message.hasOwnProperty("cancel"))
+            $root.CancelRequestBody.encode(message.cancel, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
         return writer;
     };
 
@@ -157,6 +212,9 @@ export const Request = $root.Request = (() => {
                 break;
             case 4:
                 message.end = $root.EndRequestBody.decode(reader, reader.uint32());
+                break;
+            case 5:
+                message.cancel = $root.CancelRequestBody.decode(reader, reader.uint32());
                 break;
             default:
                 reader.skipType(tag & 7);
@@ -225,6 +283,16 @@ export const Request = $root.Request = (() => {
                     return "end." + error;
             }
         }
+        if (message.cancel != null && message.hasOwnProperty("cancel")) {
+            if (properties.body === 1)
+                return "body: multiple values";
+            properties.body = 1;
+            {
+                let error = $root.CancelRequestBody.verify(message.cancel);
+                if (error)
+                    return "cancel." + error;
+            }
+        }
         return null;
     };
 
@@ -256,6 +324,11 @@ export const Request = $root.Request = (() => {
             if (typeof object.end !== "object")
                 throw TypeError(".Request.end: object expected");
             message.end = $root.EndRequestBody.fromObject(object.end);
+        }
+        if (object.cancel != null) {
+            if (typeof object.cancel !== "object")
+                throw TypeError(".Request.cancel: object expected");
+            message.cancel = $root.CancelRequestBody.fromObject(object.cancel);
         }
         return message;
     };
@@ -292,6 +365,11 @@ export const Request = $root.Request = (() => {
             if (options.oneofs)
                 object.body = "end";
         }
+        if (message.cancel != null && message.hasOwnProperty("cancel")) {
+            object.cancel = $root.CancelRequestBody.toObject(message.cancel, options);
+            if (options.oneofs)
+                object.body = "cancel";
+        }
         return object;
     };
 
@@ -315,6 +393,7 @@ export const UnaryRequestBody = $root.UnaryRequestBody = (() => {
      * Properties of an UnaryRequestBody.
      * @exports IUnaryRequestBody
      * @interface IUnaryRequestBody
+     * @property {string|null} [service] UnaryRequestBody service
      * @property {string|null} [method] UnaryRequestBody method
      * @property {Uint8Array|null} [payload] UnaryRequestBody payload
      * @property {Object.<string,string>|null} [metadata] UnaryRequestBody metadata
@@ -335,6 +414,14 @@ export const UnaryRequestBody = $root.UnaryRequestBody = (() => {
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
+
+    /**
+     * UnaryRequestBody service.
+     * @member {string} service
+     * @memberof UnaryRequestBody
+     * @instance
+     */
+    UnaryRequestBody.prototype.service = "";
 
     /**
      * UnaryRequestBody method.
@@ -384,13 +471,15 @@ export const UnaryRequestBody = $root.UnaryRequestBody = (() => {
     UnaryRequestBody.encode = function encode(message, writer) {
         if (!writer)
             writer = $Writer.create();
+        if (message.service != null && message.hasOwnProperty("service"))
+            writer.uint32(/* id 1, wireType 2 =*/10).string(message.service);
         if (message.method != null && message.hasOwnProperty("method"))
-            writer.uint32(/* id 1, wireType 2 =*/10).string(message.method);
+            writer.uint32(/* id 2, wireType 2 =*/18).string(message.method);
         if (message.payload != null && message.hasOwnProperty("payload"))
-            writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.payload);
+            writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.payload);
         if (message.metadata != null && message.hasOwnProperty("metadata"))
             for (let keys = Object.keys(message.metadata), i = 0; i < keys.length; ++i)
-                writer.uint32(/* id 3, wireType 2 =*/26).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.metadata[keys[i]]).ldelim();
+                writer.uint32(/* id 4, wireType 2 =*/34).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.metadata[keys[i]]).ldelim();
         return writer;
     };
 
@@ -426,12 +515,15 @@ export const UnaryRequestBody = $root.UnaryRequestBody = (() => {
             let tag = reader.uint32();
             switch (tag >>> 3) {
             case 1:
-                message.method = reader.string();
+                message.service = reader.string();
                 break;
             case 2:
-                message.payload = reader.bytes();
+                message.method = reader.string();
                 break;
             case 3:
+                message.payload = reader.bytes();
+                break;
+            case 4:
                 reader.skip().pos++;
                 if (message.metadata === $util.emptyObject)
                     message.metadata = {};
@@ -474,6 +566,9 @@ export const UnaryRequestBody = $root.UnaryRequestBody = (() => {
     UnaryRequestBody.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
+        if (message.service != null && message.hasOwnProperty("service"))
+            if (!$util.isString(message.service))
+                return "service: string expected";
         if (message.method != null && message.hasOwnProperty("method"))
             if (!$util.isString(message.method))
                 return "method: string expected";
@@ -503,6 +598,8 @@ export const UnaryRequestBody = $root.UnaryRequestBody = (() => {
         if (object instanceof $root.UnaryRequestBody)
             return object;
         let message = new $root.UnaryRequestBody();
+        if (object.service != null)
+            message.service = String(object.service);
         if (object.method != null)
             message.method = String(object.method);
         if (object.payload != null)
@@ -536,9 +633,18 @@ export const UnaryRequestBody = $root.UnaryRequestBody = (() => {
         if (options.objects || options.defaults)
             object.metadata = {};
         if (options.defaults) {
+            object.service = "";
             object.method = "";
-            object.payload = options.bytes === String ? "" : [];
+            if (options.bytes === String)
+                object.payload = "";
+            else {
+                object.payload = [];
+                if (options.bytes !== Array)
+                    object.payload = $util.newBuffer(object.payload);
+            }
         }
+        if (message.service != null && message.hasOwnProperty("service"))
+            object.service = message.service;
         if (message.method != null && message.hasOwnProperty("method"))
             object.method = message.method;
         if (message.payload != null && message.hasOwnProperty("payload"))
@@ -736,7 +842,13 @@ export const PushRequestBody = $root.PushRequestBody = (() => {
             options = {};
         let object = {};
         if (options.defaults)
-            object.payload = options.bytes === String ? "" : [];
+            if (options.bytes === String)
+                object.payload = "";
+            else {
+                object.payload = [];
+                if (options.bytes !== Array)
+                    object.payload = $util.newBuffer(object.payload);
+            }
         if (message.payload != null && message.hasOwnProperty("payload"))
             object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
         return object;
@@ -916,6 +1028,166 @@ export const EndRequestBody = $root.EndRequestBody = (() => {
     return EndRequestBody;
 })();
 
+export const CancelRequestBody = $root.CancelRequestBody = (() => {
+
+    /**
+     * Properties of a CancelRequestBody.
+     * @exports ICancelRequestBody
+     * @interface ICancelRequestBody
+     */
+
+    /**
+     * Constructs a new CancelRequestBody.
+     * @exports CancelRequestBody
+     * @classdesc Represents a CancelRequestBody.
+     * @implements ICancelRequestBody
+     * @constructor
+     * @param {ICancelRequestBody=} [properties] Properties to set
+     */
+    function CancelRequestBody(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * Creates a new CancelRequestBody instance using the specified properties.
+     * @function create
+     * @memberof CancelRequestBody
+     * @static
+     * @param {ICancelRequestBody=} [properties] Properties to set
+     * @returns {CancelRequestBody} CancelRequestBody instance
+     */
+    CancelRequestBody.create = function create(properties) {
+        return new CancelRequestBody(properties);
+    };
+
+    /**
+     * Encodes the specified CancelRequestBody message. Does not implicitly {@link CancelRequestBody.verify|verify} messages.
+     * @function encode
+     * @memberof CancelRequestBody
+     * @static
+     * @param {ICancelRequestBody} message CancelRequestBody message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    CancelRequestBody.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        return writer;
+    };
+
+    /**
+     * Encodes the specified CancelRequestBody message, length delimited. Does not implicitly {@link CancelRequestBody.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof CancelRequestBody
+     * @static
+     * @param {ICancelRequestBody} message CancelRequestBody message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    CancelRequestBody.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a CancelRequestBody message from the specified reader or buffer.
+     * @function decode
+     * @memberof CancelRequestBody
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {CancelRequestBody} CancelRequestBody
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    CancelRequestBody.decode = function decode(reader, length) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.CancelRequestBody();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            switch (tag >>> 3) {
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a CancelRequestBody message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof CancelRequestBody
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {CancelRequestBody} CancelRequestBody
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    CancelRequestBody.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a CancelRequestBody message.
+     * @function verify
+     * @memberof CancelRequestBody
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    CancelRequestBody.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        return null;
+    };
+
+    /**
+     * Creates a CancelRequestBody message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof CancelRequestBody
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {CancelRequestBody} CancelRequestBody
+     */
+    CancelRequestBody.fromObject = function fromObject(object) {
+        if (object instanceof $root.CancelRequestBody)
+            return object;
+        return new $root.CancelRequestBody();
+    };
+
+    /**
+     * Creates a plain object from a CancelRequestBody message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof CancelRequestBody
+     * @static
+     * @param {CancelRequestBody} message CancelRequestBody
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    CancelRequestBody.toObject = function toObject() {
+        return {};
+    };
+
+    /**
+     * Converts this CancelRequestBody to JSON.
+     * @function toJSON
+     * @memberof CancelRequestBody
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    CancelRequestBody.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    return CancelRequestBody;
+})();
+
 export const Response = $root.Response = (() => {
 
     /**
@@ -923,6 +1195,7 @@ export const Response = $root.Response = (() => {
      * @exports IResponse
      * @interface IResponse
      * @property {string|null} [id] Response id
+     * @property {IUnaryResponseBody|null} [unary] Response unary
      * @property {IPushResponseBody|null} [push] Response push
      * @property {IEndResponseBody|null} [end] Response end
      */
@@ -951,6 +1224,14 @@ export const Response = $root.Response = (() => {
     Response.prototype.id = "";
 
     /**
+     * Response unary.
+     * @member {IUnaryResponseBody|null|undefined} unary
+     * @memberof Response
+     * @instance
+     */
+    Response.prototype.unary = null;
+
+    /**
      * Response push.
      * @member {IPushResponseBody|null|undefined} push
      * @memberof Response
@@ -971,12 +1252,12 @@ export const Response = $root.Response = (() => {
 
     /**
      * Response body.
-     * @member {"push"|"end"|undefined} body
+     * @member {"unary"|"push"|"end"|undefined} body
      * @memberof Response
      * @instance
      */
     Object.defineProperty(Response.prototype, "body", {
-        get: $util.oneOfGetter($oneOfFields = ["push", "end"]),
+        get: $util.oneOfGetter($oneOfFields = ["unary", "push", "end"]),
         set: $util.oneOfSetter($oneOfFields)
     });
 
@@ -1006,10 +1287,12 @@ export const Response = $root.Response = (() => {
             writer = $Writer.create();
         if (message.id != null && message.hasOwnProperty("id"))
             writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
+        if (message.unary != null && message.hasOwnProperty("unary"))
+            $root.UnaryResponseBody.encode(message.unary, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
         if (message.push != null && message.hasOwnProperty("push"))
-            $root.PushResponseBody.encode(message.push, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            $root.PushResponseBody.encode(message.push, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
         if (message.end != null && message.hasOwnProperty("end"))
-            $root.EndResponseBody.encode(message.end, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+            $root.EndResponseBody.encode(message.end, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
         return writer;
     };
 
@@ -1048,9 +1331,12 @@ export const Response = $root.Response = (() => {
                 message.id = reader.string();
                 break;
             case 2:
-                message.push = $root.PushResponseBody.decode(reader, reader.uint32());
+                message.unary = $root.UnaryResponseBody.decode(reader, reader.uint32());
                 break;
             case 3:
+                message.push = $root.PushResponseBody.decode(reader, reader.uint32());
+                break;
+            case 4:
                 message.end = $root.EndResponseBody.decode(reader, reader.uint32());
                 break;
             default:
@@ -1092,7 +1378,17 @@ export const Response = $root.Response = (() => {
         if (message.id != null && message.hasOwnProperty("id"))
             if (!$util.isString(message.id))
                 return "id: string expected";
+        if (message.unary != null && message.hasOwnProperty("unary")) {
+            properties.body = 1;
+            {
+                let error = $root.UnaryResponseBody.verify(message.unary);
+                if (error)
+                    return "unary." + error;
+            }
+        }
         if (message.push != null && message.hasOwnProperty("push")) {
+            if (properties.body === 1)
+                return "body: multiple values";
             properties.body = 1;
             {
                 let error = $root.PushResponseBody.verify(message.push);
@@ -1127,6 +1423,11 @@ export const Response = $root.Response = (() => {
         let message = new $root.Response();
         if (object.id != null)
             message.id = String(object.id);
+        if (object.unary != null) {
+            if (typeof object.unary !== "object")
+                throw TypeError(".Response.unary: object expected");
+            message.unary = $root.UnaryResponseBody.fromObject(object.unary);
+        }
         if (object.push != null) {
             if (typeof object.push !== "object")
                 throw TypeError(".Response.push: object expected");
@@ -1157,6 +1458,11 @@ export const Response = $root.Response = (() => {
             object.id = "";
         if (message.id != null && message.hasOwnProperty("id"))
             object.id = message.id;
+        if (message.unary != null && message.hasOwnProperty("unary")) {
+            object.unary = $root.UnaryResponseBody.toObject(message.unary, options);
+            if (options.oneofs)
+                object.body = "unary";
+        }
         if (message.push != null && message.hasOwnProperty("push")) {
             object.push = $root.PushResponseBody.toObject(message.push, options);
             if (options.oneofs)
@@ -1182,6 +1488,202 @@ export const Response = $root.Response = (() => {
     };
 
     return Response;
+})();
+
+export const UnaryResponseBody = $root.UnaryResponseBody = (() => {
+
+    /**
+     * Properties of an UnaryResponseBody.
+     * @exports IUnaryResponseBody
+     * @interface IUnaryResponseBody
+     * @property {Uint8Array|null} [payload] UnaryResponseBody payload
+     */
+
+    /**
+     * Constructs a new UnaryResponseBody.
+     * @exports UnaryResponseBody
+     * @classdesc Represents an UnaryResponseBody.
+     * @implements IUnaryResponseBody
+     * @constructor
+     * @param {IUnaryResponseBody=} [properties] Properties to set
+     */
+    function UnaryResponseBody(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * UnaryResponseBody payload.
+     * @member {Uint8Array} payload
+     * @memberof UnaryResponseBody
+     * @instance
+     */
+    UnaryResponseBody.prototype.payload = $util.newBuffer([]);
+
+    /**
+     * Creates a new UnaryResponseBody instance using the specified properties.
+     * @function create
+     * @memberof UnaryResponseBody
+     * @static
+     * @param {IUnaryResponseBody=} [properties] Properties to set
+     * @returns {UnaryResponseBody} UnaryResponseBody instance
+     */
+    UnaryResponseBody.create = function create(properties) {
+        return new UnaryResponseBody(properties);
+    };
+
+    /**
+     * Encodes the specified UnaryResponseBody message. Does not implicitly {@link UnaryResponseBody.verify|verify} messages.
+     * @function encode
+     * @memberof UnaryResponseBody
+     * @static
+     * @param {IUnaryResponseBody} message UnaryResponseBody message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    UnaryResponseBody.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.payload != null && message.hasOwnProperty("payload"))
+            writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.payload);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified UnaryResponseBody message, length delimited. Does not implicitly {@link UnaryResponseBody.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof UnaryResponseBody
+     * @static
+     * @param {IUnaryResponseBody} message UnaryResponseBody message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    UnaryResponseBody.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes an UnaryResponseBody message from the specified reader or buffer.
+     * @function decode
+     * @memberof UnaryResponseBody
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {UnaryResponseBody} UnaryResponseBody
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    UnaryResponseBody.decode = function decode(reader, length) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.UnaryResponseBody();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            switch (tag >>> 3) {
+            case 1:
+                message.payload = reader.bytes();
+                break;
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes an UnaryResponseBody message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof UnaryResponseBody
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {UnaryResponseBody} UnaryResponseBody
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    UnaryResponseBody.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies an UnaryResponseBody message.
+     * @function verify
+     * @memberof UnaryResponseBody
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    UnaryResponseBody.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.payload != null && message.hasOwnProperty("payload"))
+            if (!(message.payload && typeof message.payload.length === "number" || $util.isString(message.payload)))
+                return "payload: buffer expected";
+        return null;
+    };
+
+    /**
+     * Creates an UnaryResponseBody message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof UnaryResponseBody
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {UnaryResponseBody} UnaryResponseBody
+     */
+    UnaryResponseBody.fromObject = function fromObject(object) {
+        if (object instanceof $root.UnaryResponseBody)
+            return object;
+        let message = new $root.UnaryResponseBody();
+        if (object.payload != null)
+            if (typeof object.payload === "string")
+                $util.base64.decode(object.payload, message.payload = $util.newBuffer($util.base64.length(object.payload)), 0);
+            else if (object.payload.length)
+                message.payload = object.payload;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from an UnaryResponseBody message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof UnaryResponseBody
+     * @static
+     * @param {UnaryResponseBody} message UnaryResponseBody
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    UnaryResponseBody.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults)
+            if (options.bytes === String)
+                object.payload = "";
+            else {
+                object.payload = [];
+                if (options.bytes !== Array)
+                    object.payload = $util.newBuffer(object.payload);
+            }
+        if (message.payload != null && message.hasOwnProperty("payload"))
+            object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
+        return object;
+    };
+
+    /**
+     * Converts this UnaryResponseBody to JSON.
+     * @function toJSON
+     * @memberof UnaryResponseBody
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    UnaryResponseBody.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    return UnaryResponseBody;
 })();
 
 export const PushResponseBody = $root.PushResponseBody = (() => {
@@ -1354,7 +1856,13 @@ export const PushResponseBody = $root.PushResponseBody = (() => {
             options = {};
         let object = {};
         if (options.defaults)
-            object.payload = options.bytes === String ? "" : [];
+            if (options.bytes === String)
+                object.payload = "";
+            else {
+                object.payload = [];
+                if (options.bytes !== Array)
+                    object.payload = $util.newBuffer(object.payload);
+            }
         if (message.payload != null && message.hasOwnProperty("payload"))
             object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
         return object;

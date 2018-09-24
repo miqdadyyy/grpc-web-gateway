@@ -4,12 +4,12 @@ const protoLoader = require('@grpc/proto-loader');
 
 class TestService {
   unary(call, callback) {
-    console.log(`[grpc] unary: ${call.request}`);
+    console.log(`[grpc] unary: ${JSON.stringify(call.request)}`);
     callback(null, { date: Date.now() });
   }
 
   serverStream(call) {
-    console.log(`[grpc] serverStream: ${call.request}`);
+    console.log(`[grpc] serverStream: ${JSON.stringify(call.request)}`);
     const iid = setInterval(() => call.write({ date: Date.now() }), 1000);
     setTimeout(() => {
       clearInterval(iid);
