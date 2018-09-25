@@ -55,6 +55,8 @@ function createGrpcGateway(config) {
         app.logger.debug(`register route ${methodDefinition.path}`);
         if (methodDefinition.requestStream && methodDefinition.responseStream) {
           app.ws(methodDefinition.path, (ws, req) => {
+            app.logger.debug(`bidi-stream: ${methodDefinition.path}`);
+
             const service = createService();
             const metadata = createMetadata(req);
             const call = service[methodDefinition.originalName](metadata);
@@ -96,6 +98,8 @@ function createGrpcGateway(config) {
           });
         } else if (methodDefinition.responseStream) {
           app.post(methodDefinition.path, jsonParser, (req, res) => {
+            app.logger.debug(`server-stream: ${methodDefinition.path}`);
+
             const service = createService();
             const metadata = createMetadata(req);
             const call = service[methodDefinition.originalName](req.body, metadata);
@@ -136,6 +140,8 @@ function createGrpcGateway(config) {
           });
         } else if (methodDefinition.requestStream) {
           app.post(methodDefinition.path, (req, res) => {
+            app.logger.debug(`client-stream: ${methodDefinition.path}`);
+
             res.status(501);
             res.json({
               ok: false,
@@ -147,6 +153,8 @@ function createGrpcGateway(config) {
           });
         } else {
           app.post(methodDefinition.path, jsonParser, (req, res) => {
+            app.logger.debug(`unary: ${methodDefinition.path}`);
+
             const service = createService();
             const metadata = createMetadata(req);
 
