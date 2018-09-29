@@ -6,9 +6,10 @@ const cors = require('cors');
 const expressWs = require('express-ws');
 const bodyParser = require('body-parser');
 const pino = require('pino');
+const mapErrorToHttp = require('./utils/mapErrorToHttp');
 const createInterval = require('./utils/createInterval');
-const createMetadataMapper = require('./createMetadata');
-const mapErrorToHttp = require('./mapErrorToHttp');
+const createCredentials = require('./utils/createCredentials');
+const createMetadataMapper = require('./utils/createMetadata');
 
 function createGrpcGateway(config) {
   const app = express();
@@ -50,7 +51,7 @@ function createGrpcGateway(config) {
     _.forOwn(definition, (serviceDefinition, serviceName) => {
       _.forOwn(serviceDefinition, (methodDefinition) => {
         const Service = _.get(package, serviceName);
-        const createService = () => new Service(config.apiHost, grpc.credentials.createInsecure());
+        const createService = () => new Service(config.api.host, createCredentials(config.api.credentials));
 
         app.logger.debug(`register route ${methodDefinition.path}`);
         if (methodDefinition.requestStream && methodDefinition.responseStream) {

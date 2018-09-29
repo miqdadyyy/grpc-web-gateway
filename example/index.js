@@ -7,7 +7,9 @@ const createGrpcGateway = require('../src');
 require('./server');
 
 const gateway = createGrpcGateway({
-  apiHost: 'localhost:3000',
+  api: {
+    host: 'localhost:3000'
+  },
   protoFiles: [
     path.join(__dirname, 'proto/api.proto')
   ]
