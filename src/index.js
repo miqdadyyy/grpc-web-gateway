@@ -121,20 +121,24 @@ function createGrpcGateway(config) {
             const cancelPing = createInterval(60000, () => write({ ping: true }));
 
             call.on('data', (message) => {
+              app.logger.debug(`server-stream: ${methodDefinition.path} data`);
               write({ ok: true, payload: message });
             });
 
             call.on('error', (error) => {
+              app.logger.debug(`server-stream: ${methodDefinition.path} error`);
               write({ ok: false, payload: error });
             });
 
             call.on('end', () => {
+              app.logger.debug(`server-stream: ${methodDefinition.path} end`);
               sendHeaders();
               res.end();
               cancelPing();
             });
 
             req.on('close', () => {
+              app.logger.debug(`server-stream: ${methodDefinition.path} close`);
               call.cancel();
               cancelPing();
             });
@@ -177,6 +181,7 @@ function createGrpcGateway(config) {
             });
 
             req.on('close', () => {
+              app.logger.debug(`unary: ${methodDefinition.path} close`);
               call.cancel();
             });
           });
