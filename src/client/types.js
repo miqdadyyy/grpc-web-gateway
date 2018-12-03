@@ -25,7 +25,7 @@ export type UnaryRequest = {
   service: string,
   method: string,
   payload: Uint8Array,
-  metadata: Metadata
+  metadata: Metadata,
 };
 
 export class RpcError extends Error {

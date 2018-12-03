@@ -8,7 +8,8 @@
     "generate-example": "pbjs -t static-module --es6 -o example/client/api.gen.js example/proto/*.proto",
     "generate-signaling": "pbjs -t static-module --es6 -o src/shared/signaling.js src/shared/signaling.proto",
     "preexample": "npm run generate-example",
-    "example": "webpack --watch --config example/webpack.config.js"
+    "example": "webpack --watch --config example/webpack.config.js",
+    "fmt": "prettier --write \"**/*.{js,json,md,js.flow}\""
   },
   "author": "Nikita Gusakov <gusnkt@gmail.com>",
   "license": "Apache-2.0",
@@ -35,6 +36,7 @@
     "nodemon": "1.18.4",
     "nodemon-webpack-plugin": "4.0.3",
     "npm-run-all": "4.1.3",
+    "prettier": "^1.15.3",
     "webpack": "4.19.1",
     "webpack-cli": "3.1.0",
     "webpack-node-externals": "1.7.2",

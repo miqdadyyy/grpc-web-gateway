@@ -19,7 +19,7 @@ class TestService {
   }
 
   clientStream(call, callback) {
-    call.on('data', (message) => {
+    call.on('data', message => {
       console.log(`[grpc] clientStream: ${message}`);
     });
     call.on('end', () => {
@@ -31,13 +31,13 @@ class TestService {
   bidiStream(call) {
     const iid = setInterval(() => call.write({ date: Date.now() }), 1000);
 
-    call.on('data', (message) => {
+    call.on('data', message => {
       console.log(`[grpc] bidiStream: ${message}`);
     });
 
     call.on('end', () => {
       clearInterval(iid);
-      call.end()
+      call.end();
       console.log(`[grpc] bidiStream ended`);
     });
   }

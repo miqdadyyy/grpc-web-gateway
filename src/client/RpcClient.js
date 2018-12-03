@@ -17,10 +17,11 @@ class RpcClient {
     this.transport = transport;
     this.calls = new Map();
 
-    this.transport.start()
-      .map((bytes) => Response.decode(bytes))
+    this.transport
+      .start()
+      .map(bytes => Response.decode(bytes))
       .observe({
-        value: (res) => {
+        value: res => {
           const call = this.calls.get(res.id);
           if (call) {
             call.onMessage(res);
@@ -38,7 +39,7 @@ class RpcClient {
   }
 
   makeUnaryRequest(request: UnaryRequest) {
-    return Kefir.stream((emitter) => {
+    return Kefir.stream(emitter => {
       const id = uuid();
 
       const call = new UnaryCall(this.transport, emitter);
@@ -54,7 +55,7 @@ class RpcClient {
   }
 
   makeServerStreamRequest(request: UnaryRequest) {
-    return Kefir.stream((emitter) => {
+    return Kefir.stream(emitter => {
       const id = uuid();
 
       const call = new UnaryCall(this.transport, emitter);
@@ -69,13 +70,9 @@ class RpcClient {
     });
   }
 
-  makeClientStreamRequest() {
+  makeClientStreamRequest() {}
 
-  }
-
-  makeBidiStreamRequest() {
-
-  }
+  makeBidiStreamRequest() {}
 }
 
 export default RpcClient;

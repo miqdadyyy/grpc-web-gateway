@@ -22,23 +22,28 @@ class WebSocketTransport implements RpcTransport {
 
   handleOpen() {
     if (this.queue.length) {
-      this.queue.forEach((message) => this.send(message));
+      this.queue.forEach(message => this.send(message));
       this.queue = [];
     }
   }
 
   start(): Observable<Uint8Array, RpcError> {
-    return Kefir.stream((emitter) => {
+    return Kefir.stream(emitter => {
       this.socket.onclose = () => emitter.end();
-      this.socket.onerror = (event) => {
+      this.socket.onerror = event => {
         console.error(event);
         emitter.error(new RpcError('UNKNOWN', 'WebSocket error'));
       };
-      this.socket.onmessage = (event) => {
+      this.socket.onmessage = event => {
         if (event.data instanceof ArrayBuffer) {
           emitter.value(new Uint8Array(event.data));
         } else {
-          emitter.error(new RpcError('SERIALIZATION_MISMATCH', 'Incoming message should be ArrayBuffer'));
+          emitter.error(
+            new RpcError(
+              'SERIALIZATION_MISMATCH',
+              'Incoming message should be ArrayBuffer',
+            ),
+          );
         }
       };
 

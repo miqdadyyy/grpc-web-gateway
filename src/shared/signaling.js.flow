@@ -14,22 +14,22 @@ declare class IRequest {
 declare class Request extends IRequest {
   static encode(payload: IRequest): { finish(): Uint8Array };
   static decode(bytes: Uint8Array): Request;
-};
+}
 
 export type UnaryRequestBody = {
-  service: string;
-  method: string;
-  payload: Uint8Array;
-  metadata: { [key: string]: string };
-}
+  service: string,
+  method: string,
+  payload: Uint8Array,
+  metadata: { [key: string]: string },
+};
 
 export type PushRequestBody = {
-  payload: Uint8Array;
-}
+  payload: Uint8Array,
+};
 
-export type EndRequestBody = {}
+export type EndRequestBody = {};
 
-export type CancelRequestBody = {}
+export type CancelRequestBody = {};
 
 declare class IResponse {
   id: string;
@@ -44,16 +44,16 @@ declare class Response extends IResponse {
 }
 
 export type UnaryResponseBody = {
-  payload: Uint8Array;
-}
+  payload: Uint8Array,
+};
 
 export type PushResponseBody = {
-  payload: Uint8Array;
-}
+  payload: Uint8Array,
+};
 
-export type EndResponseBody = {}
+export type EndResponseBody = {};
 
 module.exports = {
   Request,
-  Response
+  Response,
 };

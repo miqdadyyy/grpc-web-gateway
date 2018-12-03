@@ -9,44 +9,45 @@ const babel = {
   use: {
     loader: 'babel-loader',
     options: {
-      presets: ['@dlghq/babel-preset-dialog']
-    }
-  }
+      presets: ['@dlghq/babel-preset-dialog'],
+    },
+  },
 };
 
-module.exports = [{
-  mode: 'development',
-  target: 'web',
-  entry: path.resolve(__dirname, 'client/index.js'),
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'client-bundle.js'
+module.exports = [
+  {
+    mode: 'development',
+    target: 'web',
+    entry: path.resolve(__dirname, 'client/index.js'),
+    output: {
+      path: path.resolve(__dirname, 'dist'),
+      filename: 'client-bundle.js',
+    },
+    module: {
+      rules: [babel],
+    },
+    plugins: [
+      new HtmlPlugin({
+        title: 'gRPC Web Gateway',
+      }),
+    ],
   },
-  module: {
-    rules: [babel]
+  {
+    mode: 'development',
+    target: 'node',
+    entry: path.resolve(__dirname, 'server/index.js'),
+    output: {
+      path: path.resolve(__dirname, 'dist'),
+      filename: 'server-bundle.js',
+    },
+    module: {
+      rules: [babel],
+    },
+    node: {
+      __dirname: false,
+      __filename: false,
+    },
+    externals: createNodeExternals(),
+    plugins: [new NodemonPlugin()],
   },
-  plugins: [
-    new HtmlPlugin({
-      title: 'gRPC Web Gateway'
-    })
-  ]
-}, {
-  mode: 'development',
-  target: 'node',
-  entry: path.resolve(__dirname, 'server/index.js'),
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'server-bundle.js'
-  },
-  module: {
-    rules: [babel]
-  },
-  node: {
-    __dirname: false,
-    __filename: false
-  },
-  externals: createNodeExternals(),
-  plugins: [
-    new NodemonPlugin()
-  ]
-}];
+];

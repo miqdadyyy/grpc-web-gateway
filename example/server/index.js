@@ -11,7 +11,7 @@ const protoRoot = path.resolve(__dirname, '../proto/api.proto');
 
 startGrpcServer({
   protoRoot,
-  listen: apiHost
+  listen: apiHost,
 });
 
 const app = express();
@@ -19,13 +19,12 @@ const server = http.createServer(app);
 
 createGateway({
   server,
-  api: apiHost
+  api: apiHost,
 });
 
 app.use(express.static(path.resolve(__dirname, '../dist')));
 
-
-server.listen(gatewayHost, (error) => {
+server.listen(gatewayHost, error => {
   if (error) {
     console.error(error);
   } else {
