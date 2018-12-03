@@ -11,8 +11,26 @@ declare class IRequest {
   cancel?: CancelRequestBody;
 }
 
+declare type RequestPayload =
+  | {
+      id: string,
+      unary: UnaryRequestBody,
+    }
+  | {
+      id: string,
+      push: PushRequestBody,
+    }
+  | {
+      id: string,
+      end: EndRequestBody,
+    }
+  | {
+      id: string,
+      cancel: CancelRequestBody,
+    };
+
 declare class Request extends IRequest {
-  static encode(payload: IRequest): { finish(): Uint8Array };
+  static encode(payload: RequestPayload): { finish(): Uint8Array };
   static decode(bytes: Uint8Array): Request;
 }
 
@@ -38,8 +56,16 @@ declare class IResponse {
   end?: EndResponseBody;
 }
 
+declare type ResponsePayload =
+  | {
+      id: string,
+      unary: UnaryResponseBody,
+    }
+  | { id: string, push: PushResponseBody }
+  | { id: string, end: EndResponseBody };
+
 declare class Response extends IResponse {
-  static encode(payload: IResponse): { finish(): Uint8Array };
+  static encode(payload: ResponsePayload): { finish(): Uint8Array };
   static decode(bytes: Uint8Array): Response;
 }
 
