@@ -17,19 +17,21 @@ function createGrpcGateway(config) {
 
   app.logger = pino({
     name: 'grpc-gateway',
-    level: config.logLevel || 'debug'
+    level: config.logLevel || 'debug',
   });
 
   app.set('etag', false);
   app.set('x-powered-by', false);
 
   if (config.cors) {
-    app.use(cors({
-      origin: config.cors.origin,
-      maxAge: 24 * 60 * 60,
-      methods: ['GET', 'POST'],
-      allowedHeaders: ['accept', 'content-type', 'authorization']
-    }));
+    app.use(
+      cors({
+        origin: config.cors.origin,
+        maxAge: 24 * 60 * 60,
+        methods: ['GET', 'POST'],
+        allowedHeaders: ['accept', 'content-type', 'authorization'],
+      }),
+    );
   }
 
   const createMetadata = createMetadataMapper(config.filterHeaders);
@@ -44,14 +46,18 @@ function createGrpcGateway(config) {
       arrays: true,
       defaults: true,
       keepCase: false,
-      includeDirs: config.protoInclude
+      includeDirs: config.protoInclude,
     });
     const package = grpc.loadPackageDefinition(definition);
 
     _.forOwn(definition, (serviceDefinition, serviceName) => {
       _.forOwn(serviceDefinition, (methodDefinition) => {
         const Service = _.get(package, serviceName);
-        const createService = () => new Service(config.api.host, createCredentials(config.api.credentials));
+        const createService = () =>
+          new Service(
+            config.api.host,
+            createCredentials(config.api.credentials),
+          );
 
         app.logger.debug(`register route ${methodDefinition.path}`);
         if (methodDefinition.requestStream && methodDefinition.responseStream) {
@@ -89,7 +95,10 @@ function createGrpcGateway(config) {
             });
 
             call.on('error', (error) => {
-              const json = JSON.stringify({ ok: false, payload: mapErrorToHttp(error) });
+              const json = JSON.stringify({
+                ok: false,
+                payload: mapErrorToHttp(error),
+              });
               ws.send(json, handleError);
             });
 
@@ -103,13 +112,18 @@ function createGrpcGateway(config) {
 
             const service = createService();
             const metadata = createMetadata(req);
-            const call = service[methodDefinition.originalName](req.body, metadata);
+            const call = service[methodDefinition.originalName](
+              req.body,
+              metadata,
+            );
 
             let isHeadersSent = false;
             const sendHeaders = () => {
               if (!isHeadersSent) {
                 isHeadersSent = true;
-                res.writeHead(200, { 'content-type' : 'application/jsonstream' });
+                res.writeHead(200, {
+                  'content-type': 'application/jsonstream',
+                });
               }
             };
 
@@ -118,7 +132,9 @@ function createGrpcGateway(config) {
               res.write(JSON.stringify(message) + '\n');
             };
 
-            const cancelPing = createInterval(60000, () => write({ ping: true }));
+            const cancelPing = createInterval(60000, () =>
+              write({ ping: true }),
+            );
 
             call.on('data', (message) => {
               app.logger.debug(`server-stream: ${methodDefinition.path} data`);
@@ -152,8 +168,8 @@ function createGrpcGateway(config) {
               ok: false,
               payload: {
                 code: 501,
-                message: 'Not Implemented'
-              }
+                message: 'Not Implemented',
+              },
             });
           });
         } else {
@@ -164,21 +180,26 @@ function createGrpcGateway(config) {
             const metadata = createMetadata(req);
 
             const method = service[methodDefinition.originalName];
-            const call = method.call(service, req.body, metadata, (error, response) => {
-              if (error) {
-                const outError = mapErrorToHttp(error);
-                res.status(outError.status);
-                res.json({
-                  ok: false,
-                  payload: outError
-                });
-              } else {
-                res.json({
-                  ok: true,
-                  payload: response
-                });
-              }
-            });
+            const call = method.call(
+              service,
+              req.body,
+              metadata,
+              (error, response) => {
+                if (error) {
+                  const outError = mapErrorToHttp(error);
+                  res.status(outError.status);
+                  res.json({
+                    ok: false,
+                    payload: outError,
+                  });
+                } else {
+                  res.json({
+                    ok: true,
+                    payload: response,
+                  });
+                }
+              },
+            );
 
             req.on('close', () => {
               app.logger.debug(`unary: ${methodDefinition.path} close`);
@@ -196,8 +217,8 @@ function createGrpcGateway(config) {
       ok: false,
       payload: {
         code: 404,
-        message: 'Not Found'
-      }
+        message: 'Not Found',
+      },
     });
   });
 
@@ -209,8 +230,8 @@ function createGrpcGateway(config) {
       ok: false,
       payload: {
         code: 500,
-        message: 'Internal Error'
-      }
+        message: 'Internal Error',
+      },
     });
   });
 

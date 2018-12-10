@@ -1,30 +1,29 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-<head>
-<meta charset="utf-8">
-<title>gRPC gateway</title>
-</head>
-<body>
-<script type="text/javascript">
+  <head>
+    <meta charset="utf-8" />
+    <title>gRPC gateway</title>
+  </head>
+  <body>
+    <script type="text/javascript">
+      // fetch('/example.Example/Echo', {
+      //   method: 'POST',
+      //   body: JSON.stringify({ date: Date.now() }),
+      //   headers: {
+      //     'content-type': 'application/json'
+      //   }
+      // })
+      //   .then((res) => res.json())
+      //   .then(console.log.bind(console, 'echo response'))
+      //   .catch(console.error.bind(console))
 
-// fetch('/example.Example/Echo', {
-//   method: 'POST',
-//   body: JSON.stringify({ date: Date.now() }),
-//   headers: {
-//     'content-type': 'application/json'
-//   }
-// })
-//   .then((res) => res.json())
-//   .then(console.log.bind(console, 'echo response'))
-//   .catch(console.error.bind(console))
+      const ws = new WebSocket(
+        'ws://localhost:8080/example.Example/BidiStream',
+      );
 
-const ws = new WebSocket('ws://localhost:8080/example.Example/BidiStream');
-
-ws.onconnect = () => ws.send(JSON.stringify({ date: 'lkjn' }));
-ws.onerror = console.error.bind(console);
-ws.onmessage = console.log.bind(console, 'echo stream message');
-
-
-</script>
-</body>
+      ws.onconnect = () => ws.send(JSON.stringify({ date: 'lkjn' }));
+      ws.onerror = console.error.bind(console);
+      ws.onmessage = console.log.bind(console, 'echo stream message');
+    </script>
+  </body>
 </html>

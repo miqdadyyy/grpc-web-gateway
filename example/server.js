@@ -12,19 +12,22 @@ class EchoService {
   }
 
   bidiStream(call) {
-    call.write({ date: Date.now() })
+    call.write({ date: Date.now() });
     setInterval(() => call.write({ date: Date.now() }), 1000);
 
     call.on('data', (point) => {
       console.log(point);
-      call.write(point)
+      call.write(point);
     });
 
     call.on('end', () => call.end());
   }
 }
 
-const definition = protoLoader.loadSync(path.join(__dirname, 'proto/api.proto'), { keepCase: false });
+const definition = protoLoader.loadSync(
+  path.join(__dirname, 'proto/api.proto'),
+  { keepCase: false },
+);
 const descriptor = grpc.loadPackageDefinition(definition);
 
 const server = new grpc.Server();

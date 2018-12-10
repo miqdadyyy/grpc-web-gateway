@@ -7,7 +7,8 @@
     "test": "exit 0",
     "preversion": "npm test",
     "postversion": "npm publish",
-    "postpublish": "git push --follow-tags"
+    "postpublish": "git push --follow-tags",
+    "fmt": "prettier --write \"**/*.{js,json,html,md}\""
   },
   "author": "Nikita Gusakov <gusnkt@gmail.com>",
   "license": "Apache-2.0",
@@ -21,5 +22,9 @@
     "lodash": "4.17.11",
     "pino": "5.6.0",
     "ws": "6.0.0"
+  },
+  "devDependencies": {
+    "eslint-config-prettier": "3.3.0",
+    "prettier": "1.15.3"
   }
 }

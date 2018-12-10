@@ -1,10 +1,8 @@
-gRPC Web Gateway
-================
+# gRPC Web Gateway
 
 Proxies HTTP & WebSocket requests to gRPC service.
 
-Usage
------
+## Usage
 
 ```
 const path = require('path');

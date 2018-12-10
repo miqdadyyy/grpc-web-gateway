@@ -9,7 +9,7 @@ function createCredentials(config) {
     return credentials.createSsl(
       parseBuffer(config.rootCerts),
       parseBuffer(config.privateKey),
-      parseBuffer(config.certChain)
+      parseBuffer(config.certChain),
     );
   }
 
