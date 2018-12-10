@@ -211,6 +211,15 @@ function createGrpcGateway(config) {
     });
   });
 
+  app.get('/info', jsonParser, (req, res) => {
+    const package = require('../package.json');
+    const data = {
+      name: package.name,
+      version: package.version,
+    };
+    res.json({ status: 'OK', data });
+  });
+
   app.use((req, res, next) => {
     res.status(404);
     res.json({
