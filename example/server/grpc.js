@@ -8,14 +8,17 @@ class TestService {
     callback(null, { date: Date.now() });
   }
 
-  serverStream(call) {
+  serverStream(call, ...rest) {
     console.log(`[grpc] serverStream: ${JSON.stringify(call.request)}`);
-    const iid = setInterval(() => call.write({ date: Date.now() }), 1000);
+    const iid = setInterval(() => {
+      console.log('Write');
+      call.write({ date: Date.now() });
+    }, 1000);
     setTimeout(() => {
       clearInterval(iid);
       call.end();
       console.log(`[grpc] serverStream ended`);
-    });
+    }, 1000 * 10);
   }
 
   clientStream(call, callback) {

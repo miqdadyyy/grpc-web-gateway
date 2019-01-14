@@ -4,25 +4,56 @@
  */
 
 import { type Observable } from 'kefir';
-import { type RpcTransport, RpcError } from './types';
 
-type RpcTransportFactory = () => RpcTransport;
+import { RpcDuplexTransport } from './transport';
+import { RpcError } from './RpcError';
 
-class RetryTransport implements RpcTransport {
-  child: RpcTransport;
+type RpcTransportFactory = () => RpcDuplexTransport;
+
+class RetryTransport implements RpcDuplexTransport {
+  origin: RpcDuplexTransport;
   factory: RpcTransportFactory;
 
-  constructor(factory: () => RpcTransport) {
+  constructor(factory: RpcTransportFactory) {
     this.factory = factory;
-    this.child = factory();
+    this.origin = factory();
   }
 
   send(message: Uint8Array): void {
-    this.child.send(message);
+    const retrySend = (message, tryCount) => {
+      switch (tryCount) {
+        case 0:
+        case 1: {
+          try {
+            this.origin.send(message);
+          } catch (e) {
+            console.error(e);
+            console.log(`Retrying...`);
+            retrySend(message, tryCount + 1);
+          }
+        }
+
+        default:
+          try {
+            this.origin.send(message);
+          } catch (e) {
+            console.error(e);
+            console.log(
+              `Retrying in ${Math.E ** (tryCount - 2) * 1000} seconds...`,
+            );
+            setTimeout(
+              () => retrySend(message, tryCount + 1),
+              Math.E ** (tryCount - 2) * 1000,
+            );
+          }
+      }
+    };
+
+    retrySend(message, 0);
   }
 
-  start(): Observable<Uint8Array, RpcError> {
-    return this.child.start();
+  read(): Observable<Uint8Array, RpcError> {
+    return this.origin.read();
   }
 }
 

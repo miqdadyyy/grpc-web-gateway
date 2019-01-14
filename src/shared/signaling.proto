@@ -23,12 +23,15 @@ enum Status {
 message Request {
   string id = 1;
   oneof body {
-     UnaryRequestBody unary = 2;
-     PushRequestBody push = 3;
-     EndRequestBody end = 4;
-     CancelRequestBody cancel = 5;
+    UnaryRequestBody unary = 2;
+    StreamRequestBody stream = 3;
+    PushRequestBody push = 4;
+    EndRequestBody end = 5;
+    CancelRequestBody cancel = 6;
   }
 }
+
+message StreamRequestBody {}
 
 message UnaryRequestBody {
   string service = 1;
@@ -39,6 +42,7 @@ message UnaryRequestBody {
 
 message PushRequestBody {
   bytes payload = 1;
+  map<string, string> metadata = 2;
 }
 
 message EndRequestBody {}
@@ -48,18 +52,14 @@ message CancelRequestBody {}
 message Response {
   string id = 1;
   oneof body {
-     UnaryResponseBody unary = 2;
-     PushResponseBody push = 3;
-     EndResponseBody end = 4;
+    UnaryResponseBody unary = 2;
+    PushResponseBody push = 3;
+    EndResponseBody end = 4;
   }
 }
 
-message UnaryResponseBody {
-  bytes payload = 1;
-}
+message UnaryResponseBody { bytes payload = 1; }
 
-message PushResponseBody {
-  bytes payload = 1;
-}
+message PushResponseBody { bytes payload = 1; }
 
 message EndResponseBody {}

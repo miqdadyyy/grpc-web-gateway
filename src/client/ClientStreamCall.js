@@ -9,31 +9,34 @@ import { type RpcCall, type UnaryRequest } from './types';
 import { type TransportWritable, type Transport } from './transport';
 import { Request, Response } from '../shared/signaling';
 import { generateId } from '../utils/sequence';
+import { ClientStream } from './ClientStream';
 
-class F<T> {
-  constructor(value: T) {}
-}
-
-class UnaryCall implements RpcCall {
+class ClientStreamCall implements RpcCall {
   id: string;
   transport: Transport;
   reject: (() => void) | null;
+  stream: ClientStream;
 
   constructor(transport: Transport) {
     this.transport = transport;
     this.id = generateId();
     this.reject = null;
+    this.stream = new ClientStream(this.id, transport);
   }
 
-  start({ service, method, payload, metadata }: UnaryRequest) {
+  start({ service, method }: { service: string, method: string }) {
     return new Promise<Uint8Array>((resolve, reject) => {
       const id = this.id;
       const message = Request.encode({
         id,
-        unary: { service, method, payload, metadata },
+        stream: {},
       }).finish();
       this.transport.send(message);
-      this.reject = reject;
+
+      this.stream.onEnd(() => {
+        const message = Request.encode({ id, end: {} }).finish();
+        this.transport.send(message);
+      });
 
       this.transport.onMessage(message => {
         const res = Response.decode(message);
@@ -43,6 +46,8 @@ class UnaryCall implements RpcCall {
           console.log(res.id);
         }
       });
+
+      this.reject = reject;
     });
   }
 
@@ -54,7 +59,15 @@ class UnaryCall implements RpcCall {
     }
   }
 
-  onMessage(message: Response) {}
+  send(message: Uint8Array) {
+    this.stream.send(message);
+  }
+
+  end() {
+    this.stream.end();
+  }
+
+  onMessage() {}
 }
 
-export default UnaryCall;
+export default ClientStreamCall;

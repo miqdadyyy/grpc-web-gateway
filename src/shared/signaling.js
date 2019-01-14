@@ -61,6 +61,7 @@ export const Request = ($root.Request = (() => {
    * @interface IRequest
    * @property {string|null} [id] Request id
    * @property {IUnaryRequestBody|null} [unary] Request unary
+   * @property {IStreamRequestBody|null} [stream] Request stream
    * @property {IPushRequestBody|null} [push] Request push
    * @property {IEndRequestBody|null} [end] Request end
    * @property {ICancelRequestBody|null} [cancel] Request cancel
@@ -97,6 +98,14 @@ export const Request = ($root.Request = (() => {
   Request.prototype.unary = null;
 
   /**
+   * Request stream.
+   * @member {IStreamRequestBody|null|undefined} stream
+   * @memberof Request
+   * @instance
+   */
+  Request.prototype.stream = null;
+
+  /**
    * Request push.
    * @member {IPushRequestBody|null|undefined} push
    * @memberof Request
@@ -125,12 +134,14 @@ export const Request = ($root.Request = (() => {
 
   /**
    * Request body.
-   * @member {"unary"|"push"|"end"|"cancel"|undefined} body
+   * @member {"unary"|"stream"|"push"|"end"|"cancel"|undefined} body
    * @memberof Request
    * @instance
    */
   Object.defineProperty(Request.prototype, 'body', {
-    get: $util.oneOfGetter(($oneOfFields = ['unary', 'push', 'end', 'cancel'])),
+    get: $util.oneOfGetter(
+      ($oneOfFields = ['unary', 'stream', 'push', 'end', 'cancel']),
+    ),
     set: $util.oneOfSetter($oneOfFields),
   });
 
@@ -164,20 +175,25 @@ export const Request = ($root.Request = (() => {
         message.unary,
         writer.uint32(/* id 2, wireType 2 =*/ 18).fork(),
       ).ldelim();
+    if (message.stream != null && message.hasOwnProperty('stream'))
+      $root.StreamRequestBody.encode(
+        message.stream,
+        writer.uint32(/* id 3, wireType 2 =*/ 26).fork(),
+      ).ldelim();
     if (message.push != null && message.hasOwnProperty('push'))
       $root.PushRequestBody.encode(
         message.push,
-        writer.uint32(/* id 3, wireType 2 =*/ 26).fork(),
+        writer.uint32(/* id 4, wireType 2 =*/ 34).fork(),
       ).ldelim();
     if (message.end != null && message.hasOwnProperty('end'))
       $root.EndRequestBody.encode(
         message.end,
-        writer.uint32(/* id 4, wireType 2 =*/ 34).fork(),
+        writer.uint32(/* id 5, wireType 2 =*/ 42).fork(),
       ).ldelim();
     if (message.cancel != null && message.hasOwnProperty('cancel'))
       $root.CancelRequestBody.encode(
         message.cancel,
-        writer.uint32(/* id 5, wireType 2 =*/ 42).fork(),
+        writer.uint32(/* id 6, wireType 2 =*/ 50).fork(),
       ).ldelim();
     return writer;
   };
@@ -223,12 +239,18 @@ export const Request = ($root.Request = (() => {
           );
           break;
         case 3:
-          message.push = $root.PushRequestBody.decode(reader, reader.uint32());
+          message.stream = $root.StreamRequestBody.decode(
+            reader,
+            reader.uint32(),
+          );
           break;
         case 4:
-          message.end = $root.EndRequestBody.decode(reader, reader.uint32());
+          message.push = $root.PushRequestBody.decode(reader, reader.uint32());
           break;
         case 5:
+          message.end = $root.EndRequestBody.decode(reader, reader.uint32());
+          break;
+        case 6:
           message.cancel = $root.CancelRequestBody.decode(
             reader,
             reader.uint32(),
@@ -278,6 +300,14 @@ export const Request = ($root.Request = (() => {
         if (error) return 'unary.' + error;
       }
     }
+    if (message.stream != null && message.hasOwnProperty('stream')) {
+      if (properties.body === 1) return 'body: multiple values';
+      properties.body = 1;
+      {
+        let error = $root.StreamRequestBody.verify(message.stream);
+        if (error) return 'stream.' + error;
+      }
+    }
     if (message.push != null && message.hasOwnProperty('push')) {
       if (properties.body === 1) return 'body: multiple values';
       properties.body = 1;
@@ -322,6 +352,11 @@ export const Request = ($root.Request = (() => {
         throw TypeError('.Request.unary: object expected');
       message.unary = $root.UnaryRequestBody.fromObject(object.unary);
     }
+    if (object.stream != null) {
+      if (typeof object.stream !== 'object')
+        throw TypeError('.Request.stream: object expected');
+      message.stream = $root.StreamRequestBody.fromObject(object.stream);
+    }
     if (object.push != null) {
       if (typeof object.push !== 'object')
         throw TypeError('.Request.push: object expected');
@@ -359,6 +394,10 @@ export const Request = ($root.Request = (() => {
       object.unary = $root.UnaryRequestBody.toObject(message.unary, options);
       if (options.oneofs) object.body = 'unary';
     }
+    if (message.stream != null && message.hasOwnProperty('stream')) {
+      object.stream = $root.StreamRequestBody.toObject(message.stream, options);
+      if (options.oneofs) object.body = 'stream';
+    }
     if (message.push != null && message.hasOwnProperty('push')) {
       object.push = $root.PushRequestBody.toObject(message.push, options);
       if (options.oneofs) object.body = 'push';
@@ -386,6 +425,164 @@ export const Request = ($root.Request = (() => {
   };
 
   return Request;
+})());
+
+export const StreamRequestBody = ($root.StreamRequestBody = (() => {
+  /**
+   * Properties of a StreamRequestBody.
+   * @exports IStreamRequestBody
+   * @interface IStreamRequestBody
+   */
+
+  /**
+   * Constructs a new StreamRequestBody.
+   * @exports StreamRequestBody
+   * @classdesc Represents a StreamRequestBody.
+   * @implements IStreamRequestBody
+   * @constructor
+   * @param {IStreamRequestBody=} [properties] Properties to set
+   */
+  function StreamRequestBody(properties) {
+    if (properties)
+      for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+        if (properties[keys[i]] != null) this[keys[i]] = properties[keys[i]];
+  }
+
+  /**
+   * Creates a new StreamRequestBody instance using the specified properties.
+   * @function create
+   * @memberof StreamRequestBody
+   * @static
+   * @param {IStreamRequestBody=} [properties] Properties to set
+   * @returns {StreamRequestBody} StreamRequestBody instance
+   */
+  StreamRequestBody.create = function create(properties) {
+    return new StreamRequestBody(properties);
+  };
+
+  /**
+   * Encodes the specified StreamRequestBody message. Does not implicitly {@link StreamRequestBody.verify|verify} messages.
+   * @function encode
+   * @memberof StreamRequestBody
+   * @static
+   * @param {IStreamRequestBody} message StreamRequestBody message or plain object to encode
+   * @param {$protobuf.Writer} [writer] Writer to encode to
+   * @returns {$protobuf.Writer} Writer
+   */
+  StreamRequestBody.encode = function encode(message, writer) {
+    if (!writer) writer = $Writer.create();
+    return writer;
+  };
+
+  /**
+   * Encodes the specified StreamRequestBody message, length delimited. Does not implicitly {@link StreamRequestBody.verify|verify} messages.
+   * @function encodeDelimited
+   * @memberof StreamRequestBody
+   * @static
+   * @param {IStreamRequestBody} message StreamRequestBody message or plain object to encode
+   * @param {$protobuf.Writer} [writer] Writer to encode to
+   * @returns {$protobuf.Writer} Writer
+   */
+  StreamRequestBody.encodeDelimited = function encodeDelimited(
+    message,
+    writer,
+  ) {
+    return this.encode(message, writer).ldelim();
+  };
+
+  /**
+   * Decodes a StreamRequestBody message from the specified reader or buffer.
+   * @function decode
+   * @memberof StreamRequestBody
+   * @static
+   * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+   * @param {number} [length] Message length if known beforehand
+   * @returns {StreamRequestBody} StreamRequestBody
+   * @throws {Error} If the payload is not a reader or valid buffer
+   * @throws {$protobuf.util.ProtocolError} If required fields are missing
+   */
+  StreamRequestBody.decode = function decode(reader, length) {
+    if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
+    let end = length === undefined ? reader.len : reader.pos + length,
+      message = new $root.StreamRequestBody();
+    while (reader.pos < end) {
+      let tag = reader.uint32();
+      switch (tag >>> 3) {
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  };
+
+  /**
+   * Decodes a StreamRequestBody message from the specified reader or buffer, length delimited.
+   * @function decodeDelimited
+   * @memberof StreamRequestBody
+   * @static
+   * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+   * @returns {StreamRequestBody} StreamRequestBody
+   * @throws {Error} If the payload is not a reader or valid buffer
+   * @throws {$protobuf.util.ProtocolError} If required fields are missing
+   */
+  StreamRequestBody.decodeDelimited = function decodeDelimited(reader) {
+    if (!(reader instanceof $Reader)) reader = new $Reader(reader);
+    return this.decode(reader, reader.uint32());
+  };
+
+  /**
+   * Verifies a StreamRequestBody message.
+   * @function verify
+   * @memberof StreamRequestBody
+   * @static
+   * @param {Object.<string,*>} message Plain object to verify
+   * @returns {string|null} `null` if valid, otherwise the reason why it is not
+   */
+  StreamRequestBody.verify = function verify(message) {
+    if (typeof message !== 'object' || message === null)
+      return 'object expected';
+    return null;
+  };
+
+  /**
+   * Creates a StreamRequestBody message from a plain object. Also converts values to their respective internal types.
+   * @function fromObject
+   * @memberof StreamRequestBody
+   * @static
+   * @param {Object.<string,*>} object Plain object
+   * @returns {StreamRequestBody} StreamRequestBody
+   */
+  StreamRequestBody.fromObject = function fromObject(object) {
+    if (object instanceof $root.StreamRequestBody) return object;
+    return new $root.StreamRequestBody();
+  };
+
+  /**
+   * Creates a plain object from a StreamRequestBody message. Also converts values to other types if specified.
+   * @function toObject
+   * @memberof StreamRequestBody
+   * @static
+   * @param {StreamRequestBody} message StreamRequestBody
+   * @param {$protobuf.IConversionOptions} [options] Conversion options
+   * @returns {Object.<string,*>} Plain object
+   */
+  StreamRequestBody.toObject = function toObject() {
+    return {};
+  };
+
+  /**
+   * Converts this StreamRequestBody to JSON.
+   * @function toJSON
+   * @memberof StreamRequestBody
+   * @instance
+   * @returns {Object.<string,*>} JSON object
+   */
+  StreamRequestBody.prototype.toJSON = function toJSON() {
+    return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+  };
+
+  return StreamRequestBody;
 })());
 
 export const UnaryRequestBody = ($root.UnaryRequestBody = (() => {
@@ -692,6 +889,7 @@ export const PushRequestBody = ($root.PushRequestBody = (() => {
    * @exports IPushRequestBody
    * @interface IPushRequestBody
    * @property {Uint8Array|null} [payload] PushRequestBody payload
+   * @property {Object.<string,string>|null} [metadata] PushRequestBody metadata
    */
 
   /**
@@ -703,6 +901,7 @@ export const PushRequestBody = ($root.PushRequestBody = (() => {
    * @param {IPushRequestBody=} [properties] Properties to set
    */
   function PushRequestBody(properties) {
+    this.metadata = {};
     if (properties)
       for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
         if (properties[keys[i]] != null) this[keys[i]] = properties[keys[i]];
@@ -715,6 +914,14 @@ export const PushRequestBody = ($root.PushRequestBody = (() => {
    * @instance
    */
   PushRequestBody.prototype.payload = $util.newBuffer([]);
+
+  /**
+   * PushRequestBody metadata.
+   * @member {Object.<string,string>} metadata
+   * @memberof PushRequestBody
+   * @instance
+   */
+  PushRequestBody.prototype.metadata = $util.emptyObject;
 
   /**
    * Creates a new PushRequestBody instance using the specified properties.
@@ -741,6 +948,20 @@ export const PushRequestBody = ($root.PushRequestBody = (() => {
     if (!writer) writer = $Writer.create();
     if (message.payload != null && message.hasOwnProperty('payload'))
       writer.uint32(/* id 1, wireType 2 =*/ 10).bytes(message.payload);
+    if (message.metadata != null && message.hasOwnProperty('metadata'))
+      for (
+        let keys = Object.keys(message.metadata), i = 0;
+        i < keys.length;
+        ++i
+      )
+        writer
+          .uint32(/* id 2, wireType 2 =*/ 18)
+          .fork()
+          .uint32(/* id 1, wireType 2 =*/ 10)
+          .string(keys[i])
+          .uint32(/* id 2, wireType 2 =*/ 18)
+          .string(message.metadata[keys[i]])
+          .ldelim();
     return writer;
   };
 
@@ -771,12 +992,20 @@ export const PushRequestBody = ($root.PushRequestBody = (() => {
   PushRequestBody.decode = function decode(reader, length) {
     if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
     let end = length === undefined ? reader.len : reader.pos + length,
-      message = new $root.PushRequestBody();
+      message = new $root.PushRequestBody(),
+      key;
     while (reader.pos < end) {
       let tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
           message.payload = reader.bytes();
+          break;
+        case 2:
+          reader.skip().pos++;
+          if (message.metadata === $util.emptyObject) message.metadata = {};
+          key = reader.string();
+          reader.pos++;
+          message.metadata[key] = reader.string();
           break;
         default:
           reader.skipType(tag & 7);
@@ -820,6 +1049,13 @@ export const PushRequestBody = ($root.PushRequestBody = (() => {
         )
       )
         return 'payload: buffer expected';
+    if (message.metadata != null && message.hasOwnProperty('metadata')) {
+      if (!$util.isObject(message.metadata)) return 'metadata: object expected';
+      let key = Object.keys(message.metadata);
+      for (let i = 0; i < key.length; ++i)
+        if (!$util.isString(message.metadata[key[i]]))
+          return 'metadata: string{k:string} expected';
+    }
     return null;
   };
 
@@ -844,6 +1080,13 @@ export const PushRequestBody = ($root.PushRequestBody = (() => {
           0,
         );
       else if (object.payload.length) message.payload = object.payload;
+    if (object.metadata) {
+      if (typeof object.metadata !== 'object')
+        throw TypeError('.PushRequestBody.metadata: object expected');
+      message.metadata = {};
+      for (let keys = Object.keys(object.metadata), i = 0; i < keys.length; ++i)
+        message.metadata[keys[i]] = String(object.metadata[keys[i]]);
+    }
     return message;
   };
 
@@ -859,6 +1102,7 @@ export const PushRequestBody = ($root.PushRequestBody = (() => {
   PushRequestBody.toObject = function toObject(message, options) {
     if (!options) options = {};
     let object = {};
+    if (options.objects || options.defaults) object.metadata = {};
     if (options.defaults)
       if (options.bytes === String) object.payload = '';
       else {
@@ -873,6 +1117,12 @@ export const PushRequestBody = ($root.PushRequestBody = (() => {
           : options.bytes === Array
           ? Array.prototype.slice.call(message.payload)
           : message.payload;
+    let keys2;
+    if (message.metadata && (keys2 = Object.keys(message.metadata)).length) {
+      object.metadata = {};
+      for (let j = 0; j < keys2.length; ++j)
+        object.metadata[keys2[j]] = message.metadata[keys2[j]];
+    }
     return object;
   };
 

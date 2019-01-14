@@ -18,7 +18,7 @@ module.exports = [
   {
     mode: 'development',
     target: 'web',
-    entry: path.resolve(__dirname, 'client/index.js'),
+    entry: ['@babel/polyfill', path.resolve(__dirname, 'client/index.js')],
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: 'client-bundle.js',

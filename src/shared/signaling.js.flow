@@ -6,6 +6,7 @@
 declare class IRequest {
   id: string;
   unary?: UnaryRequestBody;
+  stream?: StreamRequestBody;
   push?: PushRequestBody;
   end?: EndRequestBody;
   cancel?: CancelRequestBody;
@@ -19,6 +20,10 @@ declare type RequestPayload =
   | {
       id: string,
       push: PushRequestBody,
+    }
+  | {
+      id: string,
+      stream: StreamRequestBody,
     }
   | {
       id: string,
@@ -44,6 +49,8 @@ export type UnaryRequestBody = {
 export type PushRequestBody = {
   payload: Uint8Array,
 };
+
+export type StreamRequestBody = {};
 
 export type EndRequestBody = {};
 

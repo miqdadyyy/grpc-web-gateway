@@ -3,62 +3,64 @@
  * @flow
  */
 
+import Kefir, { constant, stream, type Observable } from 'kefir';
+import obs from 'kefir/src/observable';
+import type EventEmitter from 'events';
+
 import type { RpcTransport, RpcCall, UnaryRequest } from './types';
-import uuid from 'uuid/v4';
-import Kefir from 'kefir';
+import { type RpcDuplexTransport, type Transport } from './transport';
+import { generateId, createSequence } from '../utils/sequence';
 import { Request, Response } from '../shared/signaling';
 import UnaryCall from './UnaryCall';
+import ServerStreamCall from './ServerStreamCall';
+
+type ServerStream = {
+  stream(): Observable<Uint8Array, Error>,
+};
+
+type ClientStream = {
+  push(Uint8Array): void,
+};
 
 class RpcClient {
-  transport: RpcTransport;
+  transport: Transport;
   calls: Map<string, RpcCall>;
 
-  constructor(transport: RpcTransport) {
+  constructor(transport: Transport) {
     this.transport = transport;
     this.calls = new Map();
 
-    this.transport
-      .start()
-      .map(bytes => Response.decode(bytes))
-      .observe({
-        value: res => {
-          const call = this.calls.get(res.id);
-          if (call) {
-            call.onMessage(res);
-          } else {
-            console.error('Unhandled incoming message: ', res);
-          }
-        },
-        error(error) {
-          console.log('error:', error);
-        },
-        end() {
-          console.log('end');
-        },
-      });
+    const seq = createSequence();
+
+    this.transport.onError(error => {
+      console.log('error:', error);
+    });
+  }
+
+  cancelRequest(id: string) {
+    const call = this.calls.get(id);
   }
 
   makeUnaryRequest(request: UnaryRequest) {
-    return Kefir.stream(emitter => {
-      const id = uuid();
+    console.log('Make unary request', request);
 
-      const call = new UnaryCall(this.transport, emitter);
-      this.calls.set(id, call);
+    const call = new UnaryCall(this.transport);
+    this.calls.set(call.id, call);
 
-      call.start(id, request);
-
-      return () => {
-        call.cancel(id);
-        this.calls.delete(id);
-      };
-    });
+    return call
+      .start(request)
+      .then(response => {
+        console.log('Call completed', response);
+        return response;
+      })
+      .finally(() => this.calls.delete(call.id));
   }
 
   makeServerStreamRequest(request: UnaryRequest) {
     return Kefir.stream(emitter => {
-      const id = uuid();
+      const id = generateId();
 
-      const call = new UnaryCall(this.transport, emitter);
+      const call = new ServerStreamCall(this.transport, emitter);
       this.calls.set(id, call);
 
       call.start(id, request);
@@ -73,6 +75,8 @@ class RpcClient {
   makeClientStreamRequest() {}
 
   makeBidiStreamRequest() {}
+
+  stop() {}
 }
 
 export default RpcClient;
