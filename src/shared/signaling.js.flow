@@ -69,7 +69,9 @@ export type StreamRequestBody = {
 
 export type EndRequestBody = {};
 
-export type CancelRequestBody = {};
+export type CancelRequestBody = {
+  reason?: string,
+};
 
 declare type RequestPayload =
   | {

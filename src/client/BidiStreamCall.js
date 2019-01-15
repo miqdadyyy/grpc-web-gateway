@@ -98,9 +98,12 @@ export class BidiStreamCall implements RpcCall {
     }
   }
 
-  cancel() {
+  cancel(reason?: string) {
     if (this.status === 'open') {
-      const message = Request.encode({ id: this.id, cancel: {} }).finish();
+      const message = Request.encode({
+        id: this.id,
+        cancel: { reason },
+      }).finish();
       this.transport.send(message);
     }
   }

@@ -1366,6 +1366,7 @@ export const CancelRequestBody = $root.CancelRequestBody = (() => {
      * Properties of a CancelRequestBody.
      * @exports ICancelRequestBody
      * @interface ICancelRequestBody
+     * @property {string|null} [reason] CancelRequestBody reason
      */
 
     /**
@@ -1382,6 +1383,14 @@ export const CancelRequestBody = $root.CancelRequestBody = (() => {
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
+
+    /**
+     * CancelRequestBody reason.
+     * @member {string} reason
+     * @memberof CancelRequestBody
+     * @instance
+     */
+    CancelRequestBody.prototype.reason = "";
 
     /**
      * Creates a new CancelRequestBody instance using the specified properties.
@@ -1407,6 +1416,8 @@ export const CancelRequestBody = $root.CancelRequestBody = (() => {
     CancelRequestBody.encode = function encode(message, writer) {
         if (!writer)
             writer = $Writer.create();
+        if (message.reason != null && message.hasOwnProperty("reason"))
+            writer.uint32(/* id 1, wireType 2 =*/10).string(message.reason);
         return writer;
     };
 
@@ -1441,6 +1452,9 @@ export const CancelRequestBody = $root.CancelRequestBody = (() => {
         while (reader.pos < end) {
             let tag = reader.uint32();
             switch (tag >>> 3) {
+            case 1:
+                message.reason = reader.string();
+                break;
             default:
                 reader.skipType(tag & 7);
                 break;
@@ -1476,6 +1490,9 @@ export const CancelRequestBody = $root.CancelRequestBody = (() => {
     CancelRequestBody.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
+        if (message.reason != null && message.hasOwnProperty("reason"))
+            if (!$util.isString(message.reason))
+                return "reason: string expected";
         return null;
     };
 
@@ -1490,7 +1507,10 @@ export const CancelRequestBody = $root.CancelRequestBody = (() => {
     CancelRequestBody.fromObject = function fromObject(object) {
         if (object instanceof $root.CancelRequestBody)
             return object;
-        return new $root.CancelRequestBody();
+        let message = new $root.CancelRequestBody();
+        if (object.reason != null)
+            message.reason = String(object.reason);
+        return message;
     };
 
     /**
@@ -1502,8 +1522,15 @@ export const CancelRequestBody = $root.CancelRequestBody = (() => {
      * @param {$protobuf.IConversionOptions} [options] Conversion options
      * @returns {Object.<string,*>} Plain object
      */
-    CancelRequestBody.toObject = function toObject() {
-        return {};
+    CancelRequestBody.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults)
+            object.reason = "";
+        if (message.reason != null && message.hasOwnProperty("reason"))
+            object.reason = message.reason;
+        return object;
     };
 
     /**

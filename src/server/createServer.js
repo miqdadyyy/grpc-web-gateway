@@ -123,9 +123,10 @@ function createServer(config: GrpcGatewayServerConfig) {
     const wsSend = (data, cb) =>
       ws.readyState === ws.OPEN ? ws.send(data, cb) : noop;
 
-    const handleGrpcClientError = (requestId, error) => {
+    const handleGrpcClientError = (requestId, error: GrpcStatus) => {
       connectionLogger.error(requestId, error);
       connectionLogger.info('Sending error', error);
+
       wsSend(
         Response.encode({
           id: requestId,
@@ -302,6 +303,8 @@ function createServer(config: GrpcGatewayServerConfig) {
         try {
           const { payload } = request.push;
 
+          connectionLogger.info('Push request');
+
           const call = calls.get(id);
           if (!call) {
             throw GrpcError.fromStatusName(
@@ -315,6 +318,7 @@ function createServer(config: GrpcGatewayServerConfig) {
           handleGrpcError(id, error);
         }
       } else if (request.end) {
+        connectionLogger.info('End request');
         try {
           const call = calls.get(id);
           if (!call) {
@@ -330,6 +334,8 @@ function createServer(config: GrpcGatewayServerConfig) {
           handleGrpcError(id, error);
         }
       } else if (request.cancel) {
+        const { reason } = request.cancel;
+        connectionLogger.info('Cancel request');
         try {
           const call = calls.get(id);
           if (!call) {
@@ -338,6 +344,8 @@ function createServer(config: GrpcGatewayServerConfig) {
               `There is no opened stream with id ${id}. Probably this is server problem`,
             );
           }
+
+          connectionLogger.info('Cancelling call', id, { reason });
 
           call.cancel();
           calls.delete(id);

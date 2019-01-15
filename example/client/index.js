@@ -48,7 +48,7 @@ serverStreamRequest.onCancel(() => {
   console.log('ServerStream cancelled');
 });
 
-setTimeout(() => serverStreamRequest.cancel(), 3000);
+setTimeout(() => serverStreamRequest.cancel('SS reason'), 3000);
 
 const bidiStreamRequest = client.makeBidiStreamRequest({
   service: 'Test',
@@ -72,7 +72,7 @@ bidiStreamRequest.onCancel(() => {
   console.log('BidiStream cancelled');
 });
 
-setTimeout(() => bidiStreamRequest.cancel(), 4000);
+setTimeout(() => bidiStreamRequest.cancel('BS reason'), 4000);
 
 setInterval(() => {
   console.log('Send to bidi stream');
@@ -122,7 +122,7 @@ setTimeout(() => {
   clientStreamRequest.end();
 }, 12000);
 
-setTimeout(() => clientStreamRequest.cancel(), 4000);
+setTimeout(() => clientStreamRequest.cancel('CS reason'), 4000);
 
 // TODO: how to implement this?
 // client.makeBidiStreamRequest({
