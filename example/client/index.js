@@ -33,15 +33,15 @@ const serverStreamRequest = client.makeServerStreamRequest({
 
 serverStreamRequest.onMessage(response => {
   const message = Pong.decode(response);
-  console.log(message);
+  console.log('Server stream', message);
 });
 
 serverStreamRequest.onError(error => {
-  console.error(error);
+  console.error('Server stream', error);
 });
 
 serverStreamRequest.onEnd(() => {
-  console.log('Stream ended');
+  console.log('ServerStream ended');
 });
 
 const bidiStreamRequest = client.makeBidiStreamRequest({
@@ -51,11 +51,11 @@ const bidiStreamRequest = client.makeBidiStreamRequest({
 
 bidiStreamRequest.onMessage(response => {
   const message = Pong.decode(response);
-  console.log(message);
+  console.log('Bidi stream', message);
 });
 
 bidiStreamRequest.onError(error => {
-  console.error(error);
+  console.error('Bidi stream', error);
 });
 
 bidiStreamRequest.onEnd(() => {
@@ -68,6 +68,43 @@ setInterval(() => {
     payload: Ping.encode({ date: Date.now() }).finish(),
   });
 }, 1000);
+
+setTimeout(() => {
+  console.log('Closing bidi stream');
+
+  bidiStreamRequest.end();
+}, 11000);
+
+const clientStreamRequest = client.makeClientStreamRequest({
+  service: 'Test',
+  method: 'ClientStream',
+});
+
+clientStreamRequest.onMessage(response => {
+  const message = Pong.decode(response);
+  console.log('Client stream', message);
+});
+
+clientStreamRequest.onError(error => {
+  console.error('Client stream', error);
+});
+
+clientStreamRequest.onEnd(() => {
+  console.log('Client Stream ended');
+});
+
+setInterval(() => {
+  console.log('Send to client stream');
+  clientStreamRequest.send({
+    payload: Ping.encode({ date: Date.now() }).finish(),
+  });
+}, 1000);
+
+setTimeout(() => {
+  console.log('Closing client stream');
+
+  clientStreamRequest.end();
+}, 12000);
 
 // TODO: how to implement this?
 // client.makeBidiStreamRequest({

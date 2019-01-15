@@ -19,14 +19,7 @@ import { Request, Response } from '../shared/signaling';
 import UnaryCall from './UnaryCall';
 import ServerStreamCall from './ServerStreamCall';
 import BidiStreamCall from './BidiStreamCall';
-
-type ServerStream = {
-  stream(): Observable<Uint8Array, Error>,
-};
-
-type ClientStream = {
-  push(Uint8Array): void,
-};
+import ClientStreamCall from './ClientStreamCall';
 
 class RpcClient {
   transport: Transport;
@@ -77,11 +70,24 @@ class RpcClient {
     return call;
   }
 
-  makeClientStreamRequest() {}
+  makeClientStreamRequest(request: StreamRequest) {
+    const id = this.seq.next();
+    console.log('Make client stream request', { request, id });
+
+    const call = new ClientStreamCall(id, this.transport);
+    this.calls.set(call.id, call);
+
+    call.start(request).onEnd(() => {
+      this.calls.delete(call.id);
+      this.seq.deleteId(call.id);
+    });
+
+    return call;
+  }
 
   makeBidiStreamRequest(request: StreamRequest) {
     const id = this.seq.next();
-    console.log('Make server stream request', { request, id });
+    console.log('Make bidi stream request', { request, id });
 
     const call = new BidiStreamCall(id, this.transport);
     this.calls.set(call.id, call);

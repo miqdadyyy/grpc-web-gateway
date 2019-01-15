@@ -120,10 +120,12 @@ function createServer(config: GrpcGatewayServerConfig) {
     );
     const connectionId = nanoid();
     const connectionLogger = logger.child({ connectionId });
+    const wsSend = (data, cb) =>
+      ws.readyState === ws.OPEN ? ws.send(data, cb) : noop;
 
     const handleGrpcClientError = (requestId, error) => {
       connectionLogger.error(requestId, error);
-      ws.send(
+      wsSend(
         Response.encode({
           id: requestId,
           error: {
@@ -139,13 +141,13 @@ function createServer(config: GrpcGatewayServerConfig) {
 
     const handleGrpcError = (requestId, error) => {
       connectionLogger.error(error);
-      ws.send(Response.encode({ id: requestId, error }).finish());
+      wsSend(Response.encode({ id: requestId, error }).finish());
     };
 
     const handleServerStream = (id, call) => {
       call.on('data', (response: Uint8Array) => {
         connectionLogger.info('Push Data');
-        ws.send(
+        wsSend(
           Response.encode({
             id,
             push: { payload: response },
@@ -155,7 +157,7 @@ function createServer(config: GrpcGatewayServerConfig) {
 
       call.on('end', () => {
         connectionLogger.info('Stream was ended');
-        ws.send(
+        wsSend(
           Response.encode({
             id,
             end: {},
@@ -165,7 +167,7 @@ function createServer(config: GrpcGatewayServerConfig) {
 
       call.on('close', () => {
         connectionLogger.info('Closing stream');
-        ws.send(
+        wsSend(
           Response.encode({
             id,
             end: {},
@@ -223,7 +225,7 @@ function createServer(config: GrpcGatewayServerConfig) {
                   handleGrpcClientError(id, error);
                 } else {
                   connectionLogger.info('Unary Data');
-                  ws.send(
+                  wsSend(
                     Response.encode({
                       id,
                       unary: { payload: response },
@@ -268,8 +270,24 @@ function createServer(config: GrpcGatewayServerConfig) {
               _.identity,
               createMetadata(metadata),
               {},
+              (error: GrpcStatus, response: Uint8Array) => {
+                if (error) {
+                  handleGrpcClientError(id, error);
+                } else {
+                  connectionLogger.info('Client Stream Unary Response');
+                  wsSend(
+                    Response.encode({
+                      id,
+                      unary: { payload: response },
+                    }).finish(),
+                  );
+                }
+              },
             );
             calls.set(id, call);
+            call.on('error', (error: GrpcStatus) => {
+              handleGrpcClientError(id, error);
+            });
           }
         } catch (error) {
           handleGrpcError(id, error);
@@ -282,11 +300,25 @@ function createServer(config: GrpcGatewayServerConfig) {
           if (!call) {
             throw GrpcError.fromStatusName(
               'NOT_FOUND',
-              `There is no opened stream with id ${id}`,
+              `There is no opened stream with id ${id}. Probably this is server problem`,
             );
           }
 
           call.write(payload);
+        } catch (error) {
+          handleGrpcError(id, error);
+        }
+      } else if (request.end) {
+        try {
+          const call = calls.get(id);
+          if (!call) {
+            throw GrpcError.fromStatusName(
+              'NOT_FOUND',
+              `There is no opened stream with id ${id}. Probably this is server problem`,
+            );
+          }
+
+          call.end();
         } catch (error) {
           handleGrpcError(id, error);
         }
@@ -295,6 +327,7 @@ function createServer(config: GrpcGatewayServerConfig) {
 
     ws.on('close', () => {
       logger.info('Ws closed');
+      Array.from(calls.values()).forEach(call => call.end());
       grpcClient.close();
     });
   });

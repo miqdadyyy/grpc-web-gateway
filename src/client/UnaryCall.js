@@ -15,50 +15,60 @@ class UnaryCall implements RpcCall {
   id: string;
   transport: Transport;
   emitter: Nanoevents<{ message: Uint8Array, error: RpcError, end: void }>;
+  status: 'initial' | 'open' | 'closed';
 
   constructor(id: string, transport: Transport) {
     this.transport = transport;
     this.id = id;
     this.emitter = new Nanoevents();
+    this.status = 'initial';
 
-    this.emitter.on('end', () => unbindAll(this.emitter));
+    this.emitter.on('end', () => {
+      this.status = 'closed';
+      unbindAll(this.emitter);
+    });
   }
 
   start({ service, method, payload, metadata }: UnaryRequest) {
-    const id = this.id;
-    const message = Request.encode({
-      id,
-      unary: { service, method, payload, metadata },
-    }).finish();
-    this.transport.send(message);
+    if (status === 'initial') {
+      const id = this.id;
+      const message = Request.encode({
+        id,
+        unary: { service, method, payload, metadata },
+      }).finish();
+      this.transport.send(message);
 
-    const unbindTransport = this.transport.onMessage(message => {
-      const res = Response.decode(message);
+      const unbindTransport = this.transport.onMessage(message => {
+        const res = Response.decode(message);
 
-      if (res.id === this.id) {
-        if (res.unary) {
-          this.emitter.emit('message', res.unary.payload);
-        } else if (res.error) {
-          const error = res.error;
-          this.emitter.emit(
-            'error',
-            new RpcError(error.status.toString(), error.message),
-          );
+        if (res.id === this.id) {
+          if (res.unary) {
+            this.emitter.emit('message', res.unary.payload);
+            this.emitter.emit('end');
+          } else if (res.error) {
+            const error = res.error;
+            this.emitter.emit(
+              'error',
+              new RpcError(error.status.toString(), error.message),
+            );
+            this.emitter.emit('end');
+          }
         }
-      }
-    });
+      });
 
-    this.emitter.on('end', unbindTransport);
-    this.emitter.on('message', () => this.emitter.emit('end'));
-    this.emitter.on('error', () => this.emitter.emit('end'));
+      this.emitter.on('end', unbindTransport);
+      this.status = 'open';
+    }
 
     return this;
   }
 
   cancel() {
-    const message = Request.encode({ id: this.id, cancel: {} }).finish();
-    this.transport.send(message);
-    this.emitter.emit('end');
+    if (this.status === 'open') {
+      const message = Request.encode({ id: this.id, cancel: {} }).finish();
+      this.transport.send(message);
+      this.emitter.emit('end');
+    }
   }
 
   onMessage(handler: (response: Uint8Array) => void) {

@@ -15,60 +15,80 @@ export class BidiStreamCall implements RpcCall {
   id: string;
   transport: Transport;
   emitter: Nanoevents<{ message: Uint8Array, error: RpcError, end: void }>;
+  status: 'initial' | 'open' | 'closed';
 
   constructor(id: string, transport: Transport) {
     this.id = id;
     this.transport = transport;
     this.emitter = new Nanoevents();
+    this.status = 'initial';
 
-    this.emitter.on('end', () => unbindAll(this.emitter));
+    this.emitter.on('end', () => {
+      this.status = 'closed';
+      unbindAll(this.emitter);
+    });
   }
 
   start({ service, method, metadata }: StreamRequest) {
-    const id = this.id;
-    const message = Request.encode({
-      id,
-      stream: { service, method, metadata },
-    }).finish();
+    if (this.status === 'initial') {
+      const id = this.id;
+      const message = Request.encode({
+        id,
+        stream: { service, method, metadata },
+      }).finish();
 
-    this.transport.send(message);
+      this.transport.send(message);
 
-    const unbindTransport = this.transport.onMessage(message => {
-      const res = Response.decode(message);
+      const unbindTransport = this.transport.onMessage(message => {
+        const res = Response.decode(message);
 
-      if (res.id === this.id) {
-        if (res.push) {
-          this.emitter.emit('message', res.push.payload);
-        } else if (res.end) {
-          this.emitter.emit('end');
-        } else if (res.error) {
-          const error = res.error;
-          this.emitter.emit(
-            'error',
-            new RpcError(error.status.toString(), error.message),
-          );
+        if (res.id === this.id) {
+          if (res.push) {
+            this.emitter.emit('message', res.push.payload);
+          } else if (res.end) {
+            this.emitter.emit('end');
+          } else if (res.error) {
+            const error = res.error;
+            this.emitter.emit(
+              'error',
+              new RpcError(error.status.toString(), error.message),
+            );
+          }
         }
-      }
-    });
-    this.emitter.on('end', unbindTransport);
+      });
+      this.status = 'open';
+      this.emitter.on('end', unbindTransport);
+    }
 
     return this;
   }
 
   send({ payload, metadata }: PushRequest) {
-    const id = this.id;
-    const message = Request.encode({
-      id,
-      push: { payload, metadata },
-    }).finish();
+    if (this.status === 'open') {
+      const id = this.id;
+      const message = Request.encode({
+        id,
+        push: { payload, metadata },
+      }).finish();
 
-    this.transport.send(message);
+      this.transport.send(message);
+    }
+  }
+
+  end() {
+    if (this.status === 'open') {
+      const message = Request.encode({ id: this.id, end: {} }).finish();
+      this.transport.send(message);
+      this.emitter.emit('end');
+    }
   }
 
   cancel() {
-    const message = Request.encode({ id: this.id, cancel: {} }).finish();
-    this.transport.send(message);
-    this.emitter.emit('end');
+    if (this.status === 'open') {
+      const message = Request.encode({ id: this.id, cancel: {} }).finish();
+      this.transport.send(message);
+      this.emitter.emit('end');
+    }
   }
 
   onMessage(handler: (response: Uint8Array) => void) {
