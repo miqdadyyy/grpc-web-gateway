@@ -15,7 +15,7 @@ class UnaryCall implements RpcCall {
   id: string;
   transport: Transport;
   emitter: Nanoevents<{ message: Uint8Array, error: RpcError, end: void }>;
-  status: 'initial' | 'open' | 'closed';
+  status: 'initial' | 'open' | 'closed' | 'cancelled';
 
   constructor(id: string, transport: Transport) {
     this.transport = transport;
@@ -52,6 +52,10 @@ class UnaryCall implements RpcCall {
               new RpcError(error.status.toString(), error.message),
             );
             this.emitter.emit('end');
+            if (error.status === 1) {
+              this.status = 'cancelled';
+              this.emitter.emit('end');
+            }
           }
         }
       });

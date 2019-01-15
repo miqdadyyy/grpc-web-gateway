@@ -14,8 +14,13 @@ import { RpcError } from './RpcError';
 export class ClientStreamCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: Nanoevents<{ message: Uint8Array, error: RpcError, end: void }>;
-  status: 'open' | 'closed' | 'initial';
+  emitter: Nanoevents<{
+    message: Uint8Array,
+    error: RpcError,
+    end: void,
+    cancel: void,
+  }>;
+  status: 'open' | 'closed' | 'initial' | 'cancelled';
 
   constructor(id: string, transport: Transport) {
     this.id = id;
@@ -26,6 +31,11 @@ export class ClientStreamCall implements RpcCall {
     this.emitter.on('end', () => {
       unbindAll(this.emitter);
       this.status = 'closed';
+    });
+
+    this.emitter.on('cancel', () => {
+      unbindAll(this.emitter);
+      this.status = 'cancelled';
     });
   }
 
@@ -48,12 +58,16 @@ export class ClientStreamCall implements RpcCall {
             this.emitter.emit('end');
           } else if (res.error) {
             const error = res.error;
-            console.log({ error });
-            this.emitter.emit(
-              'error',
-              new RpcError(error.status.toString(), error.message),
-            );
-            this.emitter.emit('end');
+
+            if (error.status === 1) {
+              this.emitter.emit('cancel');
+            } else {
+              this.emitter.emit(
+                'error',
+                new RpcError(error.status.toString(), error.message),
+              );
+              this.emitter.emit('end');
+            }
           }
         }
       });
@@ -100,6 +114,10 @@ export class ClientStreamCall implements RpcCall {
 
   onEnd(handler: () => void) {
     return this.emitter.on('end', handler);
+  }
+
+  onCancel(handler: () => void) {
+    return this.emitter.on('cancel', handler);
   }
 }
 

@@ -14,8 +14,13 @@ import { RpcError } from './RpcError';
 export class BidiStreamCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: Nanoevents<{ message: Uint8Array, error: RpcError, end: void }>;
-  status: 'initial' | 'open' | 'closed';
+  emitter: Nanoevents<{
+    message: Uint8Array,
+    error: RpcError,
+    end: void,
+    cancel: void,
+  }>;
+  status: 'initial' | 'open' | 'closed' | 'cancelled';
 
   constructor(id: string, transport: Transport) {
     this.id = id;
@@ -25,6 +30,11 @@ export class BidiStreamCall implements RpcCall {
 
     this.emitter.on('end', () => {
       this.status = 'closed';
+      unbindAll(this.emitter);
+    });
+
+    this.emitter.on('cancel', () => {
+      this.status = 'cancelled';
       unbindAll(this.emitter);
     });
   }
@@ -43,16 +53,21 @@ export class BidiStreamCall implements RpcCall {
         const res = Response.decode(message);
 
         if (res.id === this.id) {
+          console.log({ res });
           if (res.push) {
             this.emitter.emit('message', res.push.payload);
           } else if (res.end) {
             this.emitter.emit('end');
           } else if (res.error) {
             const error = res.error;
-            this.emitter.emit(
-              'error',
-              new RpcError(error.status.toString(), error.message),
-            );
+            if (error.status === 1) {
+              this.emitter.emit('cancel');
+            } else {
+              this.emitter.emit(
+                'error',
+                new RpcError(error.status.toString(), error.message),
+              );
+            }
           }
         }
       });
@@ -87,7 +102,6 @@ export class BidiStreamCall implements RpcCall {
     if (this.status === 'open') {
       const message = Request.encode({ id: this.id, cancel: {} }).finish();
       this.transport.send(message);
-      this.emitter.emit('end');
     }
   }
 
@@ -101,6 +115,10 @@ export class BidiStreamCall implements RpcCall {
 
   onEnd(handler: () => void) {
     return this.emitter.on('end', handler);
+  }
+
+  onCancel(handler: () => void) {
+    return this.emitter.on('cancel', handler);
   }
 }
 

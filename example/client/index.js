@@ -44,6 +44,12 @@ serverStreamRequest.onEnd(() => {
   console.log('ServerStream ended');
 });
 
+serverStreamRequest.onCancel(() => {
+  console.log('ServerStream cancelled');
+});
+
+setTimeout(() => serverStreamRequest.cancel(), 3000);
+
 const bidiStreamRequest = client.makeBidiStreamRequest({
   service: 'Test',
   method: 'BidiStream',
@@ -61,6 +67,12 @@ bidiStreamRequest.onError(error => {
 bidiStreamRequest.onEnd(() => {
   console.log('Bidi Stream ended');
 });
+
+bidiStreamRequest.onCancel(() => {
+  console.log('BidiStream cancelled');
+});
+
+setTimeout(() => bidiStreamRequest.cancel(), 4000);
 
 setInterval(() => {
   console.log('Send to bidi stream');
@@ -93,6 +105,10 @@ clientStreamRequest.onEnd(() => {
   console.log('Client Stream ended');
 });
 
+clientStreamRequest.onCancel(() => {
+  console.log('ClientStream cancelled');
+});
+
 setInterval(() => {
   console.log('Send to client stream');
   clientStreamRequest.send({
@@ -105,6 +121,8 @@ setTimeout(() => {
 
   clientStreamRequest.end();
 }, 12000);
+
+setTimeout(() => clientStreamRequest.cancel(), 4000);
 
 // TODO: how to implement this?
 // client.makeBidiStreamRequest({
