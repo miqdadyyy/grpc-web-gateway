@@ -164,6 +164,7 @@ function createServer(config: GrpcGatewayServerConfig) {
             end: {},
           }).finish(),
         );
+        calls.delete(id);
       });
 
       call.on('close', () => {
@@ -174,6 +175,7 @@ function createServer(config: GrpcGatewayServerConfig) {
             end: {},
           }).finish(),
         );
+        calls.delete(id);
       });
 
       call.on('error', (error: GrpcStatus) => {
@@ -233,6 +235,7 @@ function createServer(config: GrpcGatewayServerConfig) {
                       unary: { payload: response },
                     }).finish(),
                   );
+                  calls.delete(id);
                 }
               },
             );
@@ -322,6 +325,7 @@ function createServer(config: GrpcGatewayServerConfig) {
           }
 
           call.end();
+          calls.delete(id);
         } catch (error) {
           handleGrpcError(id, error);
         }
@@ -336,6 +340,7 @@ function createServer(config: GrpcGatewayServerConfig) {
           }
 
           call.cancel();
+          calls.delete(id);
         } catch (error) {
           handleGrpcError(id, error);
         }

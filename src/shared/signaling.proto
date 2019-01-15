@@ -51,7 +51,7 @@ message PushRequestBody {
 
 message EndRequestBody {}
 
-message CancelRequestBody {}
+message CancelRequestBody { optional string reason = 1; }
 
 message Response {
   string id = 1;
