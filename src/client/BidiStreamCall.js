@@ -6,12 +6,12 @@
 import Nanoevents from 'nanoevents';
 import unbindAll from 'nanoevents/unbind-all';
 
-import { type RpcCall, type UnaryRequest } from './types';
+import { type RpcCall, type PushRequest, type StreamRequest } from './types';
 import { Transport } from './transport';
 import { Request, Response } from '../shared/signaling';
 import { RpcError } from './RpcError';
 
-export class ServerStreamCall implements RpcCall {
+export class BidiStreamCall implements RpcCall {
   id: string;
   transport: Transport;
   emitter: Nanoevents<{ message: Uint8Array, error: RpcError, end: void }>;
@@ -24,11 +24,11 @@ export class ServerStreamCall implements RpcCall {
     this.emitter.on('end', () => unbindAll(this.emitter));
   }
 
-  start({ service, method, payload, metadata }: UnaryRequest) {
+  start({ service, method, metadata }: StreamRequest) {
     const id = this.id;
     const message = Request.encode({
       id,
-      unary: { service, method, payload, metadata },
+      stream: { service, method, metadata },
     }).finish();
 
     this.transport.send(message);
@@ -55,6 +55,16 @@ export class ServerStreamCall implements RpcCall {
     return this;
   }
 
+  send({ payload, metadata }: PushRequest) {
+    const id = this.id;
+    const message = Request.encode({
+      id,
+      push: { payload, metadata },
+    }).finish();
+
+    this.transport.send(message);
+  }
+
   cancel() {
     const message = Request.encode({ id: this.id, cancel: {} }).finish();
     this.transport.send(message);
@@ -74,4 +84,4 @@ export class ServerStreamCall implements RpcCall {
   }
 }
 
-export default ServerStreamCall;
+export default BidiStreamCall;

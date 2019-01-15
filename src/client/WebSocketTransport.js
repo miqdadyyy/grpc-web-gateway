@@ -255,7 +255,8 @@ class WebSocketTransport implements Transport {
         this.emitter.emit(
           'message',
           new Uint8Array(
-            (event.data: ArrayBuffer) /* Flow hack to refine event.data type */,
+            // Flow hack to refine event.data type
+            (event.data: ArrayBuffer),
           ),
         );
       } else {
@@ -278,13 +279,11 @@ class WebSocketTransport implements Transport {
   }
 
   onMessage(handler: MessageHandler) {
-    this.emitter.on('message', handler);
-    return this;
+    return this.emitter.on('message', handler);
   }
 
   onError(handler: ErrorHandler) {
-    this.emitter.on('error', handler);
-    return this;
+    return this.emitter.on('error', handler);
   }
 
   send(message: Uint8Array): void {

@@ -1,4 +1,3 @@
-const path = require('path');
 const grpc = require('grpc');
 const protoLoader = require('@grpc/proto-loader');
 const glob = require('glob');
@@ -11,8 +10,8 @@ class TestService {
 
   serverStream(call, ...rest) {
     console.log(`[grpc] serverStream: ${JSON.stringify(call.request)}`);
+    let i = 0;
     const iid = setInterval(() => {
-      console.log('Write');
       call.write({ date: Date.now() });
     }, 1000);
     setTimeout(() => {
@@ -33,10 +32,11 @@ class TestService {
   }
 
   bidiStream(call) {
-    const iid = setInterval(() => call.write({ date: Date.now() }), 1000);
+    const iid = setInterval(() => call.write({ date: Date.now() }), 10000);
 
     call.on('data', message => {
-      console.log(`[grpc] bidiStream: ${message}`);
+      console.log(`[grpc] bidiStream:`, message);
+      call.write({ date: Date.now() });
     });
 
     call.on('end', () => {
@@ -44,6 +44,12 @@ class TestService {
       call.end();
       console.log(`[grpc] bidiStream ended`);
     });
+
+    setTimeout(() => {
+      clearInterval(iid);
+      call.end();
+      console.log(`[grpc] bidiStream ended`);
+    }, 1000 * 15);
   }
 }
 

@@ -7,12 +7,18 @@ import Kefir, { constant, stream, type Observable } from 'kefir';
 import obs from 'kefir/src/observable';
 import type EventEmitter from 'events';
 
-import type { RpcTransport, RpcCall, UnaryRequest } from './types';
+import type {
+  RpcTransport,
+  RpcCall,
+  UnaryRequest,
+  StreamRequest,
+} from './types';
 import { type RpcDuplexTransport, type Transport } from './transport';
 import { createSequence, type Sequence } from '../utils/sequence';
 import { Request, Response } from '../shared/signaling';
 import UnaryCall from './UnaryCall';
 import ServerStreamCall from './ServerStreamCall';
+import BidiStreamCall from './BidiStreamCall';
 
 type ServerStream = {
   stream(): Observable<Uint8Array, Error>,
@@ -42,40 +48,51 @@ class RpcClient {
   }
 
   makeUnaryRequest(request: UnaryRequest) {
-    const requestId = this.seq.next();
-    console.log('Make unary request', { request, requestId });
+    const id = this.seq.next();
+    console.log('Make unary request', { request, id });
 
-    const call = new UnaryCall(requestId, this.transport);
+    const call = new UnaryCall(id, this.transport);
     this.calls.set(call.id, call);
 
-    return call
-      .start(request)
-      .then(response => {
-        console.log('Call completed', response);
-        return response;
-      })
-      .finally(() => this.calls.delete(call.id));
+    call.start(request).onEnd(() => {
+      this.calls.delete(call.id);
+      this.seq.deleteId(call.id);
+    });
+
+    return call;
   }
 
   makeServerStreamRequest(request: UnaryRequest) {
-    return Kefir.stream(emitter => {
-      const id = this.seq.next();
+    const id = this.seq.next();
+    console.log('Make server stream request', { request, id });
 
-      const call = new ServerStreamCall(this.transport, emitter);
-      this.calls.set(id, call);
+    const call = new ServerStreamCall(id, this.transport);
+    this.calls.set(call.id, call);
 
-      call.start(id, request);
-
-      return () => {
-        call.cancel(id);
-        this.calls.delete(id);
-      };
+    call.start(request).onEnd(() => {
+      this.calls.delete(call.id);
+      this.seq.deleteId(call.id);
     });
+
+    return call;
   }
 
   makeClientStreamRequest() {}
 
-  makeBidiStreamRequest() {}
+  makeBidiStreamRequest(request: StreamRequest) {
+    const id = this.seq.next();
+    console.log('Make server stream request', { request, id });
+
+    const call = new BidiStreamCall(id, this.transport);
+    this.calls.set(call.id, call);
+
+    call.start(request).onEnd(() => {
+      this.calls.delete(call.id);
+      this.seq.deleteId(call.id);
+    });
+
+    return call;
+  }
 
   stop() {}
 }

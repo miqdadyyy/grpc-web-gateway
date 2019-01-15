@@ -3,28 +3,42 @@
  * @flow
  */
 
-declare var Status: {
-  UNKNOWN: 0,
-  OK: 1,
-  CANCELLED: 2,
-  INVALID_ARGUMENT: 3,
-  DEADLINE_EXCEEDED: 4,
-  NOT_FOUND: 5,
-  ALREADY_EXISTS: 6,
-  PERMISSION_DENIED: 7,
-  UNAUTHENTICATED: 8,
-  RESOURCE_EXHAUSTED: 9,
-  FAILED_PRECONDITION: 10,
-  ABORTED: 11,
-  OUT_OF_RANGE: 12,
-  UNIMPLEMENTED: 13,
-  INTERNAL: 14,
-  UNAVAILABLE: 15,
-  DATA_LOSS: 16,
-};
-
-export type GrpcStatusName = $Keys<typeof Status>;
-export type GrpcStatusCode = $Values<typeof Status>;
+export type GrpcStatusName =
+  | 'UNKNOWN'
+  | 'OK'
+  | 'CANCELLED'
+  | 'INVALID_ARGUMENT'
+  | 'DEADLINE_EXCEEDED'
+  | 'NOT_FOUND'
+  | 'ALREADY_EXISTS'
+  | 'PERMISSION_DENIED'
+  | 'UNAUTHENTICATED'
+  | 'RESOURCE_EXHAUSTED'
+  | 'FAILED_PRECONDITION'
+  | 'ABORTED'
+  | 'OUT_OF_RANGE'
+  | 'UNIMPLEMENTED'
+  | 'INTERNAL'
+  | 'UNAVAILABLE'
+  | 'DATA_LOSS';
+export type GrpcStatusCode =
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16;
 
 declare class IRequest {
   id: string;
@@ -34,6 +48,28 @@ declare class IRequest {
   end?: EndRequestBody;
   cancel?: CancelRequestBody;
 }
+
+export type UnaryRequestBody = {
+  service: string,
+  method: string,
+  payload: Uint8Array,
+  metadata: { [key: string]: string },
+};
+
+export type PushRequestBody = {
+  payload: Uint8Array,
+  metadata: { [key: string]: string },
+};
+
+export type StreamRequestBody = {
+  service: string,
+  method: string,
+  metadata: { [key: string]: string },
+};
+
+export type EndRequestBody = {};
+
+export type CancelRequestBody = {};
 
 declare type RequestPayload =
   | {
@@ -62,46 +98,18 @@ declare class Request extends IRequest {
   static decode(bytes: Uint8Array): Request;
 }
 
-export type UnaryRequestBody = {
-  service: string,
-  method: string,
-  payload: Uint8Array,
-  metadata: { [key: string]: string | Buffer },
-};
-
-export type PushRequestBody = {
-  payload: Uint8Array,
-};
-
-export type StreamRequestBody = {};
-
-export type EndRequestBody = {};
-
-export type CancelRequestBody = {};
-
 export type ErrorResponseBody = {
   status: GrpcStatusCode,
-  message?: string,
+  message: string,
+  metadata?: { [key: string]: string | Buffer },
 };
 
 declare class IResponse {
   id: string;
   unary?: UnaryResponseBody;
+  error?: ErrorResponseBody;
   push?: PushResponseBody;
   end?: EndResponseBody;
-}
-
-declare type ResponsePayload =
-  | {
-      id: string,
-      unary: UnaryResponseBody,
-    }
-  | { id: string, push: PushResponseBody }
-  | { id: string, end: EndResponseBody };
-
-declare class Response extends IResponse {
-  static encode(payload: ResponsePayload): { finish(): Uint8Array };
-  static decode(bytes: Uint8Array): Response;
 }
 
 export type UnaryResponseBody = {
@@ -114,8 +122,21 @@ export type PushResponseBody = {
 
 export type EndResponseBody = {};
 
+declare type ResponsePayload =
+  | {
+      id: string,
+      unary: UnaryResponseBody,
+    }
+  | { id: string, push: PushResponseBody }
+  | { id: string, error: ErrorResponseBody }
+  | { id: string, end: EndResponseBody };
+
+declare class Response extends IResponse {
+  static encode(payload: ResponsePayload): { finish(): Uint8Array };
+  static decode(bytes: Uint8Array): Response;
+}
+
 module.exports = {
   Request,
   Response,
-  Status,
 };

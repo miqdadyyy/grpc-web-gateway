@@ -714,7 +714,6 @@ export const StreamRequestBody = $root.StreamRequestBody = (() => {
      * @interface IStreamRequestBody
      * @property {string|null} [service] StreamRequestBody service
      * @property {string|null} [method] StreamRequestBody method
-     * @property {Uint8Array|null} [payload] StreamRequestBody payload
      * @property {Object.<string,string>|null} [metadata] StreamRequestBody metadata
      */
 
@@ -749,14 +748,6 @@ export const StreamRequestBody = $root.StreamRequestBody = (() => {
      * @instance
      */
     StreamRequestBody.prototype.method = "";
-
-    /**
-     * StreamRequestBody payload.
-     * @member {Uint8Array} payload
-     * @memberof StreamRequestBody
-     * @instance
-     */
-    StreamRequestBody.prototype.payload = $util.newBuffer([]);
 
     /**
      * StreamRequestBody metadata.
@@ -794,11 +785,9 @@ export const StreamRequestBody = $root.StreamRequestBody = (() => {
             writer.uint32(/* id 1, wireType 2 =*/10).string(message.service);
         if (message.method != null && message.hasOwnProperty("method"))
             writer.uint32(/* id 2, wireType 2 =*/18).string(message.method);
-        if (message.payload != null && message.hasOwnProperty("payload"))
-            writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.payload);
         if (message.metadata != null && message.hasOwnProperty("metadata"))
             for (let keys = Object.keys(message.metadata), i = 0; i < keys.length; ++i)
-                writer.uint32(/* id 4, wireType 2 =*/34).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.metadata[keys[i]]).ldelim();
+                writer.uint32(/* id 3, wireType 2 =*/26).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.metadata[keys[i]]).ldelim();
         return writer;
     };
 
@@ -840,9 +829,6 @@ export const StreamRequestBody = $root.StreamRequestBody = (() => {
                 message.method = reader.string();
                 break;
             case 3:
-                message.payload = reader.bytes();
-                break;
-            case 4:
                 reader.skip().pos++;
                 if (message.metadata === $util.emptyObject)
                     message.metadata = {};
@@ -891,9 +877,6 @@ export const StreamRequestBody = $root.StreamRequestBody = (() => {
         if (message.method != null && message.hasOwnProperty("method"))
             if (!$util.isString(message.method))
                 return "method: string expected";
-        if (message.payload != null && message.hasOwnProperty("payload"))
-            if (!(message.payload && typeof message.payload.length === "number" || $util.isString(message.payload)))
-                return "payload: buffer expected";
         if (message.metadata != null && message.hasOwnProperty("metadata")) {
             if (!$util.isObject(message.metadata))
                 return "metadata: object expected";
@@ -921,11 +904,6 @@ export const StreamRequestBody = $root.StreamRequestBody = (() => {
             message.service = String(object.service);
         if (object.method != null)
             message.method = String(object.method);
-        if (object.payload != null)
-            if (typeof object.payload === "string")
-                $util.base64.decode(object.payload, message.payload = $util.newBuffer($util.base64.length(object.payload)), 0);
-            else if (object.payload.length)
-                message.payload = object.payload;
         if (object.metadata) {
             if (typeof object.metadata !== "object")
                 throw TypeError(".StreamRequestBody.metadata: object expected");
@@ -954,20 +932,11 @@ export const StreamRequestBody = $root.StreamRequestBody = (() => {
         if (options.defaults) {
             object.service = "";
             object.method = "";
-            if (options.bytes === String)
-                object.payload = "";
-            else {
-                object.payload = [];
-                if (options.bytes !== Array)
-                    object.payload = $util.newBuffer(object.payload);
-            }
         }
         if (message.service != null && message.hasOwnProperty("service"))
             object.service = message.service;
         if (message.method != null && message.hasOwnProperty("method"))
             object.method = message.method;
-        if (message.payload != null && message.hasOwnProperty("payload"))
-            object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
         let keys2;
         if (message.metadata && (keys2 = Object.keys(message.metadata)).length) {
             object.metadata = {};
@@ -2447,6 +2416,7 @@ export const ErrorResponseBody = $root.ErrorResponseBody = (() => {
      * @interface IErrorResponseBody
      * @property {Status|null} [status] ErrorResponseBody status
      * @property {string|null} [message] ErrorResponseBody message
+     * @property {Object.<string,string>|null} [metadata] ErrorResponseBody metadata
      */
 
     /**
@@ -2458,6 +2428,7 @@ export const ErrorResponseBody = $root.ErrorResponseBody = (() => {
      * @param {IErrorResponseBody=} [properties] Properties to set
      */
     function ErrorResponseBody(properties) {
+        this.metadata = {};
         if (properties)
             for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
@@ -2479,6 +2450,14 @@ export const ErrorResponseBody = $root.ErrorResponseBody = (() => {
      * @instance
      */
     ErrorResponseBody.prototype.message = "";
+
+    /**
+     * ErrorResponseBody metadata.
+     * @member {Object.<string,string>} metadata
+     * @memberof ErrorResponseBody
+     * @instance
+     */
+    ErrorResponseBody.prototype.metadata = $util.emptyObject;
 
     /**
      * Creates a new ErrorResponseBody instance using the specified properties.
@@ -2508,6 +2487,9 @@ export const ErrorResponseBody = $root.ErrorResponseBody = (() => {
             writer.uint32(/* id 1, wireType 0 =*/8).int32(message.status);
         if (message.message != null && message.hasOwnProperty("message"))
             writer.uint32(/* id 2, wireType 2 =*/18).string(message.message);
+        if (message.metadata != null && message.hasOwnProperty("metadata"))
+            for (let keys = Object.keys(message.metadata), i = 0; i < keys.length; ++i)
+                writer.uint32(/* id 3, wireType 2 =*/26).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.metadata[keys[i]]).ldelim();
         return writer;
     };
 
@@ -2538,7 +2520,7 @@ export const ErrorResponseBody = $root.ErrorResponseBody = (() => {
     ErrorResponseBody.decode = function decode(reader, length) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ErrorResponseBody();
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ErrorResponseBody(), key;
         while (reader.pos < end) {
             let tag = reader.uint32();
             switch (tag >>> 3) {
@@ -2547,6 +2529,14 @@ export const ErrorResponseBody = $root.ErrorResponseBody = (() => {
                 break;
             case 2:
                 message.message = reader.string();
+                break;
+            case 3:
+                reader.skip().pos++;
+                if (message.metadata === $util.emptyObject)
+                    message.metadata = {};
+                key = reader.string();
+                reader.pos++;
+                message.metadata[key] = reader.string();
                 break;
             default:
                 reader.skipType(tag & 7);
@@ -2609,6 +2599,14 @@ export const ErrorResponseBody = $root.ErrorResponseBody = (() => {
         if (message.message != null && message.hasOwnProperty("message"))
             if (!$util.isString(message.message))
                 return "message: string expected";
+        if (message.metadata != null && message.hasOwnProperty("metadata")) {
+            if (!$util.isObject(message.metadata))
+                return "metadata: object expected";
+            let key = Object.keys(message.metadata);
+            for (let i = 0; i < key.length; ++i)
+                if (!$util.isString(message.metadata[key[i]]))
+                    return "metadata: string{k:string} expected";
+        }
         return null;
     };
 
@@ -2696,6 +2694,13 @@ export const ErrorResponseBody = $root.ErrorResponseBody = (() => {
         }
         if (object.message != null)
             message.message = String(object.message);
+        if (object.metadata) {
+            if (typeof object.metadata !== "object")
+                throw TypeError(".ErrorResponseBody.metadata: object expected");
+            message.metadata = {};
+            for (let keys = Object.keys(object.metadata), i = 0; i < keys.length; ++i)
+                message.metadata[keys[i]] = String(object.metadata[keys[i]]);
+        }
         return message;
     };
 
@@ -2712,6 +2717,8 @@ export const ErrorResponseBody = $root.ErrorResponseBody = (() => {
         if (!options)
             options = {};
         let object = {};
+        if (options.objects || options.defaults)
+            object.metadata = {};
         if (options.defaults) {
             object.status = options.enums === String ? "UNKNOWN" : 0;
             object.message = "";
@@ -2720,6 +2727,12 @@ export const ErrorResponseBody = $root.ErrorResponseBody = (() => {
             object.status = options.enums === String ? $root.Status[message.status] : message.status;
         if (message.message != null && message.hasOwnProperty("message"))
             object.message = message.message;
+        let keys2;
+        if (message.metadata && (keys2 = Object.keys(message.metadata)).length) {
+            object.metadata = {};
+            for (let j = 0; j < keys2.length; ++j)
+                object.metadata[keys2[j]] = message.metadata[keys2[j]];
+        }
         return object;
     };
 

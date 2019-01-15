@@ -14,18 +14,11 @@ import grpc, {
 } from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
 import glob from 'glob';
-import { flatten, pipe, map, mergeAll, merge, toPairs } from 'lodash/fp';
+import { flatten, pipe, map, mergeAll, toPairs } from 'lodash/fp';
 
-import {
-  Request,
-  Response,
-  Status,
-  type GrpcStatusCode,
-  type GrpcStatusName,
-} from '../shared/signaling';
+import { Request, Response, type GrpcStatusCode } from '../shared/signaling';
 import createMetadata from './createMetadata';
-
-console.log({ Status, Response });
+import { GrpcError } from './GrpcError';
 
 type GrpcGatewayServerConfig = {
   api: string,
@@ -44,24 +37,22 @@ type GrpcMethodDefinition = {
 const SECONDS = 1000;
 const DEFAULT_HEARTBEAT_INTERVAL = 30 * SECONDS;
 
-const statusMap = Object.entries(Status).reduce(
-  (map, [statusName, statusCode]) => map.set(statusName, statusCode),
-  new Map(),
-);
+type GrpcStatus = {
+  code: GrpcStatusCode,
+  details: string,
+  metadata?: { [string]: mixed },
+};
 
-console.log({ statusMap });
-
-class GrpcError extends Error {
-  statusName: GrpcStatusName;
-  statusCode: GrpcStatusCode;
-
-  constructor(statusCode, message) {
-    super(message);
-    this.message = message;
-    this.statusCode = statusCode;
-    this.status = 'UNKNOWN';
-  }
-}
+const normalizeGrpcMetadata = (grpcMetadata: {
+  [string]: mixed,
+}): { [string]: string | Buffer } =>
+  Object.entries(grpcMetadata).reduce((metadata, [key, value]) => {
+    try {
+      return { ...metadata, [key]: JSON.stringify(value) };
+    } catch (e) {
+      return metadata;
+    }
+  }, {});
 
 const parseProtoFiles: (
   Array<string>,
@@ -79,6 +70,26 @@ function createServer(config: GrpcGatewayServerConfig) {
   const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
   const connectionsMap = new WeakMap();
   const services = parseProtoFiles(config.protoFiles);
+
+  const getMethodDefinition = (service, method) => {
+    const serviceDefinition = services.get(service);
+    if (!serviceDefinition) {
+      throw GrpcError.fromStatusName(
+        'NOT_FOUND',
+        `There is no service '${service}'`,
+      );
+    }
+
+    const methodDefinition = serviceDefinition[method];
+    if (!methodDefinition) {
+      throw GrpcError.fromStatusName(
+        'NOT_FOUND',
+        `There is no such method '${method}' in service '${service}'`,
+      );
+    }
+
+    return methodDefinition;
+  };
 
   grpc.setLogger(logger);
 
@@ -102,11 +113,72 @@ function createServer(config: GrpcGatewayServerConfig) {
   });
 
   wss.on('connection', ws => {
-    const grpc = new GrpcClient(config.api, grpcCredentials.createInsecure());
-    const id = nanoid();
+    const calls = new Map();
+    const grpcClient = new GrpcClient(
+      config.api,
+      grpcCredentials.createInsecure(),
+    );
+    const connectionId = nanoid();
+    const connectionLogger = logger.child({ connectionId });
 
-    logger.info('Connection', id);
-    connectionsMap.set(ws, { isAlive: true, id });
+    const handleGrpcClientError = (requestId, error) => {
+      connectionLogger.error(requestId, error);
+      ws.send(
+        Response.encode({
+          id: requestId,
+          error: {
+            status: error.code,
+            message: error.details,
+            metadata: error.metadata
+              ? normalizeGrpcMetadata(error.metadata)
+              : undefined,
+          },
+        }).finish(),
+      );
+    };
+
+    const handleGrpcError = (requestId, error) => {
+      connectionLogger.error(error);
+      ws.send(Response.encode({ id: requestId, error }).finish());
+    };
+
+    const handleServerStream = (id, call) => {
+      call.on('data', (response: Uint8Array) => {
+        connectionLogger.info('Push Data');
+        ws.send(
+          Response.encode({
+            id,
+            push: { payload: response },
+          }).finish(),
+        );
+      });
+
+      call.on('end', () => {
+        connectionLogger.info('Stream was ended');
+        ws.send(
+          Response.encode({
+            id,
+            end: {},
+          }).finish(),
+        );
+      });
+
+      call.on('close', () => {
+        connectionLogger.info('Closing stream');
+        ws.send(
+          Response.encode({
+            id,
+            end: {},
+          }).finish(),
+        );
+      });
+
+      call.on('error', (error: GrpcStatus) => {
+        handleGrpcClientError(id, error);
+      });
+    };
+
+    connectionsMap.set(ws, { isAlive: true, id: connectionId });
 
     ws.on('pong', heartbeat);
 
@@ -114,69 +186,129 @@ function createServer(config: GrpcGatewayServerConfig) {
       const request = Request.decode(message);
       const { id } = request;
       if (request.unary) {
-        const { service, method, payload, metadata } = request.unary;
-        const serviceDefinition = services.get(service);
-        if (!serviceDefinition) {
-        }
+        try {
+          const { service, method, payload, metadata } = request.unary;
+          const methodDefinition = getMethodDefinition(service, method);
 
-        const path = '/' + service + '/' + method;
-        const call = grpc.makeUnaryRequest(
-          path,
-          _.identity,
-          _.identity,
-          payload,
-          createMetadata(metadata),
-          {},
-          (error: Error, response: Uint8Array) => {
-            if (error) {
-              logger.error('error: ', error);
-            } else {
-              logger.info('Unary Data');
-              ws.send(
-                Response.encode({ id, unary: { payload: response } }).finish(),
-              );
-            }
-          },
-        );
+          if (methodDefinition.requestStream) {
+            throw GrpcError.fromStatusName(
+              'UNIMPLEMENTED',
+              `There is no unary request method ${method} in service ${service}. Use stream request instead`,
+            );
+          }
+
+          const path = methodDefinition.path;
+
+          if (methodDefinition.responseStream) {
+            const call = grpcClient.makeServerStreamRequest(
+              path,
+              _.identity,
+              _.identity,
+              payload,
+              createMetadata(metadata),
+              {},
+            );
+
+            handleServerStream(id, call);
+          } else {
+            grpcClient.makeUnaryRequest(
+              path,
+              _.identity,
+              _.identity,
+              payload,
+              createMetadata(metadata),
+              {},
+              (error: GrpcStatus, response: Uint8Array) => {
+                if (error) {
+                  handleGrpcClientError(id, error);
+                } else {
+                  connectionLogger.info('Unary Data');
+                  ws.send(
+                    Response.encode({
+                      id,
+                      unary: { payload: response },
+                    }).finish(),
+                  );
+                }
+              },
+            );
+          }
+        } catch (error) {
+          handleGrpcError(id, error);
+        }
       } else if (request.stream) {
-        // const { service, method, payload, metadata } = request.stream;
-        // const path = `/${service}/${method}`;
+        try {
+          const { service, method, metadata } = request.stream;
+          const methodDefinition = getMethodDefinition(service, method);
+
+          if (!methodDefinition.requestStream) {
+            throw GrpcError.fromStatusName(
+              'UNIMPLEMENTED',
+              `There is no stream request method ${method} in service ${service}. Use unary request instead`,
+            );
+          }
+
+          const path = methodDefinition.path;
+
+          if (methodDefinition.responseStream) {
+            const call = grpcClient.makeBidiStreamRequest(
+              path,
+              _.identity,
+              _.identity,
+              createMetadata(metadata),
+              {},
+            );
+            calls.set(id, call);
+
+            handleServerStream(id, call);
+          } else {
+            const call = grpcClient.makeClientStreamRequest(
+              path,
+              _.identity,
+              _.identity,
+              createMetadata(metadata),
+              {},
+            );
+            calls.set(id, call);
+          }
+        } catch (error) {
+          handleGrpcError(id, error);
+        }
+      } else if (request.push) {
+        try {
+          const { payload } = request.push;
+
+          const call = calls.get(id);
+          if (!call) {
+            throw GrpcError.fromStatusName(
+              'NOT_FOUND',
+              `There is no opened stream with id ${id}`,
+            );
+          }
+
+          call.write(payload);
+        } catch (error) {
+          handleGrpcError(id, error);
+        }
       }
-      // else if (request.push) {
-      //   const { payload } = request.push;
-      //   const path = '/' + service + '/' + method;
-      //   const call = grpc.makeServerStreamRequest(
-      //     path,
-      //     _.identity,
-      //     _.identity,
-      //     payload,
-      //     createMetadata(metadata),
-      //     {},
-      //   );
-      //   call.on('data', response => {
-      //     console.log('Stream Data', { response, id });
-      //     ws.send(
-      //       Response.encode({ id, push: { payload: response } }).finish(),
-      //     );
-      //   });
-      // }
     });
 
     ws.on('close', () => {
       logger.info('Ws closed');
-      grpc.close();
+      grpcClient.close();
     });
   });
 
-  const interval = setInterval(() => {
+  setInterval(() => {
     logger.info('Clearing dead connections...');
-    wss.clients.forEach(function each(ws) {
+    wss.clients.forEach(ws => {
       const wsMeta = connectionsMap.get(ws);
       if (!wsMeta || wsMeta.isAlive === false) {
         logger.info(
           'Terminate dead connection',
           wsMeta ? wsMeta.id : 'undefined id',
         );
+
         return ws.terminate();
       }
 

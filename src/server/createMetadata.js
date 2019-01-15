@@ -18,9 +18,7 @@ type GrpcMetadata = {
   remove(key: string): void,
 };
 
-function createMetadata(values: {
-  [key: string]: MetadataValue,
-}): GrpcMetadata {
+function createMetadata(values: { [key: string]: string }): GrpcMetadata {
   const metadata = new Metadata();
   _.forOwn(values, (value, key) => metadata.set(key, value));
   return metadata;

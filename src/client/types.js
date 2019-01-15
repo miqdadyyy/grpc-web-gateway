@@ -4,6 +4,7 @@
  */
 
 import type { Observable } from 'kefir';
+import { RpcError } from './RpcError';
 
 import { type Response } from '../shared/signaling';
 
@@ -17,7 +18,9 @@ export interface RpcTransport extends WriteRpcTransport {
 
 export interface RpcCall {
   cancel(id: string): void;
-  onMessage(message: Response): void;
+  onMessage(handler: (Uint8Array) => void): () => void;
+  onError(handler: (RpcError) => void): () => void;
+  onEnd(handler: () => void): () => void;
 }
 
 export type Metadata = { [key: string]: string };
@@ -29,11 +32,22 @@ export type UnaryRequest = {
   metadata: Metadata,
 };
 
-export class RpcError extends Error {
-  code: string;
+export type PushRequest = {
+  payload: Uint8Array,
+  metadata: Metadata,
+};
 
-  constructor(code: string, message: string) {
-    super(message);
-    this.code = code;
-  }
-}
+export type StreamRequest = {
+  service: string,
+  method: string,
+  metadata: Metadata,
+};
+
+// export class RpcError extends Error {
+//   code: string;
+
+//   constructor(code: string, message: string) {
+//     super(message);
+//     this.code = code;
+//   }
+// }

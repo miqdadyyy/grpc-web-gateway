@@ -11,5 +11,3 @@ export class RpcError extends Error {
     this.code = code;
   }
 }
-
-export const err = new RpcError('code', 'mes');

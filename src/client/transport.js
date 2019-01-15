@@ -19,9 +19,11 @@ export interface RpcDuplexTransport
   extends RpcWritableTransport,
     RpcReadableTransport {}
 
+type Unbind = () => void;
+
 export interface TransportReadable {
-  onMessage(messageHandler: (message: Uint8Array) => void): TransportReadable;
-  onError(errorHandler: (error: RpcError) => void): TransportReadable;
+  onMessage(messageHandler: (message: Uint8Array) => void): Unbind;
+  onError(errorHandler: (error: RpcError) => void): Unbind;
 }
 
 export interface TransportWritable {

@@ -260,9 +260,6 @@ export interface IStreamRequestBody {
     /** StreamRequestBody method */
     method?: (string|null);
 
-    /** StreamRequestBody payload */
-    payload?: (Uint8Array|null);
-
     /** StreamRequestBody metadata */
     metadata?: ({ [k: string]: string }|null);
 }
@@ -281,9 +278,6 @@ export class StreamRequestBody implements IStreamRequestBody {
 
     /** StreamRequestBody method. */
     public method: string;
-
-    /** StreamRequestBody payload. */
-    public payload: Uint8Array;
 
     /** StreamRequestBody metadata. */
     public metadata: { [k: string]: string };
@@ -1012,6 +1006,9 @@ export interface IErrorResponseBody {
 
     /** ErrorResponseBody message */
     message?: (string|null);
+
+    /** ErrorResponseBody metadata */
+    metadata?: ({ [k: string]: string }|null);
 }
 
 /** Represents an ErrorResponseBody. */
@@ -1028,6 +1025,9 @@ export class ErrorResponseBody implements IErrorResponseBody {
 
     /** ErrorResponseBody message. */
     public message: string;
+
+    /** ErrorResponseBody metadata. */
+    public metadata: { [k: string]: string };
 
     /**
      * Creates a new ErrorResponseBody instance using the specified properties.

@@ -41,8 +41,7 @@ message UnaryRequestBody {
 message StreamRequestBody {
   string service = 1;
   string method = 2;
-  bytes payload = 3;
-  map<string, string> metadata = 4;
+  map<string, string> metadata = 3;
 }
 
 message PushRequestBody {
@@ -73,4 +72,5 @@ message EndResponseBody {}
 message ErrorResponseBody {
   Status status = 1;
   optional string message = 2;
+  map<string, string> metadata = 3;
 }

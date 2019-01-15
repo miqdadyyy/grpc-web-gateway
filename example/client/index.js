@@ -9,8 +9,10 @@ client
     method: 'Unary',
     payload: Ping.encode({ date: Date.now() }).finish(),
   })
+  .toPromise()
   .then(Pong.decode)
-  .then(console.log);
+  .then(console.log)
+  .catch(console.error);
 
 client
   .makeUnaryRequest({
@@ -18,17 +20,54 @@ client
     method: 'Unary',
     payload: Ping.encode({ date: Date.now() }).finish(),
   })
+  .toPromise()
   .then(Pong.decode)
-  .then(console.log);
+  .then(console.log)
+  .catch(console.error);
 
-// client
-//   .makeServerStreamRequest({
-//     service: 'Test',
-//     method: 'ServerStream',
-//     payload: Ping.encode({ date: Date.now() }).finish(),
-//   })
-//   .map(Pong.decode)
-//   .log('server stream');
+const serverStreamRequest = client.makeServerStreamRequest({
+  service: 'Test',
+  method: 'ServerStream',
+  payload: Ping.encode({ date: Date.now() }).finish(),
+});
+
+serverStreamRequest.onMessage(response => {
+  const message = Pong.decode(response);
+  console.log(message);
+});
+
+serverStreamRequest.onError(error => {
+  console.error(error);
+});
+
+serverStreamRequest.onEnd(() => {
+  console.log('Stream ended');
+});
+
+const bidiStreamRequest = client.makeBidiStreamRequest({
+  service: 'Test',
+  method: 'BidiStream',
+});
+
+bidiStreamRequest.onMessage(response => {
+  const message = Pong.decode(response);
+  console.log(message);
+});
+
+bidiStreamRequest.onError(error => {
+  console.error(error);
+});
+
+bidiStreamRequest.onEnd(() => {
+  console.log('Bidi Stream ended');
+});
+
+setInterval(() => {
+  console.log('Send to bidi stream');
+  bidiStreamRequest.send({
+    payload: Ping.encode({ date: Date.now() }).finish(),
+  });
+}, 1000);
 
 // TODO: how to implement this?
 // client.makeBidiStreamRequest({

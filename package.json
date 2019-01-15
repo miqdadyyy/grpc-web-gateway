@@ -38,10 +38,14 @@
     "ws": "6.1.2"
   },
   "devDependencies": {
-    "@babel/polyfill": "^7.2.5",
+    "@babel/polyfill": "7.2.5",
     "@dlghq/babel-preset-dialog": "4.3.1",
+    "@dlghq/eslint-config-dialog": "3.4.0",
     "babel-core": "6.26.3",
     "babel-loader": "8.0.4",
+    "eslint": "^5.12.0",
+    "eslint-config-prettier": "3.4.0",
+    "eslint-plugin-react": "7.12.3",
     "flow-bin": "0.90.0",
     "grpc": "1.16.1",
     "html-webpack-plugin": "3.2.0",
