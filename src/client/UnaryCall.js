@@ -8,7 +8,6 @@ import { constant, type Emitter, type Property } from 'kefir';
 import { type RpcCall, type UnaryRequest } from './types';
 import { type TransportWritable, type Transport } from './transport';
 import { Request, Response } from '../shared/signaling';
-import { generateId } from '../utils/sequence';
 
 class F<T> {
   constructor(value: T) {}
@@ -19,9 +18,9 @@ class UnaryCall implements RpcCall {
   transport: Transport;
   reject: (() => void) | null;
 
-  constructor(transport: Transport) {
+  constructor(id: string, transport: Transport) {
     this.transport = transport;
-    this.id = generateId();
+    this.id = id;
     this.reject = null;
   }
 

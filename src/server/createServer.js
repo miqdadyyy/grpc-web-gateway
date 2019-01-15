@@ -8,24 +8,79 @@ import pino from 'pino';
 import _ from 'lodash';
 import nanoid from 'nanoid';
 import { Server as WebSocketServer } from 'ws';
-import { Client as GrpcClient, credentials as grpcCredentials } from 'grpc';
+import grpc, {
+  Client as GrpcClient,
+  credentials as grpcCredentials,
+} from 'grpc';
+import * as protoLoader from '@grpc/proto-loader';
+import glob from 'glob';
+import { flatten, pipe, map, mergeAll, merge, toPairs } from 'lodash/fp';
 
-import { Request, Response } from '../shared/signaling';
+import {
+  Request,
+  Response,
+  Status,
+  type GrpcStatusCode,
+  type GrpcStatusName,
+} from '../shared/signaling';
 import createMetadata from './createMetadata';
 
-type Config = {
+console.log({ Status, Response });
+
+type GrpcGatewayServerConfig = {
   api: string,
   server: HttpServer,
   heartbeatInterval?: number,
+  protoFiles: Array<string>,
+};
+
+type GrpcMethodDefinition = {
+  path: string,
+  requestStream: boolean,
+  responseStream: boolean,
+  originalName: string,
 };
 
 const SECONDS = 1000;
 const DEFAULT_HEARTBEAT_INTERVAL = 30 * SECONDS;
 
-function createServer(config: Config) {
+const statusMap = Object.entries(Status).reduce(
+  (map, [statusName, statusCode]) => map.set(statusName, statusCode),
+  new Map(),
+);
+
+console.log({ statusMap });
+
+class GrpcError extends Error {
+  statusName: GrpcStatusName;
+  statusCode: GrpcStatusCode;
+
+  constructor(statusCode, message) {
+    super(message);
+    this.message = message;
+    this.statusCode = statusCode;
+    this.status = 'UNKNOWN';
+  }
+}
+
+const parseProtoFiles: (
+  Array<string>,
+) => Map<string, { [methodName: string]: GrpcMethodDefinition }> = pipe([
+  map(glob.sync),
+  flatten,
+  map(protoLoader.loadSync),
+  mergeAll,
+  toPairs,
+  entries => new Map(entries),
+]);
+
+function createServer(config: GrpcGatewayServerConfig) {
   const logger = pino({ name: 'wss', prettyPrint: true });
   const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
   const connectionsMap = new WeakMap();
+  const services = parseProtoFiles(config.protoFiles);
+
+  grpc.setLogger(logger);
 
   function noop() {}
 
@@ -60,6 +115,10 @@ function createServer(config: Config) {
       const { id } = request;
       if (request.unary) {
         const { service, method, payload, metadata } = request.unary;
+        const serviceDefinition = services.get(service);
+        if (!serviceDefinition) {
+        }
+
         const path = '/' + service + '/' + method;
         const call = grpc.makeUnaryRequest(
           path,
@@ -72,13 +131,16 @@ function createServer(config: Config) {
             if (error) {
               logger.error('error: ', error);
             } else {
-              logger.info('Unary Data', { response, id });
+              logger.info('Unary Data');
               ws.send(
                 Response.encode({ id, unary: { payload: response } }).finish(),
               );
             }
           },
         );
+      } else if (request.stream) {
+        // const { service, method, payload, metadata } = request.stream;
+        // const path = `/${service}/${method}`;
       }
       // else if (request.push) {
       //   const { payload } = request.push;

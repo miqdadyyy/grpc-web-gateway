@@ -1,6 +1,7 @@
 const path = require('path');
 const grpc = require('grpc');
 const protoLoader = require('@grpc/proto-loader');
+const glob = require('glob');
 
 class TestService {
   unary(call, callback) {
@@ -47,12 +48,17 @@ class TestService {
 }
 
 function startGrpcServer({ protoRoot, listen }) {
-  const definition = protoLoader.loadSync(protoRoot, { keepCase: false });
-  const descriptor = grpc.loadPackageDefinition(definition);
-
+  const protoFiles = glob.sync(protoRoot);
   const server = new grpc.Server();
 
-  server.addService(descriptor.Test.service, new TestService());
+  protoFiles.forEach(protoRoot => {
+    const definition = protoLoader.loadSync(protoRoot, { keepCase: false });
+    const descriptor = grpc.loadPackageDefinition(definition);
+
+    Object.keys(definition).forEach(serviceName => {
+      server.addService(descriptor[serviceName].service, new TestService());
+    });
+  });
 
   server.bind(listen, grpc.ServerCredentials.createInsecure());
   server.start();

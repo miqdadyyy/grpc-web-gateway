@@ -5,29 +5,7 @@
 
 import nanoid from 'nanoid';
 
-let id = 0;
-let maxId = Number.MAX_SAFE_INTEGER;
-
-const generateFallbackId = (): string => nanoid();
-
-// generate sequence id
-export const generateId = (forceFallback: boolean = false): string => {
-  if (id === maxId || forceFallback) {
-    return generateFallbackId(); // fallback ;-)
-  } else {
-    return (++id).toString();
-  }
-};
-
-export const resetSequence = (to: number = 0) => {
-  id = to;
-};
-
-export const setMaxId = (newMaxId: number) => {
-  maxId = newMaxId;
-};
-
-type Sequence = {|
+export type Sequence = {|
   resetSequence(): void,
   deleteId(id: string): void,
   next(): string,

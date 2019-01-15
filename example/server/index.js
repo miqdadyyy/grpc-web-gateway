@@ -2,12 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import http from 'http';
 import express from 'express';
+import * as protoLoader from '@grpc/proto-loader';
+
 import startGrpcServer from './grpc';
 import createGateway from '../../src/server/createServer';
 
 const apiHost = 'localhost:3000';
 const gatewayHost = 8080;
-const protoRoot = path.resolve(__dirname, '../proto/api.proto');
+const protoRoot = path.resolve(__dirname, '../proto/*.proto');
 
 startGrpcServer({
   protoRoot,
@@ -20,6 +22,7 @@ const server = http.createServer(app);
 createGateway({
   server,
   api: apiHost,
+  protoFiles: [protoRoot],
 });
 
 app.use(express.static(path.resolve(__dirname, '../dist')));

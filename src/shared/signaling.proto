@@ -31,9 +31,14 @@ message Request {
   }
 }
 
-message StreamRequestBody {}
-
 message UnaryRequestBody {
+  string service = 1;
+  string method = 2;
+  bytes payload = 3;
+  map<string, string> metadata = 4;
+}
+
+message StreamRequestBody {
   string service = 1;
   string method = 2;
   bytes payload = 3;
@@ -55,6 +60,7 @@ message Response {
     UnaryResponseBody unary = 2;
     PushResponseBody push = 3;
     EndResponseBody end = 4;
+    ErrorResponseBody error = 5;
   }
 }
 
@@ -63,3 +69,8 @@ message UnaryResponseBody { bytes payload = 1; }
 message PushResponseBody { bytes payload = 1; }
 
 message EndResponseBody {}
+
+message ErrorResponseBody {
+  Status status = 1;
+  optional string message = 2;
+}

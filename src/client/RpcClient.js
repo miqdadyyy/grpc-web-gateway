@@ -9,7 +9,7 @@ import type EventEmitter from 'events';
 
 import type { RpcTransport, RpcCall, UnaryRequest } from './types';
 import { type RpcDuplexTransport, type Transport } from './transport';
-import { generateId, createSequence } from '../utils/sequence';
+import { createSequence, type Sequence } from '../utils/sequence';
 import { Request, Response } from '../shared/signaling';
 import UnaryCall from './UnaryCall';
 import ServerStreamCall from './ServerStreamCall';
@@ -25,12 +25,12 @@ type ClientStream = {
 class RpcClient {
   transport: Transport;
   calls: Map<string, RpcCall>;
+  seq: Sequence;
 
   constructor(transport: Transport) {
     this.transport = transport;
     this.calls = new Map();
-
-    const seq = createSequence();
+    this.seq = createSequence();
 
     this.transport.onError(error => {
       console.log('error:', error);
@@ -42,9 +42,10 @@ class RpcClient {
   }
 
   makeUnaryRequest(request: UnaryRequest) {
-    console.log('Make unary request', request);
+    const requestId = this.seq.next();
+    console.log('Make unary request', { request, requestId });
 
-    const call = new UnaryCall(this.transport);
+    const call = new UnaryCall(requestId, this.transport);
     this.calls.set(call.id, call);
 
     return call
@@ -58,7 +59,7 @@ class RpcClient {
 
   makeServerStreamRequest(request: UnaryRequest) {
     return Kefir.stream(emitter => {
-      const id = generateId();
+      const id = this.seq.next();
 
       const call = new ServerStreamCall(this.transport, emitter);
       this.calls.set(id, call);

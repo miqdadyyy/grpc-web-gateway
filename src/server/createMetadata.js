@@ -6,7 +6,21 @@
 import _ from 'lodash';
 import { Metadata } from 'grpc';
 
-function createMetadata(values: { [key: string]: string }) {
+type MetadataValue = string | Buffer;
+
+type GrpcMetadata = {
+  add(key: string, value: MetadataValue): void,
+  add(key: string, value: MetadataValue): void,
+  get(key: string): Array<MetadataValue>,
+  getMap(): {
+    [key: string]: MetadataValue,
+  },
+  remove(key: string): void,
+};
+
+function createMetadata(values: {
+  [key: string]: MetadataValue,
+}): GrpcMetadata {
   const metadata = new Metadata();
   _.forOwn(values, (value, key) => metadata.set(key, value));
   return metadata;

@@ -8,7 +8,6 @@ import { constant, type Emitter, type Property } from 'kefir';
 import { type RpcCall, type UnaryRequest } from './types';
 import { type TransportWritable, type Transport } from './transport';
 import { Request, Response } from '../shared/signaling';
-import { generateId } from '../utils/sequence';
 import { ClientStream } from './ClientStream';
 
 class ClientStreamCall implements RpcCall {
@@ -17,10 +16,10 @@ class ClientStreamCall implements RpcCall {
   reject: (() => void) | null;
   stream: ClientStream;
 
-  constructor(transport: Transport) {
+  constructor(id: string, transport: Transport) {
     this.transport = transport;
-    this.id = generateId();
     this.reject = null;
+    this.id = id;
     this.stream = new ClientStream(this.id, transport);
   }
 

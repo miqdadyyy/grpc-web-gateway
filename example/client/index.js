@@ -30,20 +30,20 @@ client
 //   .map(Pong.decode)
 //   .log('server stream');
 
-// // TODO: how to implement this?
+// TODO: how to implement this?
 // client.makeBidiStreamRequest({
 //   service: 'Test',
 //   method: 'BidiStream',
 //   payload: Ping.encode({ date: Date.now() }).finish(),
 // });
-// // .map(Pong.decode)
-// // .log('bidi stream');
+// .map(Pong.decode)
+// .log('bidi stream');
 
-// // TODO: how to implement this?
+// TODO: how to implement this?
 // client.makeClientStreamRequest({
 //   service: 'Test',
 //   method: 'ClientStream',
 //   payload: Ping.encode({ date: Date.now() }).finish,
 // });
-// // .map(Pong.decode)
-// // .log('client stream');
+// .map(Pong.decode)
+// .log('client stream');
