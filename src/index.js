@@ -132,8 +132,9 @@ function createGrpcGateway(config) {
               res.write(JSON.stringify(message) + '\n');
             };
 
-            const cancelPing = createInterval(60000, () =>
-              write({ ping: true }),
+            const cancelPing = createInterval(
+              config.pingInterval ? config.pingInterval : 15000,
+              () => write({ ping: true }),
             );
 
             call.on('data', (message) => {
