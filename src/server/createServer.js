@@ -4,6 +4,7 @@
  */
 
 import type { Server as HttpServer } from 'http';
+import type { Server as HttpsServer } from 'https';
 import nanoid from 'nanoid';
 import { Server as WebSocketServer } from 'ws';
 import grpc, { Client as GrpcClient } from 'grpc';
@@ -19,10 +20,10 @@ import { setupPingConnections } from './heartbeat';
 
 type GrpcGatewayServerConfig = {
   api: string,
-  server: HttpServer,
-  heartbeatInterval?: number,
+  server: HttpServer | HttpsServer,
   protoFiles: Array<string>,
   credentials?: CredentialsConfig,
+  heartbeatInterval?: number,
 };
 
 const SECONDS = 1000;

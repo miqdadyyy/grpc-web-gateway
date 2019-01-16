@@ -2,6 +2,7 @@
   "extends": ["@dlghq/eslint-config-dialog", "prettier"],
   "rules": {
     "consistent-return": "off",
-    "no-shadow": "off"
+    "no-shadow": "off",
+    "no-invalid-this": "off"
   }
 }
