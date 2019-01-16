@@ -147,7 +147,11 @@ function createServer(config: GrpcGatewayServerConfig) {
     };
 
     ws.on('message', message => {
-      const request = Request.decode(((message: any): Uint8Array));
+      if (!(message instanceof ArrayBuffer)) {
+        return;
+      }
+
+      const request = Request.decode(new Uint8Array(message));
       const { id } = request;
 
       if (request.unary) {
