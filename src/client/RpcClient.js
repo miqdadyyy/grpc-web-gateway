@@ -32,17 +32,18 @@ class RpcClient {
     this.seq = createSequence();
 
     this.transport.onError(error => {
-      console.log('error:', error);
+      console.error(error);
     });
   }
 
   cancelRequest(id: string) {
     const call = this.calls.get(id);
+
+    if (call) call.cancel();
   }
 
   makeUnaryRequest(request: UnaryRequest) {
     const id = this.seq.next();
-    console.log('Make unary request', { request, id });
 
     const call = new UnaryCall(id, this.transport);
     this.calls.set(call.id, call);
@@ -57,7 +58,6 @@ class RpcClient {
 
   makeServerStreamRequest(request: UnaryRequest) {
     const id = this.seq.next();
-    console.log('Make server stream request', { request, id });
 
     const call = new ServerStreamCall(id, this.transport);
     this.calls.set(call.id, call);
@@ -72,7 +72,6 @@ class RpcClient {
 
   makeClientStreamRequest(request: StreamRequest) {
     const id = this.seq.next();
-    console.log('Make client stream request', { request, id });
 
     const call = new ClientStreamCall(id, this.transport);
     this.calls.set(call.id, call);
@@ -87,7 +86,6 @@ class RpcClient {
 
   makeBidiStreamRequest(request: StreamRequest) {
     const id = this.seq.next();
-    console.log('Make bidi stream request', { request, id });
 
     const call = new BidiStreamCall(id, this.transport);
     this.calls.set(call.id, call);

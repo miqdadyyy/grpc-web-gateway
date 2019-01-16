@@ -4,8 +4,6 @@
  */
 
 import type { Server as HttpServer } from 'http';
-import pino from 'pino';
-import _ from 'lodash';
 import nanoid from 'nanoid';
 import { Server as WebSocketServer } from 'ws';
 import grpc, {
@@ -14,11 +12,21 @@ import grpc, {
 } from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
 import glob from 'glob';
-import { flatten, pipe, map, mergeAll, toPairs } from 'lodash/fp';
+import {
+  flatten,
+  pipe,
+  map,
+  mergeAll,
+  toPairs,
+  identity,
+  noop,
+} from 'lodash/fp';
+import { logger } from './logger';
 
 import { Request, Response, type GrpcStatusCode } from '../shared/signaling';
 import createMetadata from './createMetadata';
 import { GrpcError } from './GrpcError';
+import { setupPingConnections } from './heartbeat';
 
 type GrpcGatewayServerConfig = {
   api: string,
@@ -66,10 +74,13 @@ const parseProtoFiles: (
 ]);
 
 function createServer(config: GrpcGatewayServerConfig) {
-  const logger = pino({ name: 'wss', prettyPrint: true });
   const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
-  const connectionsMap = new WeakMap();
   const services = parseProtoFiles(config.protoFiles);
+  const wss = new WebSocketServer({
+    server: config.server,
+  });
+
+  const heartbeat = setupPingConnections(wss, heartbeatInterval);
 
   const getMethodDefinition = (service, method) => {
     const serviceDefinition = services.get(service);
@@ -93,32 +104,21 @@ function createServer(config: GrpcGatewayServerConfig) {
 
   grpc.setLogger(logger);
 
-  function noop() {}
-
-  function heartbeat() {
-    const wsMeta = connectionsMap.get(this);
-    logger.info('Heartbeat', wsMeta ? wsMeta.id : 'undefined');
-    connectionsMap.set(this, {
-      isAlive: true,
-      id: wsMeta ? wsMeta.id : nanoid(),
-    });
-  }
-
-  const wss = new WebSocketServer({
-    server: config.server,
-  });
-
-  wss.on('error', err => {
+  wss.on('error', (err: Error) => {
     logger.error('Connection error:', err);
   });
 
   wss.on('connection', ws => {
+    const connectionId = nanoid();
+
+    heartbeat.addConnection(connectionId, ws);
+
     const calls = new Map();
     const grpcClient = new GrpcClient(
       config.api,
       grpcCredentials.createInsecure(),
     );
-    const connectionId = nanoid();
+
     const connectionLogger = logger.child({ connectionId });
     const wsSend = (data, cb) =>
       ws.readyState === ws.OPEN ? ws.send(data, cb) : noop;
@@ -184,12 +184,8 @@ function createServer(config: GrpcGatewayServerConfig) {
       });
     };
 
-    connectionsMap.set(ws, { isAlive: true, id: connectionId });
-
-    ws.on('pong', heartbeat);
-
     ws.on('message', message => {
-      const request = Request.decode(message);
+      const request = Request.decode(((message: any): Uint8Array));
       const { id } = request;
       if (request.unary) {
         try {
@@ -208,8 +204,8 @@ function createServer(config: GrpcGatewayServerConfig) {
           if (methodDefinition.responseStream) {
             const call = grpcClient.makeServerStreamRequest(
               path,
-              _.identity,
-              _.identity,
+              identity,
+              identity,
               payload,
               createMetadata(metadata),
               {},
@@ -220,8 +216,8 @@ function createServer(config: GrpcGatewayServerConfig) {
           } else {
             const call = grpcClient.makeUnaryRequest(
               path,
-              _.identity,
-              _.identity,
+              identity,
+              identity,
               payload,
               createMetadata(metadata),
               {},
@@ -262,8 +258,8 @@ function createServer(config: GrpcGatewayServerConfig) {
           if (methodDefinition.responseStream) {
             const call = grpcClient.makeBidiStreamRequest(
               path,
-              _.identity,
-              _.identity,
+              identity,
+              identity,
               createMetadata(metadata),
               {},
             );
@@ -273,8 +269,8 @@ function createServer(config: GrpcGatewayServerConfig) {
           } else {
             const call = grpcClient.makeClientStreamRequest(
               path,
-              _.identity,
-              _.identity,
+              identity,
+              identity,
               createMetadata(metadata),
               {},
               (error: GrpcStatus, response: Uint8Array) => {
@@ -361,24 +357,6 @@ function createServer(config: GrpcGatewayServerConfig) {
       grpcClient.close();
     });
   });
-
-  setInterval(() => {
-    logger.info('Clearing dead connections...');
-    wss.clients.forEach(ws => {
-      const wsMeta = connectionsMap.get(ws);
-      if (!wsMeta || wsMeta.isAlive === false) {
-        logger.info(
-          'Terminate dead connection',
-          wsMeta ? wsMeta.id : 'undefined id',
-        );
-
-        return ws.terminate();
-      }
-
-      connectionsMap.set(ws, { isAlive: false, id: wsMeta.id });
-      ws.ping(noop);
-    });
-  }, heartbeatInterval);
 
   return wss;
 }

@@ -17,7 +17,7 @@ export interface RpcTransport extends WriteRpcTransport {
 }
 
 export interface RpcCall {
-  cancel(id: string): void;
+  cancel(): void;
   onMessage(handler: (Uint8Array) => void): () => void;
   onError(handler: (RpcError) => void): () => void;
   onEnd(handler: () => void): () => void;
