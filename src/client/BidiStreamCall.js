@@ -53,7 +53,6 @@ export class BidiStreamCall implements RpcCall {
         const res = Response.decode(message);
 
         if (res.id === this.id) {
-          console.log({ res });
           if (res.push) {
             this.emitter.emit('message', res.push.payload);
           } else if (res.end) {

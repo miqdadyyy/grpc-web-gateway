@@ -10,19 +10,10 @@ import grpc, {
   Client as GrpcClient,
   credentials as grpcCredentials,
 } from 'grpc';
-import * as protoLoader from '@grpc/proto-loader';
-import glob from 'glob';
-import {
-  flatten,
-  pipe,
-  map,
-  mergeAll,
-  toPairs,
-  identity,
-  noop,
-} from 'lodash/fp';
-import { logger } from './logger';
+import { identity, noop } from 'lodash/fp';
 
+import { logger } from './logger';
+import { parseProtoFiles } from '../utils/proto';
 import { Request, Response, type GrpcStatusCode } from '../shared/signaling';
 import createMetadata from './createMetadata';
 import { GrpcError } from './GrpcError';
@@ -33,13 +24,6 @@ type GrpcGatewayServerConfig = {
   server: HttpServer,
   heartbeatInterval?: number,
   protoFiles: Array<string>,
-};
-
-type GrpcMethodDefinition = {
-  path: string,
-  requestStream: boolean,
-  responseStream: boolean,
-  originalName: string,
 };
 
 const SECONDS = 1000;
@@ -61,17 +45,6 @@ const normalizeGrpcMetadata = (grpcMetadata: {
       return metadata;
     }
   }, {});
-
-const parseProtoFiles: (
-  Array<string>,
-) => Map<string, { [methodName: string]: GrpcMethodDefinition }> = pipe([
-  map(glob.sync),
-  flatten,
-  map(protoLoader.loadSync),
-  mergeAll,
-  toPairs,
-  entries => new Map(entries),
-]);
 
 function createServer(config: GrpcGatewayServerConfig) {
   const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
@@ -187,6 +160,7 @@ function createServer(config: GrpcGatewayServerConfig) {
     ws.on('message', message => {
       const request = Request.decode(((message: any): Uint8Array));
       const { id } = request;
+
       if (request.unary) {
         try {
           const { service, method, payload, metadata } = request.unary;

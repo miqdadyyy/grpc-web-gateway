@@ -23,7 +23,7 @@ class TestService {
 
   clientStream(call, callback) {
     call.on('data', message => {
-      console.log(`[grpc] clientStream: ${message}`);
+      console.log(`[grpc] clientStream: `, message);
     });
     call.on('end', () => {
       callback(null, { date: Date.now() });
@@ -48,7 +48,6 @@ class TestService {
     setTimeout(() => {
       clearInterval(iid);
       call.end();
-      console.log(`[grpc] bidiStream ended`);
     }, 1000 * 15);
   }
 }
