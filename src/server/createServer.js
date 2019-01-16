@@ -13,7 +13,7 @@ import { logger } from './logger';
 import { createCredentials, type CredentialsConfig } from './credentials';
 import { parseProtoFiles } from '../utils/proto';
 import { Request, Response, type GrpcStatusCode } from '../shared/signaling';
-import createMetadata from './createMetadata';
+import { createMetadata, normalizeGrpcMetadata } from './grpcMetadata';
 import { GrpcError } from './GrpcError';
 import { setupPingConnections } from './heartbeat';
 
@@ -33,17 +33,6 @@ type GrpcStatus = {
   details: string,
   metadata?: { [string]: mixed },
 };
-
-const normalizeGrpcMetadata = (grpcMetadata: {
-  [string]: mixed,
-}): { [string]: string | Buffer } =>
-  Object.entries(grpcMetadata).reduce((metadata, [key, value]) => {
-    try {
-      return { ...metadata, [key]: JSON.stringify(value) };
-    } catch (e) {
-      return metadata;
-    }
-  }, {});
 
 function createServer(config: GrpcGatewayServerConfig) {
   const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;

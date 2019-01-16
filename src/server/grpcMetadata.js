@@ -18,11 +18,23 @@ type GrpcMetadata = {
   remove(key: string): void,
 };
 
-function createMetadata(values: { [key: string]: string }): GrpcMetadata {
+export function createMetadata(values: {
+  [key: string]: string,
+}): GrpcMetadata {
   const metadata = new Metadata();
   _.forOwn(values, (value, key) => metadata.set(key, value));
 
   return metadata;
 }
 
-export default createMetadata;
+export function normalizeGrpcMetadata(grpcMetadata: {
+  [string]: mixed,
+}): { [string]: string | Buffer } {
+  return Object.entries(grpcMetadata).reduce((metadata, [key, value]) => {
+    try {
+      return { ...metadata, [key]: JSON.stringify(value) };
+    } catch (e) {
+      return metadata;
+    }
+  }, {});
+}
