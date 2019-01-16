@@ -6,13 +6,11 @@
 import type { Server as HttpServer } from 'http';
 import nanoid from 'nanoid';
 import { Server as WebSocketServer } from 'ws';
-import grpc, {
-  Client as GrpcClient,
-  credentials as grpcCredentials,
-} from 'grpc';
+import grpc, { Client as GrpcClient } from 'grpc';
 import { identity, noop } from 'lodash/fp';
 
 import { logger } from './logger';
+import { createCredentials, type CredentialsConfig } from './credentials';
 import { parseProtoFiles } from '../utils/proto';
 import { Request, Response, type GrpcStatusCode } from '../shared/signaling';
 import createMetadata from './createMetadata';
@@ -24,6 +22,7 @@ type GrpcGatewayServerConfig = {
   server: HttpServer,
   heartbeatInterval?: number,
   protoFiles: Array<string>,
+  credentials?: CredentialsConfig,
 };
 
 const SECONDS = 1000;
@@ -89,7 +88,7 @@ function createServer(config: GrpcGatewayServerConfig) {
     const calls = new Map();
     const grpcClient = new GrpcClient(
       config.api,
-      grpcCredentials.createInsecure(),
+      createCredentials(config.credentials),
     );
 
     const connectionLogger = logger.child({ connectionId });

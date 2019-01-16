@@ -21,6 +21,7 @@ type GrpcMetadata = {
 function createMetadata(values: { [key: string]: string }): GrpcMetadata {
   const metadata = new Metadata();
   _.forOwn(values, (value, key) => metadata.set(key, value));
+
   return metadata;
 }
 
