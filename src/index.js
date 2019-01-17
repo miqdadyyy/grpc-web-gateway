@@ -69,21 +69,17 @@ function createGrpcGateway(config) {
             const call = service[methodDefinition.originalName](metadata);
 
             let isAlive = true;
-            let cancelPing = () => {};
-            if (config.enablePingPong) {
-              cancelPing = createInterval(this.pingInterval || 15000, () => {
-                if (!isAlive) {
-                  handleError("Ping timeout exceeded");
-                  return;
-                }
-  
-                isAlive = false;
-                ping();
-              });
-            }
+            let cancelPing = createInterval(this.pingInterval || 15000, () => {
+              if (!isAlive) {
+                handleError("Ping timeout exceeded");
+                return;
+              }
 
-            const pingMsg = JSON.stringify({ ping: true });
-            const ping = () => ws.send(pingMsg, handleError);
+              isAlive = false;
+              ping();
+            });
+
+            const ping = () => ws.ping(null, false, handleError);
 
             const pongMsg = JSON.stringify({ pong: true });
             const pong = () => ws.send(pongMsg, handleError);
@@ -97,13 +93,13 @@ function createGrpcGateway(config) {
               }
             };
 
+            ws.on('pong', () => isAlive = true);
+
             ws.on('message', (json) => {
               try {
                 const message = JSON.parse(json);
                 if (message.ping) {
                   pong();
-                } else if (message.pong) {
-                  isAlive = true;
                 } else {
                   call.write(message);
                 }
