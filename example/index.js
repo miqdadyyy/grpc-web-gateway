@@ -10,9 +10,10 @@ const gateway = createGrpcGateway({
   api: {
     host: 'localhost:3000',
   },
+  enablePingPong: true,
   protoFiles: [path.join(__dirname, 'proto/api.proto')],
 });
 
 gateway.use(express.static(__dirname));
 
-gateway.listen(8080);
+gateway.listen(8080, '0.0.0.0');

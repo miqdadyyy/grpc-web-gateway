@@ -21,9 +21,39 @@
         'ws://localhost:8080/example.Example/BidiStream',
       );
 
-      ws.onconnect = () => ws.send(JSON.stringify({ date: 'lkjn' }));
+      let isAlive = true;
+      let interval = null;
+      const pingTimeout = 5000;
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ date: Date.now() }));
+        interval = setInterval(() => {
+          if (!isAlive) {
+            ws.close();
+            return;
+          }
+          isAlive = false;
+          ws.send(JSON.stringify({ ping: true }));
+        }, pingTimeout);
+      }
       ws.onerror = console.error.bind(console);
-      ws.onmessage = console.log.bind(console, 'echo stream message');
+      ws.onmessage = (msg) => {
+        try {
+          const message = JSON.parse(msg.data);
+          console.log('echo stream message: ', message);
+          if (message.ping) {
+            ws.send(JSON.stringify({ pong: true }));
+          } else if (message.pong) {
+            isAlive = true;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      ws.onclose = () => {
+        console.log("Connection closed");
+        clearInterval(interval);
+      }
     </script>
   </body>
 </html>

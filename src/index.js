@@ -48,11 +48,11 @@ function createGrpcGateway(config) {
       keepCase: false,
       includeDirs: config.protoInclude,
     });
-    const package = grpc.loadPackageDefinition(definition);
+    const pkg = grpc.loadPackageDefinition(definition);
 
     _.forOwn(definition, (serviceDefinition, serviceName) => {
       _.forOwn(serviceDefinition, (methodDefinition) => {
-        const Service = _.get(package, serviceName);
+        const Service = _.get(pkg, serviceName);
         const createService = () =>
           new Service(
             config.api.host,
@@ -68,8 +68,29 @@ function createGrpcGateway(config) {
             const metadata = createMetadata(req);
             const call = service[methodDefinition.originalName](metadata);
 
+            let isAlive = true;
+            let cancelPing = () => {};
+            if (config.enablePingPong) {
+              cancelPing = createInterval(this.pingInterval || 15000, () => {
+                if (!isAlive) {
+                  handleError("Ping timeout exceeded");
+                  return;
+                }
+  
+                isAlive = false;
+                ping();
+              });
+            }
+
+            const pingMsg = JSON.stringify({ ping: true });
+            const ping = () => ws.send(pingMsg, handleError);
+
+            const pongMsg = JSON.stringify({ pong: true });
+            const pong = () => ws.send(pongMsg, handleError);
+
             const handleError = (error) => {
               if (error) {
+                cancelPing();
                 call.end();
                 ws.close();
                 app.logger.error(error);
@@ -79,7 +100,13 @@ function createGrpcGateway(config) {
             ws.on('message', (json) => {
               try {
                 const message = JSON.parse(json);
-                call.write(message);
+                if (message.ping) {
+                  pong();
+                } else if (message.pong) {
+                  isAlive = true;
+                } else {
+                  call.write(message);
+                }
               } catch (error) {
                 handleError(error);
               }
@@ -87,6 +114,7 @@ function createGrpcGateway(config) {
 
             ws.on('close', () => {
               call.end();
+              cancelPing();
             });
 
             call.on('data', (message) => {
@@ -213,10 +241,10 @@ function createGrpcGateway(config) {
   });
 
   app.get('/info', jsonParser, (req, res) => {
-    const package = require('../package.json');
+    const pkg = require('../package.json');
     const data = {
-      name: package.name,
-      version: package.version,
+      name: pkg.name,
+      version: pkg.version,
     };
     res.json({ status: 'OK', data });
   });

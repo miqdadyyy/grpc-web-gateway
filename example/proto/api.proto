@@ -13,20 +13,20 @@ message Pong {
 service Example {
 	rpc Echo(Ping) returns (Pong) {
 		option (google.api.http) = {
-      post: "/v1/echo"
-      body: "*"
-    };
+			post: "/v1/echo"
+			body: "*"
+		};
 	}
 	rpc Stream(Ping) returns (stream Pong) {
 		option (google.api.http) = {
-      post: "/v1/stream"
-      body: "*"
-    };
+			post: "/v1/stream"
+			body: "*"
+		};
 	}
 	rpc BidiStream(stream Ping) returns (stream Pong) {
 		option (google.api.http) = {
-      post: "/v1/bidistream"
-      body: "*"
-    };
+			post: "/v1/bidistream"
+			body: "*"
+	    };
 	}
 }
