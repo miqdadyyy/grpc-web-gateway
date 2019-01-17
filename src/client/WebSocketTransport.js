@@ -18,6 +18,7 @@ type WebSocketTransportConfig = {
 
 const PING = Request.encode({ id: 'service', service: { ping: {} } }).finish();
 const PONG = Request.encode({ id: 'service', service: { pong: {} } }).finish();
+const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 
 class WebSocketTransport implements Transport {
   queue: Array<Uint8Array>;
@@ -28,7 +29,7 @@ class WebSocketTransport implements Transport {
   constructor(
     endpoint: string,
     { heartbeatInterval }: WebSocketTransportConfig = {
-      heartbeatInterval: 15000,
+      heartbeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
     },
   ) {
     this.queue = [];
@@ -108,6 +109,7 @@ class WebSocketTransport implements Transport {
 
   handleOpen() {
     this.isAlive = true;
+    this.socket.send(new Uint8Array([1, 0]));
     if (this.queue.length) {
       this.queue.forEach(message => this.send(message));
       this.queue = [];

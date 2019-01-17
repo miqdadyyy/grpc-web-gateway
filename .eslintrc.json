@@ -3,6 +3,7 @@
   "rules": {
     "consistent-return": "off",
     "no-shadow": "off",
-    "no-invalid-this": "off"
+    "no-invalid-this": "off",
+    "max-lines": "off"
   }
 }
