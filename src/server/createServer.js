@@ -148,7 +148,6 @@ function createServer(config: GrpcGatewayServerConfig) {
 
     ws.on('message', message => {
       const request = Request.decode(new Uint8Array((message: any)));
-
       const { id } = request;
 
       if (request.unary) {
@@ -313,6 +312,17 @@ function createServer(config: GrpcGatewayServerConfig) {
           calls.delete(id);
         } catch (error) {
           handleGrpcError(id, error);
+        }
+      } else if (request.service) {
+        if (request.service.ping) {
+          ws.send(
+            Request.encode({
+              id: 'service',
+              service: {
+                pong: {},
+              },
+            }).finish(),
+          );
         }
       }
     });

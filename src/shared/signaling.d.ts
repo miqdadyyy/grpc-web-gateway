@@ -20,100 +20,100 @@ export enum Status {
     DATA_LOSS = 16
 }
 
-/** Properties of a Service. */
-export interface IService {
+/** Properties of a ServiceRequestBody. */
+export interface IServiceRequestBody {
 
-    /** Service ping */
+    /** ServiceRequestBody ping */
     ping?: (IPing|null);
 
-    /** Service pong */
+    /** ServiceRequestBody pong */
     pong?: (IPong|null);
 }
 
-/** Represents a Service. */
-export class Service implements IService {
+/** Represents a ServiceRequestBody. */
+export class ServiceRequestBody implements IServiceRequestBody {
 
     /**
-     * Constructs a new Service.
+     * Constructs a new ServiceRequestBody.
      * @param [properties] Properties to set
      */
-    constructor(properties?: IService);
+    constructor(properties?: IServiceRequestBody);
 
-    /** Service ping. */
+    /** ServiceRequestBody ping. */
     public ping?: (IPing|null);
 
-    /** Service pong. */
+    /** ServiceRequestBody pong. */
     public pong?: (IPong|null);
 
-    /** Service body. */
+    /** ServiceRequestBody body. */
     public body?: ("ping"|"pong");
 
     /**
-     * Creates a new Service instance using the specified properties.
+     * Creates a new ServiceRequestBody instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns Service instance
+     * @returns ServiceRequestBody instance
      */
-    public static create(properties?: IService): Service;
+    public static create(properties?: IServiceRequestBody): ServiceRequestBody;
 
     /**
-     * Encodes the specified Service message. Does not implicitly {@link Service.verify|verify} messages.
-     * @param message Service message or plain object to encode
+     * Encodes the specified ServiceRequestBody message. Does not implicitly {@link ServiceRequestBody.verify|verify} messages.
+     * @param message ServiceRequestBody message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: IService, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IServiceRequestBody, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified Service message, length delimited. Does not implicitly {@link Service.verify|verify} messages.
-     * @param message Service message or plain object to encode
+     * Encodes the specified ServiceRequestBody message, length delimited. Does not implicitly {@link ServiceRequestBody.verify|verify} messages.
+     * @param message ServiceRequestBody message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: IService, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IServiceRequestBody, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a Service message from the specified reader or buffer.
+     * Decodes a ServiceRequestBody message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns Service
+     * @returns ServiceRequestBody
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): Service;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ServiceRequestBody;
 
     /**
-     * Decodes a Service message from the specified reader or buffer, length delimited.
+     * Decodes a ServiceRequestBody message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns Service
+     * @returns ServiceRequestBody
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): Service;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ServiceRequestBody;
 
     /**
-     * Verifies a Service message.
+     * Verifies a ServiceRequestBody message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a Service message from a plain object. Also converts values to their respective internal types.
+     * Creates a ServiceRequestBody message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns Service
+     * @returns ServiceRequestBody
      */
-    public static fromObject(object: { [k: string]: any }): Service;
+    public static fromObject(object: { [k: string]: any }): ServiceRequestBody;
 
     /**
-     * Creates a plain object from a Service message. Also converts values to other types if specified.
-     * @param message Service
+     * Creates a plain object from a ServiceRequestBody message. Also converts values to other types if specified.
+     * @param message ServiceRequestBody
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: Service, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: ServiceRequestBody, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this Service to JSON.
+     * Converts this ServiceRequestBody to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
@@ -307,6 +307,9 @@ export interface IRequest {
 
     /** Request cancel */
     cancel?: (ICancelRequestBody|null);
+
+    /** Request service */
+    service?: (IServiceRequestBody|null);
 }
 
 /** Represents a Request. */
@@ -336,8 +339,11 @@ export class Request implements IRequest {
     /** Request cancel. */
     public cancel?: (ICancelRequestBody|null);
 
+    /** Request service. */
+    public service?: (IServiceRequestBody|null);
+
     /** Request body. */
-    public body?: ("unary"|"stream"|"push"|"end"|"cancel");
+    public body?: ("unary"|"stream"|"push"|"end"|"cancel"|"service");
 
     /**
      * Creates a new Request instance using the specified properties.

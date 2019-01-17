@@ -20,7 +20,7 @@ enum Status {
   DATA_LOSS = 16;
 }
 
-message ServiceRequest {
+message ServiceRequestBody {
   oneof body {
     Ping ping = 1;
     Pong pong = 2;
@@ -38,6 +38,7 @@ message Request {
     PushRequestBody push = 4;
     EndRequestBody end = 5;
     CancelRequestBody cancel = 6;
+    ServiceRequestBody service = 7;
   }
 }
 
