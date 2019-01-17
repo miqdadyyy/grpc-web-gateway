@@ -20,6 +20,16 @@ enum Status {
   DATA_LOSS = 16;
 }
 
+message ServiceRequest {
+  oneof body {
+    Ping ping = 1;
+    Pong pong = 2;
+  }
+}
+
+message Ping {}
+message Pong {}
+
 message Request {
   string id = 1;
   oneof body {

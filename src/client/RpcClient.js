@@ -3,19 +3,10 @@
  * @flow
  */
 
-import Kefir, { constant, stream, type Observable } from 'kefir';
-import obs from 'kefir/src/observable';
-import type EventEmitter from 'events';
-
-import type {
-  RpcTransport,
-  RpcCall,
-  UnaryRequest,
-  StreamRequest,
-} from './types';
-import { type RpcDuplexTransport, type Transport } from './transport';
+import type { RpcCall, UnaryRequest, StreamRequest } from './types';
+import { type Transport } from './transport';
 import { createSequence, type Sequence } from '../utils/sequence';
-import { Request, Response } from '../shared/signaling';
+
 import UnaryCall from './UnaryCall';
 import ServerStreamCall from './ServerStreamCall';
 import BidiStreamCall from './BidiStreamCall';
@@ -97,8 +88,6 @@ class RpcClient {
 
     return call;
   }
-
-  stop() {}
 }
 
 export default RpcClient;

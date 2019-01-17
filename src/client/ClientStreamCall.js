@@ -6,7 +6,12 @@
 import Nanoevents from 'nanoevents';
 import unbindAll from 'nanoevents/unbind-all';
 
-import { type RpcCall, type PushRequest, type StreamRequest } from './types';
+import type {
+  RpcCall,
+  PushRequest,
+  StreamRequest,
+  RpcCallStatus,
+} from './types';
 import { Transport } from './transport';
 import { Request, Response } from '../shared/signaling';
 import { RpcError } from './RpcError';
@@ -20,7 +25,7 @@ export class ClientStreamCall implements RpcCall {
     end: void,
     cancel: void,
   }>;
-  status: 'open' | 'closed' | 'initial' | 'cancelled';
+  status: RpcCallStatus;
 
   constructor(id: string, transport: Transport) {
     this.id = id;
@@ -104,6 +109,7 @@ export class ClientStreamCall implements RpcCall {
         cancel: { reason },
       }).finish();
       this.transport.send(message);
+      this.emitter.emit('cancel');
     }
   }
 

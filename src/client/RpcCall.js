@@ -3,7 +3,7 @@
  * @flow
  */
 
-import { type RpcCall, type UnaryRequest } from './types';
+import { type UnaryRequest } from './types';
 import { type Response } from '../shared/signaling';
 
 interface RpcUnaryRequest {

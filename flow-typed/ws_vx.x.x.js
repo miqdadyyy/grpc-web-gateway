@@ -4,7 +4,12 @@ declare module 'ws' {
   import type { Server as HttpServer } from 'http';
   import type { Server as HttpsServer } from 'https';
 
-  declare type Data = string | Buffer | ArrayBuffer | Buffer[];
+  declare type Data =
+    | string
+    | Buffer
+    | ArrayBuffer
+    | Buffer[]
+    | typeof Uint8Array.prototype;
 
   /**
    * CertMeta represents the accepted types for certificate & key data.

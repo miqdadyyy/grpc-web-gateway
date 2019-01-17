@@ -16,7 +16,10 @@ export interface RpcTransport extends WriteRpcTransport {
   start(): Observable<Uint8Array, RpcError>;
 }
 
+export type RpcCallStatus = 'initial' | 'open' | 'closed' | 'cancelled';
+
 export interface RpcCall {
+  status: RpcCallStatus;
   cancel(): void;
   onMessage(handler: (Uint8Array) => void): () => void;
   onError(handler: (RpcError) => void): () => void;
@@ -42,12 +45,3 @@ export type StreamRequest = {
   method: string,
   metadata: Metadata,
 };
-
-// export class RpcError extends Error {
-//   code: string;
-
-//   constructor(code: string, message: string) {
-//     super(message);
-//     this.code = code;
-//   }
-// }

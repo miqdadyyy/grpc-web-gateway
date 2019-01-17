@@ -40,6 +40,13 @@ export type GrpcStatusCode =
   | 15
   | 16;
 
+type ServiceRequestPayload = { ping: {} } | { pong: {} };
+
+declare class ServiceRequest {
+  static encode(payload: ServiceRequestPayload): { finish(): Uint8Array };
+  static decode(bytes: Uint8Array): ServiceRequest;
+}
+
 declare class IRequest {
   id: string;
   unary?: UnaryRequestBody;
@@ -141,4 +148,5 @@ declare class Response extends IResponse {
 module.exports = {
   Request,
   Response,
+  ServiceRequest,
 };

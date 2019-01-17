@@ -66,6 +66,7 @@ export class ServerStreamCall implements RpcCall {
                 'error',
                 new RpcError(error.status.toString(), error.message),
               );
+              this.emitter.emit('end');
             }
           }
         }
@@ -84,6 +85,7 @@ export class ServerStreamCall implements RpcCall {
         cancel: { reason },
       }).finish();
       this.transport.send(message);
+      this.emitter.emit('cancel');
     }
   }
 

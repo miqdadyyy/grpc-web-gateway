@@ -7,7 +7,7 @@ import Nanoevents from 'nanoevents';
 import unbindAll from 'nanoevents/unbind-all';
 
 import { RpcError } from './RpcError';
-import { type RpcCall, type UnaryRequest } from './types';
+import type { RpcCall, UnaryRequest, RpcCallStatus } from './types';
 import { type Transport } from './transport';
 import { Request, Response } from '../shared/signaling';
 
@@ -15,7 +15,7 @@ class UnaryCall implements RpcCall {
   id: string;
   transport: Transport;
   emitter: Nanoevents<{ message: Uint8Array, error: RpcError, end: void }>;
-  status: 'initial' | 'open' | 'closed' | 'cancelled';
+  status: RpcCallStatus;
 
   constructor(id: string, transport: Transport) {
     this.transport = transport;
@@ -30,12 +30,13 @@ class UnaryCall implements RpcCall {
   }
 
   start({ service, method, payload, metadata }: UnaryRequest) {
-    if (status === 'initial') {
+    if (this.status === 'initial') {
       const id = this.id;
       const message = Request.encode({
         id,
         unary: { service, method, payload, metadata },
       }).finish();
+
       this.transport.send(message);
 
       const unbindTransport = this.transport.onMessage(message => {
@@ -90,8 +91,8 @@ class UnaryCall implements RpcCall {
     return this.emitter.on('end', handler);
   }
 
-  toPromise() {
-    return new Promise<Uint8Array, RpcError>((resolve, reject) => {
+  toPromise(): Promise<Uint8Array> {
+    return new Promise((resolve, reject) => {
       this.emitter.on('message', resolve);
       this.emitter.on('error', reject);
     });

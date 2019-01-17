@@ -147,11 +147,8 @@ function createServer(config: GrpcGatewayServerConfig) {
     };
 
     ws.on('message', message => {
-      if (!(message instanceof ArrayBuffer)) {
-        return;
-      }
+      const request = Request.decode(new Uint8Array((message: any)));
 
-      const request = Request.decode(new Uint8Array(message));
       const { id } = request;
 
       if (request.unary) {
@@ -167,6 +164,8 @@ function createServer(config: GrpcGatewayServerConfig) {
           }
 
           const path = methodDefinition.path;
+
+          connectionLogger.info('Unary request', methodDefinition);
 
           if (methodDefinition.responseStream) {
             const call = grpcClient.makeServerStreamRequest(

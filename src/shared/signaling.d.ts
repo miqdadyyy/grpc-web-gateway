@@ -20,6 +20,273 @@ export enum Status {
     DATA_LOSS = 16
 }
 
+/** Properties of a Service. */
+export interface IService {
+
+    /** Service ping */
+    ping?: (IPing|null);
+
+    /** Service pong */
+    pong?: (IPong|null);
+}
+
+/** Represents a Service. */
+export class Service implements IService {
+
+    /**
+     * Constructs a new Service.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IService);
+
+    /** Service ping. */
+    public ping?: (IPing|null);
+
+    /** Service pong. */
+    public pong?: (IPong|null);
+
+    /** Service body. */
+    public body?: ("ping"|"pong");
+
+    /**
+     * Creates a new Service instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns Service instance
+     */
+    public static create(properties?: IService): Service;
+
+    /**
+     * Encodes the specified Service message. Does not implicitly {@link Service.verify|verify} messages.
+     * @param message Service message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IService, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified Service message, length delimited. Does not implicitly {@link Service.verify|verify} messages.
+     * @param message Service message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IService, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a Service message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns Service
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): Service;
+
+    /**
+     * Decodes a Service message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns Service
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): Service;
+
+    /**
+     * Verifies a Service message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a Service message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns Service
+     */
+    public static fromObject(object: { [k: string]: any }): Service;
+
+    /**
+     * Creates a plain object from a Service message. Also converts values to other types if specified.
+     * @param message Service
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: Service, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this Service to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+}
+
+/** Properties of a Ping. */
+export interface IPing {
+}
+
+/** Represents a Ping. */
+export class Ping implements IPing {
+
+    /**
+     * Constructs a new Ping.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IPing);
+
+    /**
+     * Creates a new Ping instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns Ping instance
+     */
+    public static create(properties?: IPing): Ping;
+
+    /**
+     * Encodes the specified Ping message. Does not implicitly {@link Ping.verify|verify} messages.
+     * @param message Ping message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IPing, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified Ping message, length delimited. Does not implicitly {@link Ping.verify|verify} messages.
+     * @param message Ping message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IPing, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a Ping message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns Ping
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): Ping;
+
+    /**
+     * Decodes a Ping message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns Ping
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): Ping;
+
+    /**
+     * Verifies a Ping message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a Ping message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns Ping
+     */
+    public static fromObject(object: { [k: string]: any }): Ping;
+
+    /**
+     * Creates a plain object from a Ping message. Also converts values to other types if specified.
+     * @param message Ping
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: Ping, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this Ping to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+}
+
+/** Properties of a Pong. */
+export interface IPong {
+}
+
+/** Represents a Pong. */
+export class Pong implements IPong {
+
+    /**
+     * Constructs a new Pong.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IPong);
+
+    /**
+     * Creates a new Pong instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns Pong instance
+     */
+    public static create(properties?: IPong): Pong;
+
+    /**
+     * Encodes the specified Pong message. Does not implicitly {@link Pong.verify|verify} messages.
+     * @param message Pong message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IPong, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified Pong message, length delimited. Does not implicitly {@link Pong.verify|verify} messages.
+     * @param message Pong message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IPong, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a Pong message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns Pong
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): Pong;
+
+    /**
+     * Decodes a Pong message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns Pong
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): Pong;
+
+    /**
+     * Verifies a Pong message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a Pong message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns Pong
+     */
+    public static fromObject(object: { [k: string]: any }): Pong;
+
+    /**
+     * Creates a plain object from a Pong message. Also converts values to other types if specified.
+     * @param message Pong
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: Pong, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this Pong to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+}
+
 /** Properties of a Request. */
 export interface IRequest {
 
@@ -535,6 +802,9 @@ export class EndRequestBody implements IEndRequestBody {
 
 /** Properties of a CancelRequestBody. */
 export interface ICancelRequestBody {
+
+    /** CancelRequestBody reason */
+    reason?: (string|null);
 }
 
 /** Represents a CancelRequestBody. */
@@ -545,6 +815,9 @@ export class CancelRequestBody implements ICancelRequestBody {
      * @param [properties] Properties to set
      */
     constructor(properties?: ICancelRequestBody);
+
+    /** CancelRequestBody reason. */
+    public reason: string;
 
     /**
      * Creates a new CancelRequestBody instance using the specified properties.
