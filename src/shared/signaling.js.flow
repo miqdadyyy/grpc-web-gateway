@@ -62,18 +62,18 @@ export type UnaryRequestBody = {
   service: string,
   method: string,
   payload: Uint8Array,
-  metadata: { [key: string]: string },
+  metadata?: { [key: string]: string },
 };
 
 export type PushRequestBody = {
   payload: Uint8Array,
-  metadata: { [key: string]: string },
+  metadata?: { [key: string]: string },
 };
 
 export type StreamRequestBody = {
   service: string,
   method: string,
-  metadata: { [key: string]: string },
+  metadata?: { [key: string]: string },
 };
 
 export type EndRequestBody = {};

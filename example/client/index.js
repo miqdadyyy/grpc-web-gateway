@@ -1,75 +1,73 @@
+// @flow
+
 import { RpcClient, WebSocketTransport } from '../../src/client';
+import { RxRpcClient } from '../../src/rx-client/RpcClient';
 import { Ping, Pong } from './api.gen';
 
 const client = new RpcClient(new WebSocketTransport('ws://localhost:8080'));
+const rxClient = new RxRpcClient(client);
 
-client
+rxClient
   .makeUnaryRequest({
     service: 'Test',
     method: 'Unary',
     payload: Ping.encode({ date: Date.now() }).finish(),
   })
+  .start()
   .toPromise()
   .then(Pong.decode)
   .then(console.log)
   .catch(console.error);
 
-client
+rxClient
   .makeUnaryRequest({
     service: 'Test',
     method: 'Unary',
     payload: Ping.encode({ date: Date.now() }).finish(),
   })
+  .start()
   .toPromise()
   .then(Pong.decode)
   .then(console.log)
   .catch(console.error);
 
-const serverStreamRequest = client.makeServerStreamRequest({
+const serverStreamRequest = rxClient.makeServerStreamRequest({
   service: 'Test',
   method: 'ServerStream',
   payload: Ping.encode({ date: Date.now() }).finish(),
 });
 
-serverStreamRequest.onMessage(response => {
-  const message = Pong.decode(response);
-  console.log('Server stream', message);
-});
-
-serverStreamRequest.onError(error => {
-  console.error('Server stream', error);
-});
-
-serverStreamRequest.onEnd(() => {
-  console.log('ServerStream ended');
-});
-
-serverStreamRequest.onCancel(() => {
-  console.log('ServerStream cancelled');
+serverStreamRequest.start().subscribe({
+  next: response => {
+    const message = Pong.decode(response);
+    console.log('Server stream', message);
+  },
+  error: error => {
+    console.error('Server stream', error);
+  },
+  complete: () => {
+    console.log('ServerStream ended');
+  },
 });
 
 // setTimeout(() => serverStreamRequest.cancel('SS reason'), 3000);
 
-const bidiStreamRequest = client.makeBidiStreamRequest({
+const bidiStreamRequest = rxClient.makeBidiStreamRequest({
   service: 'Test',
   method: 'BidiStream',
 });
 
-bidiStreamRequest.onMessage(response => {
-  const message = Pong.decode(response);
-  console.log('Bidi stream', message);
-});
-
-bidiStreamRequest.onError(error => {
-  console.error('Bidi stream', error);
-});
-
-bidiStreamRequest.onEnd(() => {
-  console.log('Bidi Stream ended');
-});
-
-bidiStreamRequest.onCancel(() => {
-  console.log('BidiStream cancelled');
+bidiStreamRequest.start().subscribe({
+  next: response => {
+    const message = Pong.decode(response);
+    console.log('Bidi stream', message);
+  },
+  error: error => {
+    console.error('Bidi stream', error);
+  },
+  complete: () => {
+    console.log('Bidi Stream ended');
+  },
 });
 
 // setTimeout(() => bidiStreamRequest.cancel('BS reason'), 4000);
@@ -87,26 +85,22 @@ setTimeout(() => {
   bidiStreamRequest.end();
 }, 11000);
 
-const clientStreamRequest = client.makeClientStreamRequest({
+const clientStreamRequest = rxClient.makeClientStreamRequest({
   service: 'Test',
   method: 'ClientStream',
 });
 
-clientStreamRequest.onMessage(response => {
-  const message = Pong.decode(response);
-  console.log('Client stream', message);
-});
-
-clientStreamRequest.onError(error => {
-  console.error('Client stream', error);
-});
-
-clientStreamRequest.onEnd(() => {
-  console.log('Client Stream ended');
-});
-
-clientStreamRequest.onCancel(() => {
-  console.log('ClientStream cancelled');
+clientStreamRequest.start().subscribe({
+  next: response => {
+    const message = Pong.decode(response);
+    console.log('Client stream', message);
+  },
+  error: error => {
+    console.error('Client stream', error);
+  },
+  complete: () => {
+    console.log('Client Stream ended');
+  },
 });
 
 setInterval(() => {
