@@ -15,7 +15,7 @@ import type {
 } from '../client/types';
 
 type RxUnaryCall = {
-  start(): Observable<Uint8Array>,
+  execute(): Observable<Uint8Array>,
   cancel(): void,
 };
 
@@ -28,7 +28,7 @@ const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
   let call = null;
 
   return {
-    start: () => {
+    execute: () => {
       return Observable.create(observer => {
         call = makeCall();
 
@@ -49,7 +49,7 @@ const observableFromClientStreamCall = (
   const call = makeCall();
 
   return {
-    start: () => {
+    execute: () => {
       return Observable.create(observer => {
         call.onMessage(message => observer.next(message));
 

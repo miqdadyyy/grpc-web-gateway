@@ -13,7 +13,7 @@ rxClient
     method: 'Unary',
     payload: Ping.encode({ date: Date.now() }).finish(),
   })
-  .start()
+  .execute()
   .toPromise()
   .then(Pong.decode)
   .then(console.log)
@@ -25,7 +25,7 @@ rxClient
     method: 'Unary',
     payload: Ping.encode({ date: Date.now() }).finish(),
   })
-  .start()
+  .execute()
   .toPromise()
   .then(Pong.decode)
   .then(console.log)
@@ -37,7 +37,7 @@ const serverStreamRequest = rxClient.makeServerStreamRequest({
   payload: Ping.encode({ date: Date.now() }).finish(),
 });
 
-serverStreamRequest.start().subscribe({
+serverStreamRequest.execute().subscribe({
   next: response => {
     const message = Pong.decode(response);
     console.log('Server stream', message);
@@ -57,7 +57,7 @@ const bidiStreamRequest = rxClient.makeBidiStreamRequest({
   method: 'BidiStream',
 });
 
-bidiStreamRequest.start().subscribe({
+bidiStreamRequest.execute().subscribe({
   next: response => {
     const message = Pong.decode(response);
     console.log('Bidi stream', message);
@@ -90,7 +90,7 @@ const clientStreamRequest = rxClient.makeClientStreamRequest({
   method: 'ClientStream',
 });
 
-clientStreamRequest.start().subscribe({
+clientStreamRequest.execute().subscribe({
   next: response => {
     const message = Pong.decode(response);
     console.log('Client stream', message);
