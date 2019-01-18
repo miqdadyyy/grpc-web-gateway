@@ -168,7 +168,7 @@ function createServer(config: GrpcGatewayServerConfig) {
             identity,
             identity,
             payload,
-            createMetadata(metadata),
+            createMetadata(metadata || {}),
             {},
           );
 
@@ -180,7 +180,7 @@ function createServer(config: GrpcGatewayServerConfig) {
             identity,
             identity,
             payload,
-            createMetadata(metadata),
+            createMetadata(metadata || {}),
             {},
             (error: GrpcStatus, response: Uint8Array) => {
               if (error) {
@@ -223,7 +223,7 @@ function createServer(config: GrpcGatewayServerConfig) {
             path,
             identity,
             identity,
-            createMetadata(metadata),
+            createMetadata(metadata || {}),
             {},
           );
           calls.set(id, call);
@@ -234,7 +234,7 @@ function createServer(config: GrpcGatewayServerConfig) {
             path,
             identity,
             identity,
-            createMetadata(metadata),
+            createMetadata(metadata || {}),
             {},
             (error: GrpcStatus, response: Uint8Array) => {
               if (error) {

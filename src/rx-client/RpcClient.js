@@ -60,7 +60,7 @@ const observableFromClientStreamCall = (
     },
     send: request => call.send(request),
     end: () => call.end(),
-    cancel: () => (call ? call.cancel() : undefined),
+    cancel: () => call.cancel(),
   };
 };
 

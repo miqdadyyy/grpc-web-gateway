@@ -57,6 +57,10 @@ const bidiStreamRequest = rxClient.makeBidiStreamRequest({
   method: 'BidiStream',
 });
 
+bidiStreamRequest.send({
+  payload: Ping.encode({ date: Date.now() }).finish(),
+});
+
 bidiStreamRequest.execute().subscribe({
   next: response => {
     const message = Pong.decode(response);
