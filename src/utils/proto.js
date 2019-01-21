@@ -17,16 +17,18 @@ export const parseProtoFiles: (
 ) => Map<string, { [methodName: string]: GrpcMethodDefinition }> = pipe([
   map(glob.sync),
   flatten,
-  map(files =>
-    protoLoader.loadSync(files, {
+  map(files => {
+    const definitions = protoLoader.loadSync(files, {
       longs: String,
       enums: String,
       bytes: String,
       arrays: true,
       defaults: false,
       keepCase: false,
-    }),
-  ),
+    });
+
+    return definitions;
+  }),
   mergeAll,
   toPairs,
   entries => new Map(entries),

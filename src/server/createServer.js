@@ -45,6 +45,8 @@ export function createServer(config: GrpcGatewayServerConfig) {
   const getMethodDefinition = (service, method) => {
     const serviceDefinition = services.get(service);
     if (!serviceDefinition) {
+      console.error('No such service ', service, ' in ', services);
+
       throw GrpcError.fromStatusName(
         'NOT_FOUND',
         `There is no service '${service}'`,
@@ -53,6 +55,13 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
     const methodDefinition = serviceDefinition[method];
     if (!methodDefinition) {
+      console.error(
+        'No such method ',
+        `${service}/${method}`,
+        ' in ',
+        services,
+      );
+
       throw GrpcError.fromStatusName(
         'NOT_FOUND',
         `There is no such method '${method}' in service '${service}'`,
