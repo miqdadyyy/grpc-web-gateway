@@ -7,6 +7,7 @@ import nanoid from 'nanoid';
 import { Server as WebSocketServer } from 'ws';
 import grpc, { Client as GrpcClient } from 'grpc';
 import { identity, noop } from 'lodash/fp';
+import pkg from '../../package';
 
 import { logger } from './logger';
 import { createCredentials, type CredentialsConfig } from './credentials';
@@ -34,6 +35,8 @@ type GrpcStatus = {
 };
 
 export function createServer(config: GrpcGatewayServerConfig) {
+  logger.info('Starting gateway version: ', pkg.version);
+
   const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
   const services = parseProtoFiles(config.protoFiles);
   const wss = new WebSocketServer({
@@ -45,7 +48,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
   const getMethodDefinition = (service, method) => {
     const serviceDefinition = services.get(service);
     if (!serviceDefinition) {
-      console.error('No such service ', service, ' in ', services);
+      logger.error('No such service ', service, ' in ', services);
 
       throw GrpcError.fromStatusName(
         'NOT_FOUND',
@@ -55,12 +58,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
     const methodDefinition = serviceDefinition[method];
     if (!methodDefinition) {
-      console.error(
-        'No such method ',
-        `${service}/${method}`,
-        ' in ',
-        services,
-      );
+      logger.error('No such method ', `${service}/${method}`, ' in ', services);
 
       throw GrpcError.fromStatusName(
         'NOT_FOUND',
