@@ -13,7 +13,7 @@
     "example": "webpack --watch --config example/webpack.config.js",
     "fmt": "prettier --write \"**/*.{js,json,md,js.flow}\"",
     "flow": "flow",
-    "build:server": "parcel build src/server/index.js --target=node --detailed-report"
+    "build:server": "parcel build src/server/index.js --target=node --detailed-report --no-minify"
   },
   "husky": {
     "hooks": {
