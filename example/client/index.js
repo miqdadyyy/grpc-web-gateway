@@ -4,15 +4,13 @@ import { RpcClient, WebSocketTransport } from '../../src/client';
 import { RxRpcClient } from '../../src/rx-client/RpcClient';
 import { Ping, Pong } from './api.gen';
 
-const client = new RpcClient(
-  new WebSocketTransport('wss://grpc-test.transmit.im:10443'),
-);
+const client = new RpcClient(new WebSocketTransport('ws://localhost:8080'));
 const rxClient = new RxRpcClient(client);
 
 rxClient
   .makeUnaryRequest({
     service: 'Test',
-    method: 'Unary',
+    method: 'Unary2',
     payload: Ping.encode({ date: Date.now() }).finish(),
   })
   .execute()

@@ -60,9 +60,9 @@ function startGrpcServer({ protoRoot, listen }) {
     const definition = protoLoader.loadSync(protoRoot, { keepCase: false });
     const descriptor = grpc.loadPackageDefinition(definition);
 
-    // Object.keys(definition).forEach(serviceName => {
-    //   server.addService(descriptor[serviceName].service, new TestService());
-    // });
+    Object.keys(definition).forEach(serviceName => {
+      server.addService(descriptor[serviceName].service, new TestService());
+    });
   });
 
   server.bind(listen, grpc.ServerCredentials.createInsecure());

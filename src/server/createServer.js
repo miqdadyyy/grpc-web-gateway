@@ -39,6 +39,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
   const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
   const services = parseProtoFiles(config.protoFiles);
+  console.log({ services });
   const wss = new WebSocketServer({
     server: config.server,
   });
@@ -48,7 +49,13 @@ export function createServer(config: GrpcGatewayServerConfig) {
   const getMethodDefinition = (service, method) => {
     const serviceDefinition = services.get(service);
     if (!serviceDefinition) {
-      logger.error('No such service ', service, ' in ', services);
+      logger.error(
+        'No such service ',
+        service,
+        ' in ',
+        Array.from(services.keys()),
+      );
+      console.log(services);
 
       throw GrpcError.fromStatusName(
         'NOT_FOUND',
@@ -58,7 +65,13 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
     const methodDefinition = serviceDefinition[method];
     if (!methodDefinition) {
-      logger.error('No such method ', `${service}/${method}`, ' in ', services);
+      logger.error(
+        'No such method ',
+        `${service}/${method}`,
+        ' in ',
+        Array.from(services.keys()),
+      );
+      console.log(services);
 
       throw GrpcError.fromStatusName(
         'NOT_FOUND',
@@ -262,6 +275,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
           });
         }
       } catch (error) {
+        console.log({ error });
         handleGrpcError(id, error);
       }
     };
