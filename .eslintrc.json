@@ -4,6 +4,7 @@
     "consistent-return": "off",
     "no-shadow": "off",
     "no-invalid-this": "off",
-    "max-lines": "off"
+    "max-lines": "off",
+    "multiline-comment-style": "off"
   }
 }

@@ -1,7 +1,5 @@
-/*
- * Copyright 2019 dialog LLC <info@dlg.im>
- * @flow
- */
+// @flow
+// Copyright 2018 dialog LLC <info@dlg.im>
 
 const { credentials } = require('grpc');
 

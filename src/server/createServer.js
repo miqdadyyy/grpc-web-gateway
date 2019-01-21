@@ -1,7 +1,5 @@
-/*
- * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow
- */
+// @flow
+// Copyright 2018 dialog LLC <info@dlg.im>
 
 import type { Server as HttpServer } from 'http';
 import type { Server as HttpsServer } from 'https';
@@ -35,9 +33,11 @@ type GrpcStatus = {
   metadata?: { [string]: mixed },
 };
 
-function createServer(config: GrpcGatewayServerConfig) {
+export function createServer(config: GrpcGatewayServerConfig) {
   const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
+  console.log('Proto files', config.protoFiles);
   const services = parseProtoFiles(config.protoFiles);
+  console.log({ services });
   const wss = new WebSocketServer({
     server: config.server,
   });

@@ -1,7 +1,5 @@
-/*
- * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow
- */
+// @flow
+// Copyright 2018 dialog LLC <info@dlg.im>
 
 import { flatten, pipe, map, mergeAll, toPairs } from 'lodash/fp';
 import * as protoLoader from '@grpc/proto-loader';

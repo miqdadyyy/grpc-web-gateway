@@ -1,7 +1,5 @@
-/*
- * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow
- */
+// @flow
+// Copyright 2018 dialog LLC <info@dlg.im>
 
 import { noop } from 'lodash/fp';
 import nanoid from 'nanoid';

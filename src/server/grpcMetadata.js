@@ -1,7 +1,5 @@
-/*
- * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow
- */
+// @flow
+// Copyright 2018 dialog LLC <info@dlg.im>
 
 import _ from 'lodash';
 import { Metadata } from 'grpc';

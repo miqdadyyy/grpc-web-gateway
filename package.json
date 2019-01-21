@@ -2,7 +2,7 @@
   "name": "@dlghq/grpc-web-gateway",
   "version": "1.0.0-beta.0",
   "description": "gRPC to json gateway",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "exit 0",
     "generate-example": "pbjs -t static-module --es6 -o example/client/api.gen.js example/proto/*.proto",
@@ -12,7 +12,8 @@
     "preexample": "npm run generate-example",
     "example": "webpack --watch --config example/webpack.config.js",
     "fmt": "prettier --write \"**/*.{js,json,md,js.flow}\"",
-    "flow": "flow"
+    "flow": "flow",
+    "build:server": "parcel build src/server/index.js --target=node --detailed-report"
   },
   "husky": {
     "hooks": {
@@ -51,10 +52,11 @@
     "ws": "6.1.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.2.2",
+    "@babel/plugin-proposal-class-properties": "^7.2.3",
     "@babel/polyfill": "7.2.5",
     "@dlghq/babel-preset-dialog": "4.3.1",
     "@dlghq/eslint-config-dialog": "3.4.0",
-    "babel-core": "6.26.3",
     "babel-loader": "8.0.4",
     "eslint": "^5.12.0",
     "eslint-config-prettier": "3.4.0",
@@ -65,6 +67,7 @@
     "nodemon": "1.18.9",
     "nodemon-webpack-plugin": "4.0.6",
     "npm-run-all": "4.1.5",
+    "parcel-bundler": "^1.11.0",
     "prettier": "1.15.3",
     "webpack": "4.27.1",
     "webpack-cli": "3.1.2",

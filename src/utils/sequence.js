@@ -1,7 +1,5 @@
-/*
- * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow
- */
+// @flow
+// Copyright 2018 dialog LLC <info@dlg.im>
 
 import nanoid from 'nanoid';
 
@@ -30,9 +28,9 @@ export function createSequence(
         return deletedIds.shift();
       } else if (id < maxId) {
         return (++id).toString();
-      } else {
-        return fallback();
       }
+
+      return fallback();
     },
   };
 }
