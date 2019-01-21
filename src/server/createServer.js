@@ -35,9 +35,7 @@ type GrpcStatus = {
 
 export function createServer(config: GrpcGatewayServerConfig) {
   const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
-  console.log('Proto files', config.protoFiles);
   const services = parseProtoFiles(config.protoFiles);
-  console.log({ services });
   const wss = new WebSocketServer({
     server: config.server,
   });
@@ -79,6 +77,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
     const grpcClient = new GrpcClient(
       config.api,
       createCredentials(config.credentials),
+      {},
     );
 
     const connectionLogger = logger.child({ connectionId });
