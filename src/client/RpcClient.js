@@ -3,9 +3,12 @@
  * @flow
  */
 
+import Nanoevents from 'nanoevents';
+
 import type { RpcCall, UnaryRequest, StreamRequest } from './types';
 import { type Transport } from './transport';
 import { createSequence, type Sequence } from '../utils/sequence';
+import { RpcError } from './RpcError';
 
 import UnaryCall from './UnaryCall';
 import ServerStreamCall from './ServerStreamCall';
@@ -16,14 +19,16 @@ class RpcClient {
   transport: Transport;
   calls: Map<string, RpcCall>;
   seq: Sequence;
+  emitter: Nanoevents<{ error: RpcError }>;
 
   constructor(transport: Transport) {
     this.transport = transport;
     this.calls = new Map();
     this.seq = createSequence();
+    this.emitter = new Nanoevents();
 
     this.transport.onError(error => {
-      console.error(error);
+      this.emitter.emit('error', error);
     });
   }
 
@@ -87,6 +92,10 @@ class RpcClient {
     });
 
     return call;
+  }
+
+  onError(errorHandler: RpcError => void) {
+    this.emitter.on('error', errorHandler);
   }
 }
 

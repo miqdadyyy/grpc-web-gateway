@@ -30,9 +30,4 @@ export interface TransportWritable {
   send(message: Uint8Array): void;
 }
 
-type TransportMiddleware = (
-  message: Uint8Array,
-  next: (Uint8Array) => void,
-) => mixed;
-
 export interface Transport extends TransportReadable, TransportWritable {}

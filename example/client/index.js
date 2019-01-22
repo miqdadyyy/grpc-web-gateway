@@ -10,7 +10,7 @@ const rxClient = new RxRpcClient(client);
 rxClient
   .makeUnaryRequest({
     service: 'Test',
-    method: 'Unary2',
+    method: 'Unary',
     payload: Ping.encode({ date: Date.now() }).finish(),
   })
   .execute()

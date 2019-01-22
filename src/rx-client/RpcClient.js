@@ -6,6 +6,7 @@
 import { Observable } from 'rxjs';
 
 import { RpcClient } from '../client';
+import { RpcError } from '../client/RpcError';
 import type {
   RpcCall,
   ClientStreamCall,
@@ -93,5 +94,9 @@ export class RxRpcClient {
     return observableFromClientStreamCall(() =>
       this.rpcClient.makeBidiStreamRequest(request),
     );
+  }
+
+  onError(handler: RpcError => void) {
+    this.rpcClient.onError(handler);
   }
 }
