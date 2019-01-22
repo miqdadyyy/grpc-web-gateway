@@ -179,9 +179,8 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
         const path = methodDefinition.path;
 
-        connectionLogger.info('Unary request', methodDefinition);
-
         if (methodDefinition.responseStream) {
+          connectionLogger.info('Server stream request', methodDefinition);
           const call = grpcClient.makeServerStreamRequest(
             path,
             identity,
@@ -194,6 +193,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
           handleServerStream(id, call);
           calls.set(id, call);
         } else {
+          connectionLogger.info('Unary request', methodDefinition);
           const call = grpcClient.makeUnaryRequest(
             path,
             identity,
@@ -238,6 +238,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
         const path = methodDefinition.path;
 
         if (methodDefinition.responseStream) {
+          connectionLogger.info('Bidi stream request', methodDefinition);
           const call = grpcClient.makeBidiStreamRequest(
             path,
             identity,
@@ -249,6 +250,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
           handleServerStream(id, call);
         } else {
+          connectionLogger.info('Client stream request', methodDefinition);
           const call = grpcClient.makeClientStreamRequest(
             path,
             identity,
