@@ -88,6 +88,7 @@ class WebSocketTransport implements Transport {
         );
 
         this.socket.close();
+        this.emitter.emit('end');
 
         return;
       }
