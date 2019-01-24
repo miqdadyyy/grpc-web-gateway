@@ -13,6 +13,8 @@ type RetryWsTransportConfig = {
   debug: boolean,
 };
 
+const LOG_PREFIX = 'RetryTransport';
+
 class RetryWsTransport implements Transport {
   origin: WebSocketTransport;
   factory: WsTransportFactory;
@@ -27,14 +29,18 @@ class RetryWsTransport implements Transport {
   ) {
     this.factory = factory;
     this.nextPeriod = 0;
-    this.setupWsTransport();
+
     if (debug) {
-      this.logger = console;
+      this.logger = {
+        log: (...args) => console.log(`[${LOG_PREFIX}]`, ...args),
+      };
     } else {
       this.logger = {
         log: () => undefined,
       };
     }
+
+    this.setupWsTransport();
   }
 
   setupWsTransport() {
