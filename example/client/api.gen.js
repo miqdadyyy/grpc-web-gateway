@@ -14,7 +14,7 @@ export const Ping = ($root.Ping = (() => {
    * Properties of a Ping.
    * @exports IPing
    * @interface IPing
-   * @property {number|null} [date] Ping date
+   * @property {number|Long|null} [date] Ping date
    */
 
   /**
@@ -33,11 +33,11 @@ export const Ping = ($root.Ping = (() => {
 
   /**
    * Ping date.
-   * @member {number} date
+   * @member {number|Long} date
    * @memberof Ping
    * @instance
    */
-  Ping.prototype.date = 0;
+  Ping.prototype.date = $util.Long ? $util.Long.fromBits(0, 0, false) : 0;
 
   /**
    * Creates a new Ping instance using the specified properties.
@@ -63,7 +63,7 @@ export const Ping = ($root.Ping = (() => {
   Ping.encode = function encode(message, writer) {
     if (!writer) writer = $Writer.create();
     if (message.date != null && message.hasOwnProperty('date'))
-      writer.uint32(/* id 1, wireType 0 =*/ 8).int32(message.date);
+      writer.uint32(/* id 1, wireType 0 =*/ 8).int64(message.date);
     return writer;
   };
 
@@ -99,7 +99,7 @@ export const Ping = ($root.Ping = (() => {
       let tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.date = reader.int32();
+          message.date = reader.int64();
           break;
         default:
           reader.skipType(tag & 7);
@@ -136,7 +136,15 @@ export const Ping = ($root.Ping = (() => {
     if (typeof message !== 'object' || message === null)
       return 'object expected';
     if (message.date != null && message.hasOwnProperty('date'))
-      if (!$util.isInteger(message.date)) return 'date: integer expected';
+      if (
+        !$util.isInteger(message.date) &&
+        !(
+          message.date &&
+          $util.isInteger(message.date.low) &&
+          $util.isInteger(message.date.high)
+        )
+      )
+        return 'date: integer|Long expected';
     return null;
   };
 
@@ -151,7 +159,17 @@ export const Ping = ($root.Ping = (() => {
   Ping.fromObject = function fromObject(object) {
     if (object instanceof $root.Ping) return object;
     let message = new $root.Ping();
-    if (object.date != null) message.date = object.date | 0;
+    if (object.date != null)
+      if ($util.Long)
+        (message.date = $util.Long.fromValue(object.date)).unsigned = false;
+      else if (typeof object.date === 'string')
+        message.date = parseInt(object.date, 10);
+      else if (typeof object.date === 'number') message.date = object.date;
+      else if (typeof object.date === 'object')
+        message.date = new $util.LongBits(
+          object.date.low >>> 0,
+          object.date.high >>> 0,
+        ).toNumber();
     return message;
   };
 
@@ -167,9 +185,30 @@ export const Ping = ($root.Ping = (() => {
   Ping.toObject = function toObject(message, options) {
     if (!options) options = {};
     let object = {};
-    if (options.defaults) object.date = 0;
+    if (options.defaults)
+      if ($util.Long) {
+        let long = new $util.Long(0, 0, false);
+        object.date =
+          options.longs === String
+            ? long.toString()
+            : options.longs === Number
+            ? long.toNumber()
+            : long;
+      } else object.date = options.longs === String ? '0' : 0;
     if (message.date != null && message.hasOwnProperty('date'))
-      object.date = message.date;
+      if (typeof message.date === 'number')
+        object.date =
+          options.longs === String ? String(message.date) : message.date;
+      else
+        object.date =
+          options.longs === String
+            ? $util.Long.prototype.toString.call(message.date)
+            : options.longs === Number
+            ? new $util.LongBits(
+                message.date.low >>> 0,
+                message.date.high >>> 0,
+              ).toNumber()
+            : message.date;
     return object;
   };
 
@@ -192,7 +231,7 @@ export const Pong = ($root.Pong = (() => {
    * Properties of a Pong.
    * @exports IPong
    * @interface IPong
-   * @property {number|null} [date] Pong date
+   * @property {number|Long|null} [date] Pong date
    */
 
   /**
@@ -211,11 +250,11 @@ export const Pong = ($root.Pong = (() => {
 
   /**
    * Pong date.
-   * @member {number} date
+   * @member {number|Long} date
    * @memberof Pong
    * @instance
    */
-  Pong.prototype.date = 0;
+  Pong.prototype.date = $util.Long ? $util.Long.fromBits(0, 0, false) : 0;
 
   /**
    * Creates a new Pong instance using the specified properties.
@@ -241,7 +280,7 @@ export const Pong = ($root.Pong = (() => {
   Pong.encode = function encode(message, writer) {
     if (!writer) writer = $Writer.create();
     if (message.date != null && message.hasOwnProperty('date'))
-      writer.uint32(/* id 1, wireType 0 =*/ 8).int32(message.date);
+      writer.uint32(/* id 1, wireType 0 =*/ 8).int64(message.date);
     return writer;
   };
 
@@ -277,7 +316,7 @@ export const Pong = ($root.Pong = (() => {
       let tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.date = reader.int32();
+          message.date = reader.int64();
           break;
         default:
           reader.skipType(tag & 7);
@@ -314,7 +353,15 @@ export const Pong = ($root.Pong = (() => {
     if (typeof message !== 'object' || message === null)
       return 'object expected';
     if (message.date != null && message.hasOwnProperty('date'))
-      if (!$util.isInteger(message.date)) return 'date: integer expected';
+      if (
+        !$util.isInteger(message.date) &&
+        !(
+          message.date &&
+          $util.isInteger(message.date.low) &&
+          $util.isInteger(message.date.high)
+        )
+      )
+        return 'date: integer|Long expected';
     return null;
   };
 
@@ -329,7 +376,17 @@ export const Pong = ($root.Pong = (() => {
   Pong.fromObject = function fromObject(object) {
     if (object instanceof $root.Pong) return object;
     let message = new $root.Pong();
-    if (object.date != null) message.date = object.date | 0;
+    if (object.date != null)
+      if ($util.Long)
+        (message.date = $util.Long.fromValue(object.date)).unsigned = false;
+      else if (typeof object.date === 'string')
+        message.date = parseInt(object.date, 10);
+      else if (typeof object.date === 'number') message.date = object.date;
+      else if (typeof object.date === 'object')
+        message.date = new $util.LongBits(
+          object.date.low >>> 0,
+          object.date.high >>> 0,
+        ).toNumber();
     return message;
   };
 
@@ -345,9 +402,30 @@ export const Pong = ($root.Pong = (() => {
   Pong.toObject = function toObject(message, options) {
     if (!options) options = {};
     let object = {};
-    if (options.defaults) object.date = 0;
+    if (options.defaults)
+      if ($util.Long) {
+        let long = new $util.Long(0, 0, false);
+        object.date =
+          options.longs === String
+            ? long.toString()
+            : options.longs === Number
+            ? long.toNumber()
+            : long;
+      } else object.date = options.longs === String ? '0' : 0;
     if (message.date != null && message.hasOwnProperty('date'))
-      object.date = message.date;
+      if (typeof message.date === 'number')
+        object.date =
+          options.longs === String ? String(message.date) : message.date;
+      else
+        object.date =
+          options.longs === String
+            ? $util.Long.prototype.toString.call(message.date)
+            : options.longs === Number
+            ? new $util.LongBits(
+                message.date.low >>> 0,
+                message.date.high >>> 0,
+              ).toNumber()
+            : message.date;
     return object;
   };
 

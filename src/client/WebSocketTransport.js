@@ -23,7 +23,12 @@ const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 class WebSocketTransport implements Transport {
   queue: Array<Uint8Array>;
   socket: WebSocket;
-  emitter: Nanoevents<{ message: Uint8Array, error: RpcError, end: void }>;
+  emitter: Nanoevents<{
+    open: void,
+    message: Uint8Array,
+    error: RpcError,
+    end: void,
+  }>;
   isAlive: boolean;
 
   constructor(
@@ -111,10 +116,15 @@ class WebSocketTransport implements Transport {
   handleOpen() {
     this.isAlive = true;
     this.socket.send(new Uint8Array([1, 0]));
+    this.emitter.emit('open');
     if (this.queue.length) {
       this.queue.forEach(message => this.send(message));
       this.queue = [];
     }
+  }
+
+  onOpen(handler: () => void) {
+    return this.emitter.on('open', handler);
   }
 
   onMessage(handler: MessageHandler) {

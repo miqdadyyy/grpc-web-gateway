@@ -5,5 +5,6 @@
 
 import RpcClient from './RpcClient';
 import WebSocketTransport from './WebSocketTransport';
+import RetryWsTransport from './RetryWsTransport';
 
-export { RpcClient, WebSocketTransport };
+export { RpcClient, WebSocketTransport, RetryWsTransport };

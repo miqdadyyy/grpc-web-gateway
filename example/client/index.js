@@ -1,10 +1,16 @@
 // @flow
 
-import { RpcClient, WebSocketTransport } from '../../src/client';
+import {
+  RpcClient,
+  RetryWsTransport,
+  WebSocketTransport,
+} from '../../src/client';
 import { RxRpcClient } from '../../src/rx-client/RpcClient';
 import { Ping, Pong } from './api.gen';
 
-const client = new RpcClient(new WebSocketTransport('ws://localhost:8080'));
+const wsTransportFactory = () => new WebSocketTransport('ws://localhost:8080');
+const retryTransport = new RetryWsTransport(wsTransportFactory);
+const client = new RpcClient(retryTransport);
 const rxClient = new RxRpcClient(client);
 
 rxClient
