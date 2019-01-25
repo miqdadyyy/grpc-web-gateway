@@ -5,14 +5,9 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "exit 0",
-    "generate-example": "pbjs -t static-module --es6 -o example/client/api.gen.js example/proto/*.proto",
-    "generate-signaling-js": "pbjs -t static-module --es6 -o src/shared/signaling.js src/shared/signaling.proto",
-    "generate-signaling-ts": "pbts -o src/shared/signaling.d.ts src/shared/signaling.js",
-    "generate-signaling": "npm run generate-signaling-js & npm run generate-signaling-ts",
-    "preexample": "npm run generate-example",
-    "example": "webpack --watch --config example/webpack.config.js",
     "fmt": "prettier --write \"**/*.{js,json,md,js.flow}\"",
-    "flow": "flow"
+    "flow": "flow",
+    "example": "lerna exec --scope example -- npm start"
   },
   "husky": {
     "hooks": {
@@ -27,26 +22,16 @@
   },
   "author": "Nikita Gusakov <gusnkt@gmail.com>",
   "devDependencies": {
-    "@babel/core": "^7.2.2",
-    "@babel/plugin-proposal-class-properties": "^7.2.3",
-    "@dlghq/babel-preset-dialog": "4.3.3",
     "@dlghq/eslint-config-dialog": "4.0.6",
-    "babel-loader": "8.0.5",
     "eslint": "5.12.1",
     "eslint-config-prettier": "3.6.0",
     "eslint-plugin-react": "7.12.4",
-    "flow-bin": "0.90.0",
+    "flow-bin": "0.91.0",
     "html-webpack-plugin": "3.2.0",
-    "lerna": "^3.10.5",
+    "lerna": "3.10.7",
     "nodemon": "1.18.9",
     "nodemon-webpack-plugin": "4.0.7",
     "npm-run-all": "4.1.5",
-    "parcel-bundler": "^1.11.0",
-    "prettier": "1.16.1",
-    "webpack": "4.29.0",
-    "webpack-cli": "3.2.1",
-    "webpack-node-externals": "1.7.2",
-    "webpack-shell-plugin": "0.5.0",
-    "webpack-shell-plugin-next": "^0.6.4"
+    "prettier": "1.16.1"
   }
 }
