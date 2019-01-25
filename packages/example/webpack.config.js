@@ -8,7 +8,7 @@ const babel = {
   include: [
     path.resolve(__dirname, 'client'),
     path.resolve(__dirname, 'server'),
-    path.resolve(__dirname, 'node_modules/@dlghq'),
+    path.resolve(__dirname, '../'),
   ],
   use: {
     loader: 'babel-loader',
@@ -18,8 +18,6 @@ const babel = {
     },
   },
 };
-
-console.log(path.resolve('./node_modules/'));
 
 module.exports = [
   {
@@ -47,7 +45,7 @@ module.exports = [
     mode: 'development',
     target: 'node',
     resolve: {
-      symlinks: false,
+      symlinks: true,
       mainFields: ['module', 'main'],
     },
     entry: path.resolve(__dirname, 'server/index.js'),
@@ -64,19 +62,13 @@ module.exports = [
     },
     externals: function(context, request, callback) {
       if (
-        request.startsWith('@dlghq') ||
-        (/node_modules\/@dlghq(?!(.*(node_modules).*)+)/.test(context) &&
-          request.startsWith('.')) ||
-        (context.startsWith(path.resolve(__dirname)) &&
-          !/node_modules/.test(context) &&
-          (request.startsWith('.') || request.startsWith('/')))
+        /^((?!node_modules).)*$/.test(context) &&
+        (request.startsWith(__dirname) ||
+          request.startsWith('.') ||
+          request.startsWith('@dlghq'))
       ) {
-        console.log({ context, request });
         return callback();
       }
-
-      console.log({ context, request });
-
       return callback(null, 'commonjs ' + request);
     },
 
