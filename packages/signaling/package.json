@@ -1,0 +1,21 @@
+{
+  "name": "@dlghq/grpc-web-gateway-signaling",
+  "version": "1.0.0-beta.14",
+  "description": "Signaling for grpc web gateway and its clients",
+  "main": "signaling.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dialogs/grpc-web-gateway.git"
+  },
+  "keywords": [
+    "grpc"
+  ],
+  "author": "meafmira <i@meafmira.me>",
+  "bugs": {
+    "url": "https://github.com/dialogs/grpc-web-gateway/issues"
+  },
+  "homepage": "https://github.com/dialogs/grpc-web-gateway#readme"
+}

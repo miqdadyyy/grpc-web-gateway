@@ -1,0 +1,54 @@
+{
+  "name": "@dlghq/grpc-web-gateway",
+  "version": "1.0.0-beta.14",
+  "description": "Dialog grpc gateway web server",
+  "main": "dist/index.js",
+  "module": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "npm run build",
+    "build": "parcel build src/index.js --target=node --detailed-report --no-minify"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dialogs/grpc-web-gateway.git"
+  },
+  "keywords": [
+    "grpc"
+  ],
+  "author": "meafmira (i@meafmira.me)",
+  "bugs": {
+    "url": "https://github.com/dialogs/grpc-web-gateway/issues"
+  },
+  "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
+  "dependencies": {
+    "@dlghq/grpc-web-gateway-signaling": "1.0.0-beta.14",
+    "@dlghq/dialog-api": "0.6.4",
+    "@grpc/proto-loader": "0.3.0",
+    "body-parser": "1.18.3",
+    "express": "4.16.4",
+    "express-ws": "4.0.0",
+    "glob": "7.1.3",
+    "grpc": "1.16.1",
+    "lodash": "4.17.11",
+    "nanoid": "2.0.0",
+    "npm": "6.7.0",
+    "pino": "5.11.0",
+    "pino-pretty": "2.5.0",
+    "protocol-buffers-schema": "3.3.2",
+    "run": "1.4.0",
+    "rxjs": "^6.3.3",
+    "ws": "6.1.3"
+  },
+  "devDependencies": {
+    "@babel/core": "7.2.2",
+    "@babel/plugin-proposal-class-properties": "7.3.0",
+    "@dlghq/babel-preset-dialog": "4.3.3",
+    "@dlghq/eslint-config-dialog": "4.0.6",
+    "flow-bin": "0.91.0",
+    "html-webpack-plugin": "3.2.0",
+    "nodemon": "1.18.9",
+    "npm-run-all": "4.1.5",
+    "parcel-bundler": "1.11.0"
+  }
+}
