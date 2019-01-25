@@ -1,6 +1,6 @@
 {
   "name": "example",
-  "version": "1.0.0-beta.15",
+  "version": "1.0.0-beta.16",
   "description": "Example of using grpc gateway service",
   "private": true,
   "scripts": {
