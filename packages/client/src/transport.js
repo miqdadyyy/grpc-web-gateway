@@ -3,21 +3,7 @@
  * @flow
  */
 
-import { type Observable } from 'kefir';
-
 import { type RpcError } from './RpcError';
-
-export interface RpcWritableTransport {
-  send(message: Uint8Array): void;
-}
-
-export interface RpcReadableTransport {
-  read(): Observable<Uint8Array, RpcError>;
-}
-
-export interface RpcDuplexTransport
-  extends RpcWritableTransport,
-    RpcReadableTransport {}
 
 type Unbind = () => void;
 
@@ -31,3 +17,9 @@ export interface TransportWritable {
 }
 
 export interface Transport extends TransportReadable, TransportWritable {}
+
+export interface StatusfulTransport extends Transport {
+  close(): void;
+  onOpen(() => void): Unbind;
+  onClose(() => void): Unbind;
+}

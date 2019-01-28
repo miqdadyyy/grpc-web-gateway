@@ -25,7 +25,6 @@ module.exports = [
     target: 'web',
     resolve: {
       symlinks: false,
-      mainFields: ['module', 'main'],
     },
     entry: [path.resolve(__dirname, 'client/index.js')],
     output: {
@@ -47,6 +46,7 @@ module.exports = [
     resolve: {
       symlinks: true,
       mainFields: ['module', 'main'],
+      mainFiles: ['index', 'index.browser.js'],
     },
     entry: path.resolve(__dirname, 'server/index.js'),
     output: {
@@ -69,6 +69,7 @@ module.exports = [
       ) {
         return callback();
       }
+      console.log({ context, request });
       return callback(null, 'commonjs ' + request);
     },
 

@@ -9,3 +9,5 @@ import RetryWsTransport from './RetryWsTransport';
 
 export { RpcClient, WebSocketTransport, RetryWsTransport };
 export * from './types';
+export * from './transport';
+export * from './RpcError.js';

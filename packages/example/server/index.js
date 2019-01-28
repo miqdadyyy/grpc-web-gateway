@@ -3,8 +3,8 @@ import path from 'path';
 import http from 'http';
 import express from 'express';
 import * as protoLoader from '@grpc/proto-loader';
-import { createServer as createGateway } from '@dlghq/grpc-web-gateway';
 
+import { createServer as createGateway } from '../../server/src/';
 import startGrpcServer from './grpc';
 
 const apiHost = 'localhost:3000';

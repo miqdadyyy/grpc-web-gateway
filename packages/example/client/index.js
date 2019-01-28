@@ -4,15 +4,33 @@ import {
   RpcClient,
   RetryWsTransport,
   WebSocketTransport,
+  type Transport,
+  type StatusfulTransport,
 } from '@dlghq/grpc-web-gateway-client';
+import {
+  createWebsocketTransport,
+  createWebsocketTransportFactory,
+  retryTransportDecorator,
+  heartbeatTransportDecorator,
+  map,
+  chain,
+  type Factory,
+} from '@dlghq/grpc-web-gateway-client/src/transports';
 import { RxRpcClient } from '@dlghq/rx-grpc-web-gateway-client';
+import { pipe } from 'lodash/fp';
 
 import { Ping, Pong } from './api.gen';
 
-const wsTransportFactory = () => new WebSocketTransport('ws://localhost:8080');
-const retryTransport = new RetryWsTransport(wsTransportFactory);
-const client = new RpcClient(retryTransport);
-const rxClient = new RxRpcClient(client);
+const endpoint = 'ws://localhost:8080';
+const makeClient = pipe(
+  createWebsocketTransportFactory,
+  map(heartbeatTransportDecorator()),
+  retryTransportDecorator(),
+  transport => new RpcClient(transport),
+  rpcClient => new RxRpcClient(rpcClient),
+);
+
+const rxClient = makeClient(endpoint);
 
 rxClient
   .makeUnaryRequest({
