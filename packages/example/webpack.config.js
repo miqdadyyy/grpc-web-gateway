@@ -69,7 +69,6 @@ module.exports = [
       ) {
         return callback();
       }
-      console.log({ context, request });
       return callback(null, 'commonjs ' + request);
     },
 
