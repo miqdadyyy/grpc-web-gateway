@@ -12,6 +12,7 @@ import {
   type UnaryRequest,
   type StreamRequest,
   type PushRequest,
+  type IRpcClient,
 } from '@dlghq/grpc-web-gateway-client';
 
 type RxUnaryCall = {
@@ -64,7 +65,8 @@ const observableFromClientStreamCall = (
   };
 };
 
-export class RxRpcClient {
+export class RxRpcClient
+  implements IRpcClient<RxUnaryCall, RxClientStreamCall> {
   rpcClient: RpcClient;
 
   constructor(rpcClient: RpcClient) {

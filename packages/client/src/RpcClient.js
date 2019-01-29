@@ -1,21 +1,27 @@
 /*
  * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow
+ * @flow strict
  */
 
 import Nanoevents from 'nanoevents';
 
-import type { RpcCall, UnaryRequest, StreamRequest } from './types';
+import type {
+  RpcCall,
+  UnaryRequest,
+  StreamRequest,
+  ClientStreamCall as IClientStreamCall,
+} from './types';
 import { type Transport } from './transport';
 import { createSequence, type Sequence } from './utils/sequence';
 import { RpcError } from './RpcError';
+import { IRpcClient } from './IRpcClient';
 
 import UnaryCall from './UnaryCall';
 import ServerStreamCall from './ServerStreamCall';
 import BidiStreamCall from './BidiStreamCall';
 import ClientStreamCall from './ClientStreamCall';
 
-class RpcClient {
+class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
   transport: Transport;
   calls: Map<string, RpcCall>;
   seq: Sequence;

@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow
+ * @flow strict
  */
 import { type Response } from '@dlghq/grpc-web-gateway-signaling';
 

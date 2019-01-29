@@ -7,3 +7,9 @@ declare module 'nanoevents' {
     emit<K: $Keys<T>>(event: K, data?: $ElementType<T, K>): void;
   }
 }
+
+declare module 'nanoevents/unbind-all' {
+  import type NanoEvents from 'nanoevents';
+
+  declare export default (NanoEvents<*>) => void;
+}

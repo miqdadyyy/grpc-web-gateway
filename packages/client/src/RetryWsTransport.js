@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow
+ * @flow strict
  */
 
 import { RpcError } from './RpcError';
@@ -20,7 +20,7 @@ class RetryWsTransport implements Transport {
   factory: WsTransportFactory;
   nextPeriod: number;
   logger: {
-    log(...any): void,
+    log(...Array<mixed>): void,
   };
 
   constructor(

@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow
+ * @flow strict
  */
 
 export class RpcError extends Error {

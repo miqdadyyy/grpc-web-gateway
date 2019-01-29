@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow
+ * @flow strict
  */
 
 import { type Transport, type StatusfulTransport } from '../transport';

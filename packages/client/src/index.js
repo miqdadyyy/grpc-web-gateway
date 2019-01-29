@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow
+ * @flow strict
  */
 
 import RpcClient from './RpcClient';
@@ -11,3 +11,4 @@ export { RpcClient, WebSocketTransport, RetryWsTransport };
 export * from './types';
 export * from './transport';
 export * from './RpcError.js';
+export * from './IRpcClient.js';

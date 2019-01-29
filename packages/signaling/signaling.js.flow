@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow
+ * @flow strict
  */
 
 export type GrpcStatusName =
@@ -45,7 +45,7 @@ type ServiceMessagePayload = { ping: {} } | { pong: {} };
 declare class ServiceMessage {
   static encode(payload: ServiceMessagePayload): { finish(): Uint8Array };
   static decode(bytes: Uint8Array): ServiceMessagePayload;
-  static verify(Object): null | string;
+  static verify({ [key: string]: mixed }): null | string;
 }
 
 declare class IRequest {
