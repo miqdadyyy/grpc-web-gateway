@@ -1,4 +1,4 @@
-// @flow
+// @flow strict
 // Copyright 2018 dialog LLC <info@dlg.im>
 
 import type { Server as HttpServer } from 'http';
@@ -13,6 +13,7 @@ import {
   type GrpcStatusCode,
 } from '@dlghq/grpc-web-gateway-signaling';
 
+// $FlowFixMe
 import pkg from '../package.json';
 import { logger } from './logger';
 import { createCredentials, type CredentialsConfig } from './credentials';
@@ -20,6 +21,12 @@ import { parseProtoFiles } from './utils/proto';
 import { createMetadata, normalizeGrpcMetadata } from './grpcMetadata';
 import { GrpcError } from './GrpcError';
 import { setupPingConnections } from './heartbeat';
+
+const invariant = (condition, message) => {
+  if (!condition) {
+    throw GrpcError.fromStatusName('UNKNOWN', message);
+  }
+};
 
 type GrpcGatewayServerConfig = {
   api: string,
@@ -288,7 +295,11 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
     ws.on('message', message => {
       try {
-        const request = Request.decode(new Uint8Array((message: any)));
+        invariant(
+          message instanceof ArrayBuffer,
+          'Message should be ArrayBuffer',
+        );
+        const request = Request.decode(new Uint8Array(message));
         const { id } = request;
 
         if (request.unary) {
