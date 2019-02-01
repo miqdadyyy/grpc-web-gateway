@@ -1,7 +1,5 @@
-/*
- * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow strict
- */
+// @flow strict
+// Copyright 2018 dialog LLC <info@dlg.im>
 
 import { RpcError } from './RpcError';
 import WebSocketTransport from './WebSocketTransport';

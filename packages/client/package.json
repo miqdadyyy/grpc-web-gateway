@@ -3,11 +3,14 @@
   "version": "1.0.0-beta.17",
   "description": "Dialog grpc web gateway client",
   "main": "src",
+  "browser": "dist",
   "directories": {
     "transports": "./src/transports"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "parcel build src/index.js --experimental-scope-hoisting",
+    "prepublish": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -22,9 +25,14 @@
   },
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "dependencies": {
+    "@babel/plugin-proposal-class-properties": "7.3.0",
     "@dlghq/grpc-web-gateway-signaling": "1.0.0-beta.15",
     "nanoevents": "1.0.8",
     "nanoid": "2.0.1",
     "npm": "6.7.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.2.2",
+    "parcel-bundler": "^1.11.0"
   }
 }

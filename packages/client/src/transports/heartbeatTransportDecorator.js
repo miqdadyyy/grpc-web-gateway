@@ -1,7 +1,5 @@
-/*
- * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow strict
- */
+// @flow strict
+// Copyright 2018 dialog LLC <info@dlg.im>
 
 import { Request } from '@dlghq/grpc-web-gateway-signaling';
 import Nanoevents from 'nanoevents';

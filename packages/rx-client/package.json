@@ -3,8 +3,10 @@
   "version": "1.0.0-beta.17",
   "description": "Rx client for dialog grpc web gateway",
   "main": "RpcClient.js",
+  "browser": "dist/RpcClient",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "parcel build RpcClient.js --experimental-scope-hoisting"
   },
   "repository": {
     "type": "git",
@@ -20,6 +22,11 @@
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "dependencies": {
     "@dlghq/grpc-web-gateway-client": "^1.0.0-beta.17",
-    "rxjs": "6.3.3"
+    "rxjs": "6.3.3",
+    "@babel/plugin-proposal-class-properties": "7.3.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.2.2",
+    "parcel-bundler": "^1.11.0"
   }
 }
