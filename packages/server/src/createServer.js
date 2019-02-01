@@ -22,12 +22,6 @@ import { createMetadata, normalizeGrpcMetadata } from './grpcMetadata';
 import { GrpcError } from './GrpcError';
 import { setupPingConnections } from './heartbeat';
 
-const invariant = (condition, message) => {
-  if (!condition) {
-    throw GrpcError.fromStatusName('UNKNOWN', message);
-  }
-};
-
 type GrpcGatewayServerConfig = {
   api: string,
   server: HttpServer | HttpsServer,
@@ -295,10 +289,11 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
     ws.on('message', message => {
       try {
-        invariant(
-          message instanceof ArrayBuffer,
-          'Message should be ArrayBuffer',
-        );
+        if (!(message instanceof Buffer))
+          throw GrpcError.fromStatusName(
+            'UNKNOWN',
+            'Message should be ArrayBuffer',
+          );
         const request = Request.decode(new Uint8Array(message));
         const { id } = request;
 
