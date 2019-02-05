@@ -1,6 +1,6 @@
 {
   "name": "@dlghq/grpc-web-gateway",
-  "version": "1.0.0-beta.15",
+  "version": "1.0.0-beta.18",
   "description": "Dialog grpc gateway web server",
   "main": "dist/index.js",
   "module": "src/index.js",
@@ -23,7 +23,7 @@
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "dependencies": {
     "@dlghq/dialog-api": "0.6.4",
-    "@dlghq/grpc-web-gateway-signaling": "^1.0.0-beta.15",
+    "@dlghq/grpc-web-gateway-signaling": "^1.0.0-beta.18",
     "@grpc/proto-loader": "0.3.0",
     "body-parser": "1.18.3",
     "express": "4.16.4",
