@@ -26,11 +26,14 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
   emitter: Nanoevents<{ error: RpcError }>;
 
   constructor(transport: Transport) {
-    this.transport = transport;
     this.calls = new Map();
     this.seq = createSequence();
     this.emitter = new Nanoevents();
+    this.setTransport(transport);
+  }
 
+  setTransport(transport: Transport) {
+    this.transport = transport;
     this.transport.onError(error => {
       this.emitter.emit('error', error);
     });
