@@ -3,7 +3,6 @@
   "version": "1.0.0-beta.18",
   "description": "Dialog grpc web gateway client",
   "main": "src",
-  "browser": "dist",
   "directories": {
     "transports": "./src/transports"
   },
