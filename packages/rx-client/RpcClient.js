@@ -96,6 +96,6 @@ export class RxRpcClient
   }
 
   onError(handler: RpcError => void) {
-    this.rpcClient.onError(handler);
+    return this.rpcClient.onError(handler);
   }
 }

@@ -102,7 +102,7 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
   }
 
   onError(errorHandler: RpcError => void) {
-    this.emitter.on('error', errorHandler);
+    return this.emitter.on('error', errorHandler);
   }
 }
 
