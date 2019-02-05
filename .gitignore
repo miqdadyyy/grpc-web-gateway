@@ -4,3 +4,4 @@ example/dist
 flow-typed/npm
 **/.cache
 **/dist
+*.log
