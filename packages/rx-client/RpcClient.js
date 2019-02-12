@@ -13,12 +13,12 @@ import {
   type IRpcClient,
 } from '@dlghq/grpc-web-gateway-client';
 
-type RxUnaryCall = {
+export type RxUnaryCall = {
   execute(): Observable<Uint8Array>,
   cancel(): void,
 };
 
-type RxClientStreamCall = RxUnaryCall & {
+export type RxClientStreamCall = RxUnaryCall & {
   send(PushRequest): void,
   end(): void,
 };

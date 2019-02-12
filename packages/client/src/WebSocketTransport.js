@@ -148,7 +148,10 @@ class WebSocketTransport implements Transport {
         break;
 
       default:
-        throw new Error('Connection closed');
+        this.emitter.emit(
+          'error',
+          new RpcError('CONNECTION_CLOSED', 'Connection closed'),
+        );
     }
   }
 }
