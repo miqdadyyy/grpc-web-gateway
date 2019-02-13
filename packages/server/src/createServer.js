@@ -133,8 +133,10 @@ export function createServer(config: GrpcGatewayServerConfig) {
     };
 
     const handleServerStream = (id, call) => {
+      connectionLogger.info('Handler server stream', id);
+
       call.on('data', (response: Uint8Array) => {
-        connectionLogger.info('Push Data');
+        connectionLogger.info('Push Data', id);
         wsSend(
           Response.encode({
             id,
@@ -144,7 +146,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
       });
 
       call.on('end', () => {
-        connectionLogger.info('Stream was ended');
+        connectionLogger.info('Stream was ended', id);
         wsSend(
           Response.encode({
             id,
@@ -155,7 +157,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
       });
 
       call.on('close', () => {
-        connectionLogger.info('Closing stream');
+        connectionLogger.info('Closing stream', id);
         wsSend(
           Response.encode({
             id,
