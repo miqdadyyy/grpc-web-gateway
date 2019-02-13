@@ -4,7 +4,8 @@
   "description": "Signaling for grpc web gateway and its clients",
   "main": "signaling.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate-api": "pbjs -t static-module -o client/api.gen.js proto/*.proto"
   },
   "repository": {
     "type": "git",

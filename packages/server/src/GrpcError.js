@@ -4,7 +4,7 @@
 import {
   type GrpcStatusCode,
   type GrpcStatusName,
-} from '@dlghq/grpc-web-gateway-signaling';
+} from '../../signaling/signaling';
 
 const statusMap: Map<GrpcStatusCode, GrpcStatusName> = new Map([
   [0, 'UNKNOWN'],

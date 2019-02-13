@@ -11,7 +11,7 @@ import {
   Request,
   Response,
   type GrpcStatusCode,
-} from '@dlghq/grpc-web-gateway-signaling';
+} from '../../signaling/signaling';
 
 // $FlowFixMe
 import pkg from '../package.json';
