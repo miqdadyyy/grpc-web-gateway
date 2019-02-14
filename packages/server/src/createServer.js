@@ -141,7 +141,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
       connectionLogger.info('Handler server stream', id);
 
       call.on('data', (response: Uint8Array) => {
-        connectionLogger.info('Push Data', id);
+        connectionLogger.info('Push Data', id, response);
         wsSend(
           Response.encode({
             id,
@@ -205,19 +205,20 @@ export function createServer(config: GrpcGatewayServerConfig) {
           handleServerStream(id, call);
           calls.set(id, call);
         } else {
-          connectionLogger.info('Unary request', methodDefinition);
+          const meta = createMetadata(metadata || {});
+          connectionLogger.info('Unary request', payload, meta);
           const call = grpcClient.makeUnaryRequest(
             path,
             identity,
             identity,
             payload,
-            createMetadata(metadata || {}),
+            meta,
             {},
             (error: GrpcStatus, response: Uint8Array) => {
               if (error) {
                 handleGrpcClientError(id, error);
               } else {
-                connectionLogger.info('Unary Data');
+                connectionLogger.info('Unary Data', response);
                 wsSend(
                   Response.encode({
                     id,

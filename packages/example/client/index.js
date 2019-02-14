@@ -19,7 +19,7 @@ import {
 import { RxRpcClient } from '@dlghq/rx-grpc-web-gateway-client';
 import { pipe } from 'lodash/fp';
 
-import { Ping, Pong } from './api.gen';
+import { Ping, Pong, Bytes } from './api.gen';
 
 const endpoint = 'ws://localhost:8080';
 const makeClient = pipe(
@@ -47,12 +47,12 @@ rxClient
 rxClient
   .makeUnaryRequest({
     service: 'Test',
-    method: 'Unary',
-    payload: Ping.encode({ date: Date.now() }).finish(),
+    method: 'UnaryBytes',
+    payload: Bytes.encode({ byteString: new Uint8Array([1, 2, 3]) }).finish(),
   })
   .execute()
   .toPromise()
-  .then(Pong.decode)
+  .then(Bytes.decode)
   .then(console.log)
   .catch(console.error);
 

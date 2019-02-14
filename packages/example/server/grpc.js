@@ -8,6 +8,14 @@ class TestService {
     callback(null, { date: Date.now() });
   }
 
+  unaryBytes(call, callback) {
+    console.log('Request', call.request);
+    console.log(`[grpc] unary bytes: ${JSON.stringify(call.request)}`);
+    callback(null, {
+      byteString: { value: 'AQAAAAsUCIGSAxIAGAIYCBgFGAYgoYLk1gY=' },
+    });
+  }
+
   serverStream(call, ...rest) {
     console.log(`[grpc] serverStream: ${JSON.stringify(call.request)}`);
     let i = 0;
@@ -57,7 +65,11 @@ function startGrpcServer({ protoRoot, listen }) {
   const server = new grpc.Server();
 
   protoFiles.forEach(protoRoot => {
-    const definition = protoLoader.loadSync(protoRoot, { keepCase: false });
+    const definition = protoLoader.loadSync(protoRoot, {
+      keepCase: false,
+      longs: String,
+      bytes: Array,
+    });
     const descriptor = grpc.loadPackageDefinition(definition);
 
     Object.keys(definition).forEach(serviceName => {
