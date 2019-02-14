@@ -205,12 +205,14 @@ function createGrpcGateway(config) {
             const metadata = createMetadata(req);
 
             const method = service[methodDefinition.originalName];
+            app.logger.debug('Unary request', req, metadata);
             const call = method.call(
               service,
               req.body,
               metadata,
               (error, response) => {
                 if (error) {
+                  app.logger.error('Unary error', error);
                   const outError = mapErrorToHttp(error);
                   res.status(outError.status);
                   res.json({
@@ -218,6 +220,7 @@ function createGrpcGateway(config) {
                     payload: outError,
                   });
                 } else {
+                  app.logger.debug('Unary response', response);
                   res.json({
                     ok: true,
                     payload: response,
