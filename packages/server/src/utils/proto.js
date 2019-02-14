@@ -12,23 +12,29 @@ type GrpcMethodDefinition = {
   originalName: string,
 };
 
+export const loadDefinitions = (files: Array<string>) => {
+  const definitions = protoLoader.loadSync(files, {
+    longs: String,
+    enums: String,
+    bytes: String,
+    arrays: true,
+    defaults: false,
+    keepCase: false,
+  });
+
+  return definitions;
+};
+
+export const getDefinitions = pipe([
+  map(glob.sync),
+  flatten,
+  map(loadDefinitions),
+]);
+
 export const parseProtoFiles: (
   protoFiles: Array<string>,
 ) => Map<string, { [methodName: string]: GrpcMethodDefinition }> = pipe([
-  map(glob.sync),
-  flatten,
-  map(files => {
-    const definitions = protoLoader.loadSync(files, {
-      longs: String,
-      enums: String,
-      bytes: String,
-      arrays: true,
-      defaults: false,
-      keepCase: false,
-    });
-
-    return definitions;
-  }),
+  getDefinitions,
   mergeAll,
   toPairs,
   entries => new Map(entries),

@@ -5,7 +5,9 @@ import type { Server as HttpServer } from 'http';
 import type { Server as HttpsServer } from 'https';
 import nanoid from 'nanoid';
 import { Server as WebSocketServer } from 'ws';
-import grpc, { Client as GrpcClient } from 'grpc';
+import grpc, {
+  makeGenericClientConstructor as makeClientConstructor,
+} from 'grpc';
 import { identity, noop } from 'lodash/fp';
 import {
   Request,
@@ -17,7 +19,7 @@ import {
 import pkg from '../package.json';
 import { logger } from './logger';
 import { createCredentials, type CredentialsConfig } from './credentials';
-import { parseProtoFiles } from './utils/proto';
+import { parseProtoFiles, getDefinitions } from './utils/proto';
 import { createMetadata, normalizeGrpcMetadata } from './grpcMetadata';
 import { GrpcError } from './GrpcError';
 import { setupPingConnections } from './heartbeat';
@@ -43,8 +45,11 @@ export function createServer(config: GrpcGatewayServerConfig) {
   logger.info('Starting gateway version: ', pkg.version);
 
   const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
+  const definitions = getDefinitions(config.protoFiles);
+  const GrpcClient = makeClientConstructor(definitions);
+  logger.info(definitions);
   const services = parseProtoFiles(config.protoFiles);
-  console.log({ services });
+  logger.info({ services });
   const wss = new WebSocketServer({
     server: config.server,
   });
@@ -60,7 +65,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
         ' in ',
         Array.from(services.keys()),
       );
-      console.log(services);
+      logger.info(services);
 
       throw GrpcError.fromStatusName(
         'NOT_FOUND',
@@ -76,7 +81,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
         ' in ',
         Array.from(services.keys()),
       );
-      console.log(services);
+      logger.info(services);
 
       throw GrpcError.fromStatusName(
         'NOT_FOUND',
@@ -284,7 +289,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
           });
         }
       } catch (error) {
-        console.log({ error });
+        connectionLogger.error({ error });
         handleGrpcError(id, error);
       }
     };
