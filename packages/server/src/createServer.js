@@ -313,7 +313,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
           try {
             const { payload } = request.push;
 
-            connectionLogger.info('Push request');
+            connectionLogger.info('Push request', id, payload);
 
             const call = calls.get(id);
             if (!call) {
