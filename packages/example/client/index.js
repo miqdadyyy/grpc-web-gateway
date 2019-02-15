@@ -19,7 +19,7 @@ import {
 import { RxRpcClient } from '@dlghq/rx-grpc-web-gateway-client';
 import { pipe } from 'lodash/fp';
 
-import { Ping, Pong, Bytes } from './api.gen';
+import { Ping, Pong, Bytes, Long } from './api.gen';
 
 const endpoint = 'ws://localhost:8080';
 const makeClient = pipe(
@@ -32,118 +32,139 @@ const makeClient = pipe(
 
 const rxClient = makeClient(endpoint);
 
+// rxClient
+//   .makeUnaryRequest({
+//     service: 'Test',
+//     method: 'Unary',
+//     payload: Ping.encode({ date: Date.now() }).finish(),
+//   })
+//   .execute()
+//   .toPromise()
+//   .then(Pong.decode)
+//   .then(console.log)
+//   .catch(console.error);
+
+// rxClient
+//   .makeUnaryRequest({
+//     service: 'Test',
+//     method: 'UnaryBytes',
+//     payload: Bytes.encode({
+//       byteString: { value: 'AQAAAAsUCIGSAxIAGAIYCBgFGAYgoYLk1gY=' },
+//     }).finish(),
+//   })
+//   .execute()
+//   .toPromise()
+//   .then(Bytes.decode)
+//   .then(console.log)
+//   .catch(console.error);
+console.log(
+  'Long source',
+  Long.encode({
+    long: '-6580904714293305126',
+  }).finish(),
+);
 rxClient
   .makeUnaryRequest({
     service: 'Test',
-    method: 'Unary',
-    payload: Ping.encode({ date: Date.now() }).finish(),
+    method: 'Long',
+    payload: Long.encode({
+      long: '-6580904714293305126',
+    }).finish(),
   })
   .execute()
   .toPromise()
-  .then(Pong.decode)
+  .then(resp => (console.log({ resp }), Long.decode(resp)))
   .then(console.log)
   .catch(console.error);
 
-rxClient
-  .makeUnaryRequest({
-    service: 'Test',
-    method: 'UnaryBytes',
-    payload: Bytes.encode({ byteString: new Uint8Array([1, 2, 3]) }).finish(),
-  })
-  .execute()
-  .toPromise()
-  .then(Bytes.decode)
-  .then(console.log)
-  .catch(console.error);
+// const serverStreamRequest = rxClient.makeServerStreamRequest({
+//   service: 'Test',
+//   method: 'ServerStream',
+//   payload: Ping.encode({ date: Date.now() }).finish(),
+// });
 
-const serverStreamRequest = rxClient.makeServerStreamRequest({
-  service: 'Test',
-  method: 'ServerStream',
-  payload: Ping.encode({ date: Date.now() }).finish(),
-});
+// serverStreamRequest.execute().subscribe({
+//   next: response => {
+//     const message = Pong.decode(response);
+//     console.log('Server stream', message);
+//   },
+//   error: error => {
+//     console.error('Server stream', error);
+//   },
+//   complete: () => {
+//     console.log('ServerStream ended');
+//   },
+// });
 
-serverStreamRequest.execute().subscribe({
-  next: response => {
-    const message = Pong.decode(response);
-    console.log('Server stream', message);
-  },
-  error: error => {
-    console.error('Server stream', error);
-  },
-  complete: () => {
-    console.log('ServerStream ended');
-  },
-});
+// // setTimeout(() => serverStreamRequest.cancel('SS reason'), 3000);
 
-// setTimeout(() => serverStreamRequest.cancel('SS reason'), 3000);
+// const bidiStreamRequest = rxClient.makeBidiStreamRequest({
+//   service: 'Test',
+//   method: 'BidiStream',
+// });
 
-const bidiStreamRequest = rxClient.makeBidiStreamRequest({
-  service: 'Test',
-  method: 'BidiStream',
-});
+// bidiStreamRequest.send({
+//   payload: Ping.encode({ date: Date.now() }).finish(),
+// });
 
-bidiStreamRequest.send({
-  payload: Ping.encode({ date: Date.now() }).finish(),
-});
+// bidiStreamRequest.execute().subscribe({
+//   next: response => {
+//     const message = Pong.decode(response);
+//     console.log('Bidi stream', message);
+//   },
+//   error: error => {
+//     console.error('Bidi stream', error);
+//   },
+//   complete: () => {
+//     console.log('Bidi Stream ended');
+//   },
+// });
 
-bidiStreamRequest.execute().subscribe({
-  next: response => {
-    const message = Pong.decode(response);
-    console.log('Bidi stream', message);
-  },
-  error: error => {
-    console.error('Bidi stream', error);
-  },
-  complete: () => {
-    console.log('Bidi Stream ended');
-  },
-});
+// // setTimeout(() => bidiStreamRequest.cancel('BS reason'), 4000);
 
-// setTimeout(() => bidiStreamRequest.cancel('BS reason'), 4000);
+// setInterval(() => {
+//   console.log('Send to bidi stream');
+//   bidiStreamRequest.send({
+//     payload: Ping.encode({ date: Date.now() }).finish(),
+//   });
+// }, 1000);
 
-setInterval(() => {
-  console.log('Send to bidi stream');
-  bidiStreamRequest.send({
-    payload: Ping.encode({ date: Date.now() }).finish(),
-  });
-}, 1000);
+// setTimeout(() => {
+//   console.log('Closing bidi stream');
 
-setTimeout(() => {
-  console.log('Closing bidi stream');
+//   bidiStreamRequest.end();
+// }, 11000);
 
-  bidiStreamRequest.end();
-}, 11000);
+// const clientStreamRequest = rxClient.makeClientStreamRequest({
+//   service: 'Test',
+//   method: 'ClientStream',
+// });
 
-const clientStreamRequest = rxClient.makeClientStreamRequest({
-  service: 'Test',
-  method: 'ClientStream',
-});
+// clientStreamRequest.execute().subscribe({
+//   next: response => {
+//     const message = Pong.decode(response);
+//     console.log('Client stream', message);
+//   },
+//   error: error => {
+//     console.error('Client stream', error);
+//   },
+//   complete: () => {
+//     console.log('Client Stream ended');
+//   },
+// });
 
-clientStreamRequest.execute().subscribe({
-  next: response => {
-    const message = Pong.decode(response);
-    console.log('Client stream', message);
-  },
-  error: error => {
-    console.error('Client stream', error);
-  },
-  complete: () => {
-    console.log('Client Stream ended');
-  },
-});
+// setInterval(() => {
+//   console.log('Send to client stream');
+//   clientStreamRequest.send({
+//     payload: Ping.encode({ date: Date.now() }).finish(),
+//   });
+// }, 1000);
 
-setInterval(() => {
-  console.log('Send to client stream');
-  clientStreamRequest.send({
-    payload: Ping.encode({ date: Date.now() }).finish(),
-  });
-}, 1000);
+// setTimeout(() => {
+//   console.log('Closing client stream');
 
-setTimeout(() => {
-  console.log('Closing client stream');
-
-  clientStreamRequest.end();
-}, 12000);
+//   clientStreamRequest.end();
+// }, 12000);
 
 // setTimeout(() => clientStreamRequest.cancel('CS reason'), 4000);
 

@@ -14,7 +14,7 @@ export const Ping = ($root.Ping = (() => {
    * Properties of a Ping.
    * @exports IPing
    * @interface IPing
-   * @property {number|Long|null} [date] Ping date
+   * @property {Long|null} [date] Ping date
    */
 
   /**
@@ -33,7 +33,7 @@ export const Ping = ($root.Ping = (() => {
 
   /**
    * Ping date.
-   * @member {number|Long} date
+   * @member {Long} date
    * @memberof Ping
    * @instance
    */
@@ -231,7 +231,7 @@ export const Pong = ($root.Pong = (() => {
    * Properties of a Pong.
    * @exports IPong
    * @interface IPong
-   * @property {number|Long|null} [date] Pong date
+   * @property {Long|null} [date] Pong date
    */
 
   /**
@@ -250,7 +250,7 @@ export const Pong = ($root.Pong = (() => {
 
   /**
    * Pong date.
-   * @member {number|Long} date
+   * @member {Long} date
    * @memberof Pong
    * @instance
    */
@@ -835,6 +835,223 @@ export const Bytes = ($root.Bytes = (() => {
   return Bytes;
 })());
 
+export const Long = ($root.Long = (() => {
+  /**
+   * Properties of a Long.
+   * @exports ILong
+   * @interface ILong
+   * @property {Long|null} [long] Long long
+   */
+
+  /**
+   * Constructs a new Long.
+   * @exports Long
+   * @classdesc Represents a Long.
+   * @implements ILong
+   * @constructor
+   * @param {ILong=} [properties] Properties to set
+   */
+  function Long(properties) {
+    if (properties)
+      for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+        if (properties[keys[i]] != null) this[keys[i]] = properties[keys[i]];
+  }
+
+  /**
+   * Long long.
+   * @member {Long} long
+   * @memberof Long
+   * @instance
+   */
+  Long.prototype.long = $util.Long ? $util.Long.fromBits(0, 0, false) : 0;
+
+  /**
+   * Creates a new Long instance using the specified properties.
+   * @function create
+   * @memberof Long
+   * @static
+   * @param {ILong=} [properties] Properties to set
+   * @returns {Long} Long instance
+   */
+  Long.create = function create(properties) {
+    return new Long(properties);
+  };
+
+  /**
+   * Encodes the specified Long message. Does not implicitly {@link Long.verify|verify} messages.
+   * @function encode
+   * @memberof Long
+   * @static
+   * @param {ILong} message Long message or plain object to encode
+   * @param {$protobuf.Writer} [writer] Writer to encode to
+   * @returns {$protobuf.Writer} Writer
+   */
+  Long.encode = function encode(message, writer) {
+    if (!writer) writer = $Writer.create();
+    if (message.long != null && message.hasOwnProperty('long'))
+      writer.uint32(/* id 1, wireType 0 =*/ 8).int64(message.long);
+    return writer;
+  };
+
+  /**
+   * Encodes the specified Long message, length delimited. Does not implicitly {@link Long.verify|verify} messages.
+   * @function encodeDelimited
+   * @memberof Long
+   * @static
+   * @param {ILong} message Long message or plain object to encode
+   * @param {$protobuf.Writer} [writer] Writer to encode to
+   * @returns {$protobuf.Writer} Writer
+   */
+  Long.encodeDelimited = function encodeDelimited(message, writer) {
+    return this.encode(message, writer).ldelim();
+  };
+
+  /**
+   * Decodes a Long message from the specified reader or buffer.
+   * @function decode
+   * @memberof Long
+   * @static
+   * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+   * @param {number} [length] Message length if known beforehand
+   * @returns {Long} Long
+   * @throws {Error} If the payload is not a reader or valid buffer
+   * @throws {$protobuf.util.ProtocolError} If required fields are missing
+   */
+  Long.decode = function decode(reader, length) {
+    if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
+    let end = length === undefined ? reader.len : reader.pos + length,
+      message = new $root.Long();
+    while (reader.pos < end) {
+      let tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.long = reader.int64();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  };
+
+  /**
+   * Decodes a Long message from the specified reader or buffer, length delimited.
+   * @function decodeDelimited
+   * @memberof Long
+   * @static
+   * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+   * @returns {Long} Long
+   * @throws {Error} If the payload is not a reader or valid buffer
+   * @throws {$protobuf.util.ProtocolError} If required fields are missing
+   */
+  Long.decodeDelimited = function decodeDelimited(reader) {
+    if (!(reader instanceof $Reader)) reader = new $Reader(reader);
+    return this.decode(reader, reader.uint32());
+  };
+
+  /**
+   * Verifies a Long message.
+   * @function verify
+   * @memberof Long
+   * @static
+   * @param {Object.<string,*>} message Plain object to verify
+   * @returns {string|null} `null` if valid, otherwise the reason why it is not
+   */
+  Long.verify = function verify(message) {
+    if (typeof message !== 'object' || message === null)
+      return 'object expected';
+    if (message.long != null && message.hasOwnProperty('long'))
+      if (
+        !$util.isInteger(message.long) &&
+        !(
+          message.long &&
+          $util.isInteger(message.long.low) &&
+          $util.isInteger(message.long.high)
+        )
+      )
+        return 'long: integer|Long expected';
+    return null;
+  };
+
+  /**
+   * Creates a Long message from a plain object. Also converts values to their respective internal types.
+   * @function fromObject
+   * @memberof Long
+   * @static
+   * @param {Object.<string,*>} object Plain object
+   * @returns {Long} Long
+   */
+  Long.fromObject = function fromObject(object) {
+    if (object instanceof $root.Long) return object;
+    let message = new $root.Long();
+    if (object.long != null)
+      if ($util.Long)
+        (message.long = $util.Long.fromValue(object.long)).unsigned = false;
+      else if (typeof object.long === 'string')
+        message.long = parseInt(object.long, 10);
+      else if (typeof object.long === 'number') message.long = object.long;
+      else if (typeof object.long === 'object')
+        message.long = new $util.LongBits(
+          object.long.low >>> 0,
+          object.long.high >>> 0,
+        ).toNumber();
+    return message;
+  };
+
+  /**
+   * Creates a plain object from a Long message. Also converts values to other types if specified.
+   * @function toObject
+   * @memberof Long
+   * @static
+   * @param {Long} message Long
+   * @param {$protobuf.IConversionOptions} [options] Conversion options
+   * @returns {Object.<string,*>} Plain object
+   */
+  Long.toObject = function toObject(message, options) {
+    if (!options) options = {};
+    let object = {};
+    if (options.defaults)
+      if ($util.Long) {
+        let long = new $util.Long(0, 0, false);
+        object.long =
+          options.longs === String
+            ? long.toString()
+            : options.longs === Number
+            ? long.toNumber()
+            : long;
+      } else object.long = options.longs === String ? '0' : 0;
+    if (message.long != null && message.hasOwnProperty('long'))
+      if (typeof message.long === 'number')
+        object.long =
+          options.longs === String ? String(message.long) : message.long;
+      else
+        object.long =
+          options.longs === String
+            ? $util.Long.prototype.toString.call(message.long)
+            : options.longs === Number
+            ? new $util.LongBits(
+                message.long.low >>> 0,
+                message.long.high >>> 0,
+              ).toNumber()
+            : message.long;
+    return object;
+  };
+
+  /**
+   * Converts this Long to JSON.
+   * @function toJSON
+   * @memberof Long
+   * @instance
+   * @returns {Object.<string,*>} JSON object
+   */
+  Long.prototype.toJSON = function toJSON() {
+    return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+  };
+
+  return Long;
+})());
+
 export const Test = ($root.Test = (() => {
   /**
    * Constructs a new Test service.
@@ -950,6 +1167,43 @@ export const Test = ($root.Test = (() => {
    * @instance
    * @param {IBytes} request Bytes message or plain object
    * @returns {Promise<Bytes>} Promise
+   * @variation 2
+   */
+
+  /**
+   * Callback as used by {@link Test#long}.
+   * @memberof Test
+   * @typedef LongCallback
+   * @type {function}
+   * @param {Error|null} error Error, if any
+   * @param {Long} [response] Long
+   */
+
+  /**
+   * Calls Long.
+   * @function long
+   * @memberof Test
+   * @instance
+   * @param {ILong} request Long message or plain object
+   * @param {Test.LongCallback} callback Node-style callback called with the error, if any, and Long
+   * @returns {undefined}
+   * @variation 1
+   */
+  Object.defineProperty(
+    (Test.prototype.long = function long(request, callback) {
+      return this.rpcCall(long, $root.Long, $root.Long, request, callback);
+    }),
+    'name',
+    { value: 'Long' },
+  );
+
+  /**
+   * Calls Long.
+   * @function long
+   * @memberof Test
+   * @instance
+   * @param {ILong} request Long message or plain object
+   * @returns {Promise<Long>} Promise
    * @variation 2
    */
 

@@ -11,9 +11,13 @@ class TestService {
   unaryBytes(call, callback) {
     console.log('Request', call.request);
     console.log(`[grpc] unary bytes: ${JSON.stringify(call.request)}`);
-    callback(null, {
-      byteString: { value: 'AQAAAAsUCIGSAxIAGAIYCBgFGAYgoYLk1gY=' },
-    });
+    callback(null, call.request);
+  }
+
+  long(call, callback) {
+    console.log('Request', call.request);
+    console.log(`[grpc] long: ${JSON.stringify(call.request)}`);
+    callback(null, call.request);
   }
 
   serverStream(call, ...rest) {

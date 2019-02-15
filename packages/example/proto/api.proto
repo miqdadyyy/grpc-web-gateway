@@ -12,9 +12,14 @@ message Bytes {
   BytesValue byteString = 1;
 }
 
+message Long {
+  int64 long = 1;
+}
+
 service Test {
   rpc Unary(Ping) returns (Pong) {}
   rpc UnaryBytes(Bytes) returns (Bytes) {}
+  rpc Long(Long) returns (Long) {}
   rpc ServerStream(Ping) returns (stream Pong) {}
   rpc ClientStream(stream Ping) returns (Pong) {}
   rpc BidiStream(stream Ping) returns (stream Pong) {}
