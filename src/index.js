@@ -205,7 +205,7 @@ function createGrpcGateway(config) {
             const metadata = createMetadata(req);
 
             const method = service[methodDefinition.originalName];
-            app.logger.debug('Unary request', req, metadata);
+            app.logger.debug('Unary request', req.body, metadata);
             const call = method.call(
               service,
               req.body,
