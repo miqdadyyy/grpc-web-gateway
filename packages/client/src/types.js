@@ -1,16 +1,10 @@
 // @flow strict
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import type { Observable } from 'kefir';
-
 import { RpcError } from './RpcError';
 
 export interface WriteRpcTransport {
   send(message: Uint8Array): void;
-}
-
-export interface RpcTransport extends WriteRpcTransport {
-  start(): Observable<Uint8Array, RpcError>;
 }
 
 export type RpcCallStatus = 'initial' | 'open' | 'closed' | 'cancelled';

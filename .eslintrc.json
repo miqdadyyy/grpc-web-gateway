@@ -5,6 +5,7 @@
     "no-shadow": "off",
     "no-invalid-this": "off",
     "max-lines": "off",
-    "multiline-comment-style": "off"
+    "multiline-comment-style": "off",
+    "no-void": "off"
   }
 }

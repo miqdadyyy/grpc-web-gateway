@@ -5,18 +5,27 @@ import Nanoevents from 'nanoevents';
 import unbindAll from 'nanoevents/unbind-all';
 import { Request } from '@dlghq/grpc-web-gateway-signaling';
 
+import {
+  type Logger,
+  debugLoggerDecorator,
+  prefixLoggerDecorator,
+} from './Logger';
 import { type Transport } from './transport';
 import { RpcError } from './RpcError';
 
 type MessageHandler = (message: Uint8Array) => void;
 type ErrorHandler = (error: RpcError) => void;
 type WebSocketTransportConfig = {
-  heartbeatInterval: number,
+  heartbeatInterval?: number,
+  logger?: Logger,
+  debug?: boolean,
 };
 
 const PING = Request.encode({ id: 'service', service: { ping: {} } }).finish();
 const PONG = Request.encode({ id: 'service', service: { pong: {} } }).finish();
 const DEFAULT_HEARTBEAT_INTERVAL = 30000;
+
+const DEFAULT_LOGGER_PREFIX = '[WS Transport]';
 
 class WebSocketTransport implements Transport {
   queue: Array<Uint8Array>;
@@ -28,14 +37,25 @@ class WebSocketTransport implements Transport {
     end: void,
   }>;
   isAlive: boolean;
+  logger: Logger;
+  debug: boolean;
 
   constructor(
     endpoint: string,
-    { heartbeatInterval }: WebSocketTransportConfig = {
+    {
+      heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL,
+      debug = false,
+      logger = console,
+    }: WebSocketTransportConfig = {
       heartbeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
+      debug: false,
+      logger: console,
     },
   ) {
     this.queue = [];
+    this.logger = prefixLoggerDecorator(DEFAULT_LOGGER_PREFIX)(
+      debugLoggerDecorator(debug)(logger),
+    );
 
     const socket = new WebSocket(endpoint);
     socket.binaryType = 'arraybuffer';
@@ -48,21 +68,25 @@ class WebSocketTransport implements Transport {
     const cancelPing = this.setupHeartbeat(heartbeatInterval);
 
     this.socket.onclose = () => {
+      this.logger.log('Closed connetcion');
       this.emitter.emit('end');
     };
 
     this.emitter.on('end', () => {
+      this.logger.log('Ended connection');
       unbindAll(this.emitter);
       cancelPing();
     });
 
     this.socket.onmessage = event => {
+      this.logger.log('Message', event.data, event);
       this.isAlive = true;
       if (event.data instanceof ArrayBuffer) {
         const message = new Uint8Array(
           // Flow hack to refine event.data type
           (event.data: ArrayBuffer),
         );
+
         this.emitter.emit(
           'message',
           new Uint8Array(
@@ -71,6 +95,7 @@ class WebSocketTransport implements Transport {
           ),
         );
       } else {
+        this.logger.error('Serialization mismatch');
         this.emitter.emit(
           'error',
           new RpcError(
@@ -84,6 +109,7 @@ class WebSocketTransport implements Transport {
 
   setupHeartbeat(interval: number) {
     const iid = setInterval(() => {
+      this.logger.log('Is alive', this.isAlive);
       if (!this.isAlive) {
         this.emitter.emit(
           'error',
@@ -104,14 +130,17 @@ class WebSocketTransport implements Transport {
   }
 
   ping() {
+    this.logger.log('Send ping');
     this.socket.send(PING);
   }
 
   pong() {
+    this.logger.log('Send pong');
     this.socket.send(PONG);
   }
 
   handleOpen() {
+    this.logger.log('Connection opened');
     this.isAlive = true;
     this.socket.send(new Uint8Array([1, 0]));
     this.emitter.emit('open');
