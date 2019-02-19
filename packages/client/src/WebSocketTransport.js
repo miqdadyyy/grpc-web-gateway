@@ -162,7 +162,7 @@ class WebSocketTransport implements Transport {
     return this.emitter.on('error', handler);
   }
 
-  onEnd(handler: void => void) {
+  onClose(handler: void => void) {
     return this.emitter.on('end', handler);
   }
 

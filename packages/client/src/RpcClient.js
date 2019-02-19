@@ -9,7 +9,7 @@ import type {
   StreamRequest,
   ClientStreamCall as IClientStreamCall,
 } from './types';
-import { type Transport } from './transport';
+import { type StatusfulTransport } from './transport';
 import { createSequence, type Sequence } from './utils/sequence';
 import { RpcError } from './RpcError';
 import { IRpcClient } from './IRpcClient';
@@ -20,22 +20,28 @@ import BidiStreamCall from './BidiStreamCall';
 import ClientStreamCall from './ClientStreamCall';
 
 class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
-  transport: Transport;
+  transport: StatusfulTransport;
   calls: Map<string, RpcCall>;
   seq: Sequence;
   emitter: Nanoevents<{ error: RpcError }>;
 
-  constructor(transport: Transport) {
+  constructor(transport: StatusfulTransport) {
     this.calls = new Map();
     this.seq = createSequence();
     this.emitter = new Nanoevents();
     this.setTransport(transport);
   }
 
-  setTransport(transport: Transport) {
+  setTransport(transport: StatusfulTransport) {
     this.transport = transport;
     this.transport.onError(error => {
       this.emitter.emit('error', error);
+    });
+    this.transport.onClose(() => {
+      this.emitter.emit(
+        'error',
+        new RpcError('CONNECTION_CLOSED', 'Connection closed'),
+      );
     });
   }
 

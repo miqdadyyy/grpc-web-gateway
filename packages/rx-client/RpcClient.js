@@ -38,18 +38,19 @@ const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
         call.onEnd(() => observer.complete());
       });
     },
-    cancel: () => (call ? call.cancel() : undefined),
+    cancel: () => call && call.cancel(),
   };
 };
 
 const observableFromClientStreamCall = (
   makeCall: () => ClientStreamCall,
 ): RxClientStreamCall => {
-  const call = makeCall();
+  let call = null;
 
   return {
     execute: () => {
       return Observable.create(observer => {
+        call = makeCall();
         call.onMessage(message => observer.next(message));
 
         call.onError(error => observer.error(error));
@@ -57,9 +58,9 @@ const observableFromClientStreamCall = (
         call.onEnd(() => observer.complete());
       });
     },
-    send: request => call.send(request),
-    end: () => call.end(),
-    cancel: () => call.cancel(),
+    send: request => call && call.send(request),
+    end: () => call && call.end(),
+    cancel: () => call && call.cancel(),
   };
 };
 
