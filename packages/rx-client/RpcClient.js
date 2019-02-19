@@ -15,7 +15,7 @@ import {
 
 export type RxUnaryCall = {
   execute(): Observable<Uint8Array>,
-  cancel(): void,
+  cancel(reason?: string): void,
 };
 
 export type RxClientStreamCall = RxUnaryCall & {
@@ -38,7 +38,7 @@ const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
         call.onEnd(() => observer.complete());
       });
     },
-    cancel: () => call && call.cancel(),
+    cancel: reason => (call ? call.cancel(reason) : undefined),
   };
 };
 
@@ -58,9 +58,9 @@ const observableFromClientStreamCall = (
         call.onEnd(() => observer.complete());
       });
     },
-    send: request => call && call.send(request),
-    end: () => call && call.end(),
-    cancel: () => call && call.cancel(),
+    send: request => (call ? call.send(request) : undefined),
+    end: () => (call ? call.end() : undefined),
+    cancel: reason => (call ? call.cancel(reason) : undefined),
   };
 };
 

@@ -45,7 +45,7 @@ class RetryWsTransport implements Transport {
     const nextInterval = Math.E ** (this.nextPeriod * 0.2) * 1000;
     this.logger.log({ nextInterval });
     this.origin = this.factory();
-    this.origin.onEnd(() => {
+    this.origin.onClose(() => {
       this.nextPeriod = Math.min(this.nextPeriod + 1, 20);
 
       this.logger.log('Increased period', this.nextPeriod);

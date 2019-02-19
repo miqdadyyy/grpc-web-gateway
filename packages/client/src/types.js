@@ -11,7 +11,7 @@ export type RpcCallStatus = 'initial' | 'open' | 'closed' | 'cancelled';
 
 export interface RpcCall {
   status: RpcCallStatus;
-  cancel(): void;
+  cancel(reason?: string): void;
   onMessage(handler: (Uint8Array) => void): () => void;
   onError(handler: (RpcError) => void): () => void;
   onEnd(handler: () => void): () => void;

@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/dialogs/grpc-web-gateway/issues"
   },
-  "homepage": "https://github.com/dialogs/grpc-web-gateway#readme"
+  "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
+  "dependencies": {
+    "flow-bin": "^0.93.0"
+  }
 }

@@ -10,7 +10,7 @@ import {
   debugLoggerDecorator,
   prefixLoggerDecorator,
 } from './Logger';
-import { type Transport } from './transport';
+import { type StatusfulTransport } from './transport';
 import { RpcError } from './RpcError';
 
 type MessageHandler = (message: Uint8Array) => void;
@@ -27,7 +27,7 @@ const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 
 const DEFAULT_LOGGER_PREFIX = '[WS Transport]';
 
-class WebSocketTransport implements Transport {
+class WebSocketTransport implements StatusfulTransport {
   queue: Array<Uint8Array>;
   socket: WebSocket;
   emitter: Nanoevents<{
@@ -174,6 +174,10 @@ class WebSocketTransport implements Transport {
 
   onClose(handler: void => void) {
     return this.emitter.on('end', handler);
+  }
+
+  close() {
+    return this.socket.close();
   }
 
   send(message: Uint8Array): void {
