@@ -6,7 +6,7 @@
   "scripts": {
     "test": "exit 0",
     "fmt": "prettier --write \"**/*.{js,json,md,js.flow,ts}\"",
-    "flow": "flow",
+    "flow": "npx flow",
     "example": "lerna exec --scope example -- npm start"
   },
   "husky": {
@@ -16,22 +16,22 @@
   },
   "lint-staged": {
     "*.{js,json,css,md}": [
-      "prettier --write",
+      "npx prettier --write",
       "git add"
     ]
   },
   "author": "Nikita Gusakov <gusnkt@gmail.com>",
   "devDependencies": {
-    "@dlghq/eslint-config-dialog": "4.0.6",
-    "eslint": "5.12.1",
-    "eslint-config-prettier": "3.6.0",
+    "@dlghq/eslint-config-dialog": "4.0.7",
+    "eslint": "5.14.1",
+    "eslint-config-prettier": "4.0.0",
     "eslint-plugin-react": "7.12.4",
-    "flow-bin": "0.91.0",
+    "flow-bin": "0.93.0",
     "html-webpack-plugin": "3.2.0",
-    "lerna": "3.10.7",
-    "nodemon": "1.18.9",
+    "lerna": "3.13.0",
+    "nodemon": "1.18.10",
     "nodemon-webpack-plugin": "4.0.7",
     "npm-run-all": "4.1.5",
-    "prettier": "1.16.1"
+    "prettier": "1.16.4"
   }
 }
