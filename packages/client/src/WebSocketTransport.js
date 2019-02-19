@@ -68,7 +68,14 @@ class WebSocketTransport implements Transport {
     const cancelPing = this.setupHeartbeat(heartbeatInterval);
 
     this.socket.onclose = () => {
-      this.logger.log('Closed connetcion');
+      this.logger.log('Closed connection');
+      this.emitter.emit(
+        'error',
+        new RpcError(
+          'CONNECTION_ERROR',
+          'Connection closed normally by the server.',
+        ),
+      );
       this.emitter.emit('end');
     };
 
@@ -113,7 +120,10 @@ class WebSocketTransport implements Transport {
       if (!this.isAlive) {
         this.emitter.emit(
           'error',
-          new RpcError('SERVER_CLOSED_CONNECTION', "Server doesn't respond"),
+          new RpcError(
+            'SERVER_CLOSED_CONNECTION',
+            "Server doesn't respond on client pings. That means server closed connection on their side.",
+          ),
         );
 
         this.socket.close();

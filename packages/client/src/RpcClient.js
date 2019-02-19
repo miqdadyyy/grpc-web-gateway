@@ -37,12 +37,6 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
     this.transport.onError(error => {
       this.emitter.emit('error', error);
     });
-    this.transport.onClose(() => {
-      this.emitter.emit(
-        'error',
-        new RpcError('CONNECTION_CLOSED', 'Connection closed'),
-      );
-    });
   }
 
   cancelRequest(id: string) {
