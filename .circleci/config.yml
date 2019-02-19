@@ -19,7 +19,7 @@ jobs:
           <<: *defaults_run
       - run: |
           npx lerna exec -- npx flow-typed install
-          npx flow --retries 20
+          npm run flow
       - save_cache:
           key: grpc-web-gateway-{{ .Branch }}
           paths:
