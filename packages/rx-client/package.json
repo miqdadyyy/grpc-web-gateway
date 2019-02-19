@@ -1,6 +1,6 @@
 {
   "name": "@dlghq/rx-grpc-web-gateway-client",
-  "version": "1.0.0-beta.28",
+  "version": "1.0.0-beta.29",
   "description": "Rx client for dialog grpc web gateway",
   "main": "RpcClient.js",
   "scripts": {
@@ -21,7 +21,7 @@
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "dependencies": {
     "@babel/plugin-proposal-class-properties": "7.3.0",
-    "@dlghq/grpc-web-gateway-client": "^1.0.0-beta.28",
+    "@dlghq/grpc-web-gateway-client": "^1.0.0-beta.29",
     "rxjs": "6.3.3"
   },
   "devDependencies": {
