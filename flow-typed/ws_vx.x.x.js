@@ -24,7 +24,7 @@ declare module 'ws' {
   declare type VerifyClientCallbackSync = (info: {
     origin: string,
     secure: boolean,
-    req: http$IncomingMessage,
+    req: http$IncomingMessage<>,
   }) => boolean;
 
   /**
@@ -33,7 +33,7 @@ declare module 'ws' {
    * whether or not to accept the handshake.
    */
   declare type VerifyClientCallbackAsync = (
-    info: { origin: string, secure: boolean, req: http$IncomingMessage },
+    info: { origin: string, secure: boolean, req: http$IncomingMessage<> },
     callback: (
       res: boolean,
       code?: number,
@@ -50,7 +50,7 @@ declare module 'ws' {
     protocolVersion?: number;
     headers?: { [key: string]: string };
     origin?: string;
-    agent?: http$Agent;
+    agent?: http$Agent<>;
     host?: string;
     family?: number;
     checkServerIdentity: (servername: string, cert: CertMeta) => boolean;
@@ -231,7 +231,7 @@ declare module 'ws' {
     on(event: 'error', listener: (ws: WebSocket, err: Error) => void): this;
     on(
       event: 'upgrade',
-      listener: (ws: WebSocket, request: http$IncomingMessage) => void,
+      listener: (ws: WebSocket, request: http$IncomingMessage<>) => void,
     ): this;
     on(event: 'message', listener: (data: Data) => void): this;
     on(event: 'open', listener: (ws: WebSocket) => void): this;
@@ -243,8 +243,8 @@ declare module 'ws' {
       event: 'unexpected-response',
       listener: (
         ws: WebSocket,
-        request: http$ClientRequest,
-        response: http$IncomingMessage,
+        request: http$ClientRequest<>,
+        response: http$IncomingMessage<>,
       ) => void,
     ): this;
     // on(
@@ -259,7 +259,7 @@ declare module 'ws' {
     addListener(event: 'error', listener: (err: Error) => void): this;
     addListener(
       event: 'upgrade',
-      listener: (request: http$IncomingMessage) => void,
+      listener: (request: http$IncomingMessage<>) => void,
     ): this;
     addListener(event: 'message', listener: (data: Data) => void): this;
     addListener(event: 'open', listener: () => void): this;
@@ -267,8 +267,8 @@ declare module 'ws' {
     addListener(
       event: 'unexpected-response',
       listener: (
-        request: http$ClientRequest,
-        response: http$IncomingMessage,
+        request: http$ClientRequest<>,
+        response: http$IncomingMessage<>,
       ) => void,
     ): this;
     addListener(
@@ -283,7 +283,7 @@ declare module 'ws' {
     removeListener(event: 'error', listener: (err: Error) => void): this;
     removeListener(
       event: 'upgrade',
-      listener: (request: http$IncomingMessage) => void,
+      listener: (request: http$IncomingMessage<>) => void,
     ): this;
     removeListener(event: 'message', listener: (data: Data) => void): this;
     removeListener(event: 'open', listener: () => void): this;
@@ -294,8 +294,8 @@ declare module 'ws' {
     removeListener(
       event: 'unexpected-response',
       listener: (
-        request: http$ClientRequest,
-        response: http$IncomingMessage,
+        request: http$ClientRequest<>,
+        response: http$IncomingMessage<>,
       ) => void,
     ): this;
     removeListener(
@@ -315,12 +315,12 @@ declare module 'ws' {
     address(void): AddressInfo | string;
     close(cb?: (err?: Error) => void): void;
     handleUpgrade(
-      request: http$IncomingMessage,
+      request: http$IncomingMessage<>,
       socket: net$Socket,
       upgradeHead: Buffer,
       callback: (client: WebSocket) => void,
     ): void;
-    shouldHandle(request: http$IncomingMessage): boolean;
+    shouldHandle(request: http$IncomingMessage<>): boolean;
 
     // Events
     on(
@@ -328,7 +328,7 @@ declare module 'ws' {
       cb: (
         ws: WebSocket,
         socket: WebSocket,
-        request: http$IncomingMessage,
+        request: http$IncomingMessage<>,
       ) => void,
     ): this;
     on(event: 'error', cb: (error: Error) => void): this;
@@ -337,7 +337,7 @@ declare module 'ws' {
       cb: (
         ws: WebSocket,
         headers: string[],
-        request: http$IncomingMessage,
+        request: http$IncomingMessage<>,
       ) => void,
     ): this;
     on(event: 'listening', cb: (ws: WebSocket) => void): this;
@@ -350,7 +350,7 @@ declare module 'ws' {
     addListener(event: 'error', cb: (err: Error) => void): this;
     addListener(
       event: 'headers',
-      cb: (headers: string[], request: http$IncomingMessage) => void,
+      cb: (headers: string[], request: http$IncomingMessage<>) => void,
     ): this;
     addListener(event: 'listening', cb: () => void): this;
     addListener(
