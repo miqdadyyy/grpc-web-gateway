@@ -6,7 +6,7 @@
   "scripts": {
     "test": "exit 0",
     "fmt": "prettier --write \"**/*.{js,json,md,js.flow,ts}\"",
-    "flow": "flow --retries=20",
+    "flow": "flow --retries=20 --timeout=60",
     "example": "lerna exec --scope example -- npm start"
   },
   "husky": {
