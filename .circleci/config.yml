@@ -1,0 +1,32 @@
+# CircleCI Config
+
+version: 2
+
+defaults_run: &defaults_run
+  name: run defaults
+  command: |
+    echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" > ~/.npmrc
+    npm ci
+    npx lerna bootstrap
+
+jobs:
+  test:
+    docker:
+      - image: node:10
+    steps:
+      - checkout
+      - run:
+          <<: *defaults_run
+      - run: |
+          npx lerna exec -- npx flow-typed install
+          npx flow
+      - save_cache:
+          key: grpc-web-gateway-{{ .Branch }}
+          paths:
+            - node_modules
+
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - test
