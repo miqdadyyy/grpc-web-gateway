@@ -87,7 +87,7 @@ function createGrpcGateway(config) {
             const handleError = (error) => {
               if (error) {
                 cancelPing();
-                call.end();
+                call.cancel();
                 ws.close();
                 app.logger.error(error);
               }
@@ -109,7 +109,7 @@ function createGrpcGateway(config) {
             });
 
             ws.on('close', () => {
-              call.end();
+              call.cancel();
               cancelPing();
             });
 
