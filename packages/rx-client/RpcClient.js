@@ -29,7 +29,7 @@ const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
   return {
     execute: () => {
       return Observable.create(observer => {
-        call = makeCall();
+        call = call ? call : makeCall();
 
         call.onMessage(message => observer.next(message));
 
@@ -50,7 +50,7 @@ const observableFromClientStreamCall = (
   return {
     execute: () => {
       return Observable.create(observer => {
-        call = makeCall();
+        call = call ? call : makeCall();
         call.onMessage(message => observer.next(message));
 
         call.onError(error => observer.error(error));
