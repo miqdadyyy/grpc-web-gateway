@@ -1,0 +1,155 @@
+/*
+ * Copyright 2018 dialog LLC <info@dlg.im>
+ * @flow strict
+ */
+
+export type GrpcStatusName =
+  | 'UNKNOWN'
+  | 'OK'
+  | 'CANCELLED'
+  | 'INVALID_ARGUMENT'
+  | 'DEADLINE_EXCEEDED'
+  | 'NOT_FOUND'
+  | 'ALREADY_EXISTS'
+  | 'PERMISSION_DENIED'
+  | 'UNAUTHENTICATED'
+  | 'RESOURCE_EXHAUSTED'
+  | 'FAILED_PRECONDITION'
+  | 'ABORTED'
+  | 'OUT_OF_RANGE'
+  | 'UNIMPLEMENTED'
+  | 'INTERNAL'
+  | 'UNAVAILABLE'
+  | 'DATA_LOSS';
+export type GrpcStatusCode =
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16;
+
+type ServiceMessagePayload = { ping: {} } | { pong: {} };
+
+declare class ServiceMessage {
+  static encode(payload: ServiceMessagePayload): { finish(): Uint8Array };
+  static decode(bytes: Uint8Array): ServiceMessagePayload;
+  static verify({ [key: string]: mixed }): null | string;
+}
+
+declare class IRequest {
+  id: string;
+  unary?: UnaryRequestBody;
+  stream?: StreamRequestBody;
+  push?: PushRequestBody;
+  end?: EndRequestBody;
+  cancel?: CancelRequestBody;
+  service?: ServiceMessagePayload;
+}
+
+export type UnaryRequestBody = {
+  service: string,
+  method: string,
+  payload: Uint8Array,
+  metadata?: { [key: string]: string },
+};
+
+export type PushRequestBody = {
+  payload: Uint8Array,
+  metadata?: { [key: string]: string },
+};
+
+export type StreamRequestBody = {
+  service: string,
+  method: string,
+  metadata?: { [key: string]: string },
+};
+
+export type EndRequestBody = {};
+
+export type CancelRequestBody = {
+  reason?: string,
+};
+
+declare type RequestPayload =
+  | {
+      id: string,
+      unary: UnaryRequestBody,
+    }
+  | {
+      id: string,
+      push: PushRequestBody,
+    }
+  | {
+      id: string,
+      stream: StreamRequestBody,
+    }
+  | {
+      id: string,
+      end: EndRequestBody,
+    }
+  | {
+      id: string,
+      cancel: CancelRequestBody,
+    }
+  | { id: string, service: ServiceMessagePayload };
+
+declare class Request extends IRequest {
+  static encode(payload: RequestPayload): { finish(): Uint8Array };
+  static decode(bytes: Uint8Array): Request;
+}
+
+export type ErrorResponseBody = {
+  status: GrpcStatusCode,
+  message: string,
+  metadata?: { [key: string]: string | Buffer },
+};
+
+declare class IResponse {
+  id: string;
+  unary?: UnaryResponseBody;
+  error?: ErrorResponseBody;
+  push?: PushResponseBody;
+  end?: EndResponseBody;
+}
+
+export type UnaryResponseBody = {
+  payload: Uint8Array,
+};
+
+export type PushResponseBody = {
+  payload: Uint8Array,
+};
+
+export type EndResponseBody = {};
+
+declare type ResponsePayload =
+  | {
+      id: string,
+      unary: UnaryResponseBody,
+    }
+  | { id: string, push: PushResponseBody }
+  | { id: string, error: ErrorResponseBody }
+  | { id: string, end: EndResponseBody };
+
+declare class Response extends IResponse {
+  static encode(payload: ResponsePayload): { finish(): Uint8Array };
+  static decode(bytes: Uint8Array): Response;
+}
+
+module.exports = {
+  Request,
+  Response,
+  ServiceMessage,
+};

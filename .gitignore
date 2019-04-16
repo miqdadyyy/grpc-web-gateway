@@ -1,3 +1,7 @@
-node_modules/
+.vscode
+**/node_modules/
 example/dist
-flow-typed
+flow-typed/npm
+**/.cache
+**/dist
+*.log
