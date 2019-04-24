@@ -1,6 +1,6 @@
 {
   "name": "example",
-  "version": "1.0.0-beta.32",
+  "version": "1.0.0-beta.33",
   "description": "Example of using grpc gateway service",
   "private": true,
   "scripts": {
@@ -12,9 +12,9 @@
   "author": "meafmira <i@meafmira.me>",
   "dependencies": {
     "@dlghq/grpc-web-gateway": "^1.0.0-beta.32",
-    "@dlghq/grpc-web-gateway-client": "^1.0.0-beta.32",
+    "@dlghq/grpc-web-gateway-client": "^1.0.0-beta.33",
     "@dlghq/grpc-web-gateway-signaling": "^1.0.0-beta.32",
-    "@dlghq/rx-grpc-web-gateway-client": "^1.0.0-beta.32",
+    "@dlghq/rx-grpc-web-gateway-client": "^1.0.0-beta.33",
     "@grpc/proto-loader": "0.3.0",
     "express": "4.16.4",
     "glob": "7.1.3",
