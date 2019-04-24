@@ -27,8 +27,7 @@
     "@babel/plugin-proposal-class-properties": "7.3.0",
     "@dlghq/grpc-web-gateway-signaling": "^1.0.0-beta.32",
     "nanoevents": "1.0.8",
-    "nanoid": "2.0.1",
-    "npm": "6.7.0"
+    "nanoid": "2.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.2.2",
