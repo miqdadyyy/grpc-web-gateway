@@ -23,6 +23,12 @@ export type RxClientStreamCall = RxUnaryCall & {
   end(): void,
 };
 
+function cancelCall(call, reason) {
+  if (call) {
+    call.cancel(reason);
+  }
+}
+
 const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
   let call = null;
 
@@ -36,11 +42,11 @@ const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
         call.onError(error => observer.error(error));
 
         call.onEnd(() => observer.complete());
-        
-        return () => call.cancel()
+
+        return () => cancelCall(call);
       });
     },
-    cancel: reason => (call ? call.cancel(reason) : undefined),
+    cancel: reason => cancelCall(call, reason),
   };
 };
 
@@ -58,13 +64,13 @@ const observableFromClientStreamCall = (
         call.onError(error => observer.error(error));
 
         call.onEnd(() => observer.complete());
-        
-        return () => call.cancel()
+
+        return () => cancelCall(call);
       });
     },
     send: request => (call ? call.send(request) : undefined),
     end: () => (call ? call.end() : undefined),
-    cancel: reason => (call ? call.cancel(reason) : undefined),
+    cancel: reason => cancelCall(call, reason),
   };
 };
 
