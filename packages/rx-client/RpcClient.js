@@ -2,6 +2,7 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
 import { Observable } from 'rxjs';
+import { share } from 'rxjs/operators';
 import {
   RpcClient,
   RpcError,
@@ -44,7 +45,7 @@ const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
         call.onEnd(() => observer.complete());
 
         return () => cancelCall(call);
-      });
+      }).pipe(share());
     },
     cancel: reason => cancelCall(call, reason),
   };
@@ -66,7 +67,7 @@ const observableFromClientStreamCall = (
         call.onEnd(() => observer.complete());
 
         return () => cancelCall(call);
-      });
+      }).pipe(share());
     },
     send: request => (call ? call.send(request) : undefined),
     end: () => (call ? call.end() : undefined),
