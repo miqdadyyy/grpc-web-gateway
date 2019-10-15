@@ -1,4 +1,5 @@
 // @flow strict
+
 // Copyright 2018 dialog LLC <info@dlg.im>
 
 import Nanoevents from 'nanoevents';
@@ -40,6 +41,8 @@ export class ClientStreamCall implements RpcCall {
       unbindAll(this.emitter);
       this.status = 'cancelled';
     });
+
+    this.transport.onError(error => this.emitter.emit('error', error));
   }
 
   start({ service, method, metadata }: StreamRequest) {

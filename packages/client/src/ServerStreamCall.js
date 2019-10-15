@@ -1,4 +1,5 @@
 // @flow strict
+
 // Copyright 2018 dialog LLC <info@dlg.im>
 
 import Nanoevents from 'nanoevents';
@@ -35,6 +36,8 @@ export class ServerStreamCall implements RpcCall {
       this.status = 'cancelled';
       unbindAll(this.emitter);
     });
+
+    this.transport.onError(error => this.emitter.emit('error', error));
   }
 
   start({ service, method, payload, metadata }: UnaryRequest) {

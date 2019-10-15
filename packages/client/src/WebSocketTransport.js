@@ -28,7 +28,6 @@ const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 const DEFAULT_LOGGER_PREFIX = '[WS Transport]';
 
 class WebSocketTransport implements StatusfulTransport {
-  queue: Array<Uint8Array>;
   socket: WebSocket;
   emitter: Nanoevents<{
     open: void,
@@ -52,7 +51,6 @@ class WebSocketTransport implements StatusfulTransport {
       logger: console,
     },
   ) {
-    this.queue = [];
     this.logger = prefixLoggerDecorator(DEFAULT_LOGGER_PREFIX)(
       debugLoggerDecorator(debug)(logger),
     );
@@ -154,10 +152,6 @@ class WebSocketTransport implements StatusfulTransport {
     this.isAlive = true;
     this.socket.send(new Uint8Array([1, 0]));
     this.emitter.emit('open');
-    if (this.queue.length) {
-      this.queue.forEach(message => this.send(message));
-      this.queue = [];
-    }
   }
 
   onOpen(handler: () => void) {
@@ -181,21 +175,7 @@ class WebSocketTransport implements StatusfulTransport {
   }
 
   send(message: Uint8Array): void {
-    switch (this.socket.readyState) {
-      case WebSocket.CONNECTING:
-        this.queue.push(message);
-        break;
-
-      case WebSocket.OPEN:
-        this.socket.send(message);
-        break;
-
-      default:
-        this.emitter.emit(
-          'error',
-          new RpcError('CONNECTION_CLOSED', 'Connection closed'),
-        );
-    }
+    this.send(message);
   }
 }
 

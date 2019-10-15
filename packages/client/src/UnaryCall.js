@@ -1,4 +1,5 @@
 // @flow strict
+
 // Copyright 2018 dialog LLC <info@dlg.im>
 
 import Nanoevents from 'nanoevents';
@@ -25,6 +26,8 @@ class UnaryCall implements RpcCall {
       this.status = 'closed';
       unbindAll(this.emitter);
     });
+
+    this.transport.onError(error => this.emitter.emit('error', error));
   }
 
   start({ service, method, payload, metadata }: UnaryRequest) {
