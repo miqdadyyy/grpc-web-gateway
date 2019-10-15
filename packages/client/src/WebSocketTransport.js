@@ -1,4 +1,5 @@
 // @flow strict
+
 // Copyright 2018 dialog LLC <info@dlg.im>
 
 import Nanoevents from 'nanoevents';
@@ -28,6 +29,7 @@ const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 const DEFAULT_LOGGER_PREFIX = '[WS Transport]';
 
 class WebSocketTransport implements StatusfulTransport {
+  queue: Array<Uint8Array>;
   socket: WebSocket;
   emitter: Nanoevents<{
     open: void,
@@ -58,7 +60,7 @@ class WebSocketTransport implements StatusfulTransport {
     const socket = new WebSocket(endpoint);
     socket.binaryType = 'arraybuffer';
     socket.onopen = () => this.handleOpen();
-
+    this.queue = [];
     this.socket = socket;
     this.emitter = new Nanoevents();
     this.isAlive = false;
@@ -152,6 +154,11 @@ class WebSocketTransport implements StatusfulTransport {
     this.isAlive = true;
     this.socket.send(new Uint8Array([1, 0]));
     this.emitter.emit('open');
+
+    if (this.queue.length) {
+      this.queue.forEach(message => this.send(message));
+      this.queue = [];
+    }
   }
 
   onOpen(handler: () => void) {
@@ -175,7 +182,21 @@ class WebSocketTransport implements StatusfulTransport {
   }
 
   send(message: Uint8Array): void {
-    this.send(message);
+    switch (this.socket.readyState) {
+      case WebSocket.CONNECTING:
+        this.queue.push(message);
+        break;
+
+      case WebSocket.OPEN:
+        this.socket.send(message);
+        break;
+
+      default:
+        this.emitter.emit(
+          'error',
+          new RpcError('CONNECTION_CLOSED', 'Connection closed'),
+        );
+    }
   }
 }
 
