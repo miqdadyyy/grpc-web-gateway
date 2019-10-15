@@ -20,13 +20,13 @@
   },
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "dependencies": {
-    "@babel/plugin-proposal-class-properties": "7.3.0",
-    "@dlghq/grpc-web-gateway-client": "^1.0.0-beta.37",
-    "rxjs": "6.3.3"
+    "@dlghq/grpc-web-gateway-client": "1.0.0-beta.33",
+    "rxjs": "6.5.3"
   },
   "devDependencies": {
-    "@babel/core": "^7.2.2",
-    "flow-bin": "0.93.0",
-    "parcel-bundler": "^1.11.0"
+    "@babel/core": "^7.6.4",
+    "@babel/plugin-proposal-class-properties": "7.5.5",
+    "flow-bin": "0.109.0",
+    "parcel-bundler": "^1.12.4"
   }
 }

@@ -31,6 +31,37 @@ function cancelCall(call, reason) {
   }
 }
 
+function test() {
+  setLastScrollTops(prevState => {
+    if (container.current) {
+      return {
+        ...prevState,
+        lastScreen: container.current.scrollTop,
+      };
+    }
+
+    return screen;
+  });
+
+  switch (screen) {
+    case 'emoji': {
+      if (!isEmpty(stickers)) {
+        setCurrent(String(stickers[0].id));
+      }
+      setScreen('stickers');
+    }
+
+    case 'stickers': {
+      setCurrent(categories[0].name);
+      setScreen('emoji');
+      break;
+    }
+
+    default:
+      setScreen('emoji');
+  }
+}
+
 const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
   let call = null;
 
