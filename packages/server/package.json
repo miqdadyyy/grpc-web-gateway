@@ -1,6 +1,6 @@
 {
   "name": "@dlghq/grpc-web-gateway",
-  "version": "1.0.0-beta.32",
+  "version": "1.0.0-beta.37",
   "description": "Dialog grpc gateway web server",
   "main": "dist/index.js",
   "module": "src/index.js",
