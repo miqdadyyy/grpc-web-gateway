@@ -1,10 +1,13 @@
 [ignore]
+.*/node_modules/@parcel/.*
+.*/node_modules/parcel-bundler/.*
 
 [include]
 
 [libs]
 
 [lints]
+deprecated-utility=off
 
 [options]
 server.max_workers=1
