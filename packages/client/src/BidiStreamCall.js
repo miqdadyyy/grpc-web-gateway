@@ -50,7 +50,13 @@ export class BidiStreamCall implements RpcCall {
       const id = this.id;
       const message = Request.encode({
         id,
-        stream: { service, method, metadata },
+        stream: {
+          service,
+          method,
+          metadata,
+          // STREAM
+          responseType: 2,
+        },
       }).finish();
 
       this.transport.send(message);

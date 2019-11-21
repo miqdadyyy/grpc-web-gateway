@@ -23,6 +23,7 @@ createGateway({
   server,
   api: apiHost,
   protoFiles: [protoRoot],
+  filterHeaders: () => true,
 });
 
 app.use(express.static(path.resolve(__dirname, '../dist')));

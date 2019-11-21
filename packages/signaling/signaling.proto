@@ -42,17 +42,25 @@ message Request {
   }
 }
 
+enum ResponseType {
+  UNKNOWN = 0;
+  UNARY = 1;
+  STREAM = 2;
+};
+
 message UnaryRequestBody {
   string service = 1;
   string method = 2;
   bytes payload = 3;
   map<string, string> metadata = 4;
+  ResponseType responseType = 10;
 }
 
 message StreamRequestBody {
   string service = 1;
   string method = 2;
   map<string, string> metadata = 3;
+  ResponseType responseType = 10;
 }
 
 message PushRequestBody {

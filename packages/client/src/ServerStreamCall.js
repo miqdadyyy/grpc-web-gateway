@@ -45,7 +45,14 @@ export class ServerStreamCall implements RpcCall {
       const id = this.id;
       const message = Request.encode({
         id,
-        unary: { service, method, payload, metadata },
+        unary: {
+          service,
+          method,
+          payload,
+          metadata,
+          // STREAM
+          responseType: 2,
+        },
       }).finish();
 
       this.transport.send(message);

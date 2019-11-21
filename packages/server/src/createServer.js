@@ -2,14 +2,11 @@
 
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import type { Server as HttpServer, IncomingMessage } from 'http';
+import type { Server as HttpServer } from 'http';
 import type { Server as HttpsServer } from 'https';
 import nanoid from 'nanoid';
 import { Server as WebSocketServer } from 'ws';
-import grpc, {
-  makeGenericClientConstructor as makeClientConstructor,
-  Metadata,
-} from 'grpc';
+import grpc, { Client } from 'grpc';
 import { identity, noop } from 'lodash/fp';
 import {
   Request,
@@ -25,7 +22,6 @@ import {
 import pkg from '../package.json';
 import { logger } from './logger';
 import { createCredentials, type CredentialsConfig } from './credentials';
-import { parseProtoFiles, getDefinitions } from './utils/proto';
 import { createMetadata, normalizeGrpcMetadata } from './grpcMetadata';
 import { GrpcError } from './GrpcError';
 import { setupPingConnections } from './heartbeat';
@@ -52,11 +48,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
   logger.info('Starting gateway version: ', pkg.version);
 
   const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
-  const definitions = getDefinitions(config.protoFiles);
-  const GrpcClient = makeClientConstructor(definitions);
-  logger.info(definitions);
-  const services = parseProtoFiles(config.protoFiles);
-  logger.info({ services });
+
   const wss = new WebSocketServer({
     server: config.server,
   });
@@ -64,42 +56,6 @@ export function createServer(config: GrpcGatewayServerConfig) {
   const parseMetadata = createMetadataParser(config.filterHeaders);
 
   const heartbeat = setupPingConnections(wss, heartbeatInterval);
-
-  const getMethodDefinition = (service, method) => {
-    const serviceDefinition = services.get(service);
-    if (!serviceDefinition) {
-      logger.error(
-        'No such service ',
-        service,
-        ' in ',
-        Array.from(services.keys()),
-      );
-      logger.info(services);
-
-      throw GrpcError.fromStatusName(
-        'NOT_FOUND',
-        `There is no service '${service}'`,
-      );
-    }
-
-    const methodDefinition = serviceDefinition[method];
-    if (!methodDefinition) {
-      logger.error(
-        'No such method ',
-        `${service}/${method}`,
-        ' in ',
-        Array.from(services.keys()),
-      );
-      logger.info(services);
-
-      throw GrpcError.fromStatusName(
-        'NOT_FOUND',
-        `There is no such method '${method}' in service '${service}'`,
-      );
-    }
-
-    return methodDefinition;
-  };
 
   grpc.setLogger(logger);
 
@@ -114,7 +70,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
     heartbeat.addConnection(connectionId, ws);
 
     const calls = new Map();
-    const grpcClient = new GrpcClient(
+    const grpcClient = new Client(
       config.api,
       createCredentials(config.credentials),
       {},
@@ -190,19 +146,8 @@ export function createServer(config: GrpcGatewayServerConfig) {
     const processUnaryRequest = (id, unaryPayload) => {
       try {
         const { service, method, payload, metadata } = unaryPayload;
-        const methodDefinition = getMethodDefinition(service, method);
-
-        if (methodDefinition.requestStream) {
-          throw GrpcError.fromStatusName(
-            'UNIMPLEMENTED',
-            `There is no unary request method ${method} in service ${service}. Use stream request instead`,
-          );
-        }
-
-        const path = methodDefinition.path;
-
-        if (methodDefinition.responseStream) {
-          connectionLogger.info('Server stream request', methodDefinition);
+        const path = `/${service}/${method}`;
+        if (unaryPayload.responseType === 'STREAM') {
           const call = grpcClient.makeServerStreamRequest(
             path,
             identity,
@@ -215,7 +160,6 @@ export function createServer(config: GrpcGatewayServerConfig) {
           handleServerStream(id, call);
           calls.set(id, call);
         } else {
-          connectionLogger.info('Unary request', methodDefinition);
           const call = grpcClient.makeUnaryRequest(
             path,
             identity,
@@ -248,19 +192,10 @@ export function createServer(config: GrpcGatewayServerConfig) {
     const processStreamRequest = (id, streamPayload) => {
       try {
         const { service, method, metadata } = streamPayload;
-        const methodDefinition = getMethodDefinition(service, method);
 
-        if (!methodDefinition.requestStream) {
-          throw GrpcError.fromStatusName(
-            'UNIMPLEMENTED',
-            `There is no stream request method ${method} in service ${service}. Use unary request instead`,
-          );
-        }
+        const path = `/${service}/${method}`;
 
-        const path = methodDefinition.path;
-
-        if (methodDefinition.responseStream) {
-          connectionLogger.info('Bidi stream request', methodDefinition);
+        if (streamPayload.responseType === 'STREAM') {
           const call = grpcClient.makeBidiStreamRequest(
             path,
             identity,
@@ -272,7 +207,6 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
           handleServerStream(id, call);
         } else {
-          connectionLogger.info('Client stream request', methodDefinition);
           const call = grpcClient.makeClientStreamRequest(
             path,
             identity,
@@ -311,7 +245,10 @@ export function createServer(config: GrpcGatewayServerConfig) {
             'UNKNOWN',
             'Message should be ArrayBuffer',
           );
-        const request = Request.decode(new Uint8Array(message));
+        const request = Request.toObject(
+          Request.decode(new Uint8Array(message)),
+          { enums: String },
+        );
         const { id } = request;
 
         if (request.unary) {

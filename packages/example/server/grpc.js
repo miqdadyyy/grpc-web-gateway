@@ -73,11 +73,18 @@ function startGrpcServer({ protoRoot, listen }) {
       keepCase: false,
       longs: String,
       bytes: Array,
+      enums: String,
     });
+    console.log(definition);
     const descriptor = grpc.loadPackageDefinition(definition);
 
+    console.log(descriptor);
+
     Object.keys(definition).forEach(serviceName => {
-      server.addService(descriptor[serviceName].service, new TestService());
+      const service = descriptor[serviceName].service;
+      if (service) {
+        server.addService(service, new TestService());
+      }
     });
   });
 

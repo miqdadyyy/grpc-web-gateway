@@ -5,7 +5,7 @@
   "main": "signaling.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "generate-api": "pbjs -t static-module -o client/api.gen.js proto/*.proto"
+    "generate-api": "pbjs -t static-module -o signaling.js ./signaling.proto && pbts -o signaling.d.ts signaling.js"
   },
   "repository": {
     "type": "git",
@@ -21,5 +21,6 @@
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "devDependencies": {
     "flow-bin": "0.112.0"
-  }
+  },
+  "dependencies": {}
 }
