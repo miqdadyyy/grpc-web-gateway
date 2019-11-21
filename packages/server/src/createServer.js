@@ -1,12 +1,15 @@
-// @flow strict
-// Copyright 2018 dialog LLC <info@dlg.im>
+/**
+ * Copyright 2018 dialog LLC <info@dlg.im>
+ * @flow strict
+ */
 
-import type { Server as HttpServer } from 'http';
+import type { Server as HttpServer, IncomingMessage } from 'http';
 import type { Server as HttpsServer } from 'https';
 import nanoid from 'nanoid';
 import { Server as WebSocketServer } from 'ws';
 import grpc, {
   makeGenericClientConstructor as makeClientConstructor,
+  Metadata,
 } from 'grpc';
 import { identity, noop } from 'lodash/fp';
 import {
@@ -14,6 +17,10 @@ import {
   Response,
   type GrpcStatusCode,
 } from '../../signaling/signaling';
+import {
+  type HeaderFilter,
+  createMetadataParser,
+} from './createMetadataParser';
 
 // $FlowFixMe
 import pkg from '../package.json';
@@ -30,6 +37,7 @@ type GrpcGatewayServerConfig = {
   protoFiles: Array<string>,
   credentials?: CredentialsConfig,
   heartbeatInterval?: number,
+  filterHeaders: HeaderFilter,
 };
 
 const SECONDS = 1000;
@@ -53,6 +61,8 @@ export function createServer(config: GrpcGatewayServerConfig) {
   const wss = new WebSocketServer({
     server: config.server,
   });
+
+  const parseMetadata = createMetadataParser(config.filterHeaders);
 
   const heartbeat = setupPingConnections(wss, heartbeatInterval);
 
@@ -98,8 +108,9 @@ export function createServer(config: GrpcGatewayServerConfig) {
     logger.error('Connection error:', err);
   });
 
-  wss.on('connection', ws => {
+  wss.on('connection', (ws, httpRequest: http$IncomingMessage<>) => {
     const connectionId = nanoid();
+    const initialMetadata = parseMetadata(httpRequest);
 
     heartbeat.addConnection(connectionId, ws);
 
@@ -198,21 +209,20 @@ export function createServer(config: GrpcGatewayServerConfig) {
             identity,
             identity,
             payload,
-            createMetadata(metadata || {}),
+            createMetadata(initialMetadata, metadata || {}),
             {},
           );
 
           handleServerStream(id, call);
           calls.set(id, call);
         } else {
-          const meta = createMetadata(metadata || {});
-          connectionLogger.info('Unary request', payload, meta);
+          connectionLogger.info('Unary request', methodDefinition);
           const call = grpcClient.makeUnaryRequest(
             path,
             identity,
             identity,
             payload,
-            meta,
+            createMetadata(initialMetadata, metadata || {}),
             {},
             (error: GrpcStatus, response: Uint8Array) => {
               if (error) {
@@ -256,7 +266,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
             path,
             identity,
             identity,
-            createMetadata(metadata || {}),
+            createMetadata(initialMetadata, metadata || {}),
             {},
           );
           calls.set(id, call);
@@ -268,7 +278,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
             path,
             identity,
             identity,
-            createMetadata(metadata || {}),
+            createMetadata(initialMetadata, metadata || {}),
             {},
             (error: GrpcStatus, response: Uint8Array) => {
               if (error) {

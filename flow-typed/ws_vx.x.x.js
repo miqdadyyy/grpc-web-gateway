@@ -325,11 +325,7 @@ declare module 'ws' {
     // Events
     on(
       event: 'connection',
-      cb: (
-        ws: WebSocket,
-        socket: WebSocket,
-        request: http$IncomingMessage<>,
-      ) => void,
+      cb: (ws: WebSocket, request: http$IncomingMessage<>) => void,
     ): this;
     on(event: 'error', cb: (error: Error) => void): this;
     on(
