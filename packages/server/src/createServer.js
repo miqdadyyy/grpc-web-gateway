@@ -1,7 +1,6 @@
-/**
- * Copyright 2018 dialog LLC <info@dlg.im>
- * @flow strict
- */
+// @flow strict
+
+// Copyright 2018 dialog LLC <info@dlg.im>
 
 import type { Server as HttpServer, IncomingMessage } from 'http';
 import type { Server as HttpsServer } from 'https';
