@@ -24,14 +24,14 @@
   },
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "dependencies": {
-    "@babel/plugin-proposal-class-properties": "7.3.0",
+    "@babel/plugin-proposal-class-properties": "7.7.0",
     "@dlghq/grpc-web-gateway-signaling": "^1.0.0-beta.38",
-    "nanoevents": "1.0.8",
-    "nanoid": "2.0.1"
+    "nanoevents": "2.0.0",
+    "nanoid": "2.1.7"
   },
   "devDependencies": {
-    "@babel/core": "^7.2.2",
-    "flow-bin": "0.109.0",
-    "parcel-bundler": "^1.11.0"
+    "@babel/core": "^7.7.2",
+    "flow-bin": "0.112.0",
+    "parcel-bundler": "^1.12.4"
   }
 }
