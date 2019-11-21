@@ -1,5 +1,7 @@
-// @flow strict
-// Copyright 2018 dialog LLC <info@dlg.im>
+/**
+ * Copyright 2018 dialog LLC <info@dlg.im>
+ * @flow strict
+ */
 
 import _ from 'lodash';
 import { Metadata } from 'grpc';
@@ -16,10 +18,13 @@ type GrpcMetadata = {
   remove(key: string): void,
 };
 
-export function createMetadata(values: {
-  [key: string]: string,
-}): GrpcMetadata {
-  const metadata = new Metadata();
+export function createMetadata(
+  initialMetadata: Metadata,
+  values: {
+    [key: string]: string,
+  },
+): GrpcMetadata {
+  const metadata = initialMetadata.clone();
   _.forOwn(values, (value, key) => metadata.set(key, value));
 
   return metadata;
