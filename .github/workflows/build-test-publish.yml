@@ -15,7 +15,7 @@ jobs:
       - name: Install dependencies
         run: npx lerna bootstrap
       - name: Instal flow types
-        run: npx lerna exec -- npx flow-typed install
+        run: npx lerna exec -- "(npx flow-typed install || exit 0)"
       - name: Flow check
         run: npx flow check
       - name: Release
