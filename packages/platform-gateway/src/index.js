@@ -74,12 +74,14 @@ createGrpcGateway({
   },
 });
 
-server.listen(config.listen, error => {
+const { HOST: host, PORT: port } = config;
+
+server.listen({ host, port }, error => {
   if (error) {
     throw error;
   } else {
-    const listening = `http://${config.listen.host}:${config.listen.port}`;
-    const proxying = `http${config.api.secure ? 's' : ''}://${config.api.host}`;
+    const listening = `http://${host}:${port}`;
+    const proxying = `http${config.API_SECURE ? 's' : ''}://${config.API_HOST}`;
     console.info(
       `Gateway started. Listening ${listening}. Proxying ${proxying}.`,
     );
