@@ -1,0 +1,29 @@
+name: Docker
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '12.13.x'
+      - name: Setup npm
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+      - name: Build Docker Container
+        run: |
+          cd packages/platform-gateway
+          npm ci
+          docker build -t platform-gateway .
+      - name: Pack dist
+        run: tar czf platform-gateway.tar.gz packages/platform-gateway
+      - name: Upload dist to release
+        uses: JasonEtco/upload-to-release@0.1
+        with:
+          args: platform-gateway.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
