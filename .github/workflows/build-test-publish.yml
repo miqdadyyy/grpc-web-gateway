@@ -18,7 +18,10 @@ jobs:
         run: npx lerna exec -- "(npx flow-typed install || exit 0)"
       - name: Flow check
         run: npx flow check
-      - name: Release
+      - name: Git reset
         run: |
+          git add --all
+          git reset --hard
           git checkout master
-          npx lerna publish patch --yes
+      - name: Release
+        run: npx lerna publish patch --yes
