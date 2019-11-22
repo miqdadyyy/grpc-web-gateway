@@ -19,4 +19,6 @@ jobs:
       - name: Flow check
         run: npx flow check
       - name: Release
-        run: npx lerna publish patch --yes
+        run: |
+          git checkout master
+          npx lerna publish patch --yes
