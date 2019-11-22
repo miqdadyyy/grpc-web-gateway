@@ -1,0 +1,18 @@
+{
+  "name": "@dlghq/web-platform-grpc-web-gateway",
+  "private": true,
+  "version": "1.0.0-beta.42",
+  "description": "Dialog Web Platform gRPC Web Gateway",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "exit 0"
+  },
+  "author": "Nikita Gusakov <nkt@dlg.im>",
+  "dependencies": {
+    "@dlghq/grpc-web-gateway": "1.0.0-beta.42",
+    "cors": "2.8.5",
+    "dotenv": "6.0.0",
+    "env-schema": "1.1.0",
+    "express": "4.17.1"
+  }
+}

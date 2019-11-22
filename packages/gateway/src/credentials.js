@@ -1,4 +1,5 @@
 // @flow strict
+
 // Copyright 2018 dialog LLC <info@dlg.im>
 
 const { credentials } = require('grpc');
@@ -12,7 +13,7 @@ export type SslCredentialsConfig = {
 export type CredentialsConfig =
   | {
       type: 'ssl',
-      config: SslCredentialsConfig,
+      config?: SslCredentialsConfig,
     }
   | {
       type: 'insecure',
