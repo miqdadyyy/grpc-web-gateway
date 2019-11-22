@@ -4,7 +4,7 @@ import http from 'http';
 import express from 'express';
 import * as protoLoader from '@grpc/proto-loader';
 
-import { createServer as createGateway } from '../../server/src/';
+import { createServer as createGateway } from '../../gateway/src/';
 import startGrpcServer from './grpc';
 
 const apiHost = 'localhost:3000';
