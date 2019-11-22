@@ -18,3 +18,5 @@ jobs:
         run: npx lerna exec -- npx flow-typed install
       - name: Flow check
         run: npx flow check
+      - name: Release
+        run: npx lerna publish patch --yes
