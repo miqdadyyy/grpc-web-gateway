@@ -29,7 +29,6 @@ import { setupPingConnections } from './heartbeat';
 type GrpcGatewayServerConfig = {
   api: string,
   server: HttpServer | HttpsServer,
-  protoFiles: Array<string>,
   credentials?: CredentialsConfig,
   heartbeatInterval?: number,
   filterHeaders: HeaderFilter,
