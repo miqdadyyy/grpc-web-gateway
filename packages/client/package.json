@@ -1,6 +1,6 @@
 {
   "name": "@dlghq/grpc-web-gateway-client",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Dialog grpc web gateway client",
   "main": "src",
   "directories": {
@@ -25,7 +25,7 @@
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "dependencies": {
     "@babel/plugin-proposal-class-properties": "7.7.0",
-    "@dlghq/grpc-web-gateway-signaling": "^2.0.0",
+    "@dlghq/grpc-web-gateway-signaling": "^3.0.0",
     "nanoevents": "2.0.0",
     "nanoid": "2.1.7"
   },
