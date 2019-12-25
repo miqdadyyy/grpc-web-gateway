@@ -47,11 +47,7 @@ class WebSocketTransport implements StatusfulTransport {
       heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL,
       debug = false,
       logger = console,
-    }: WebSocketTransportConfig = {
-      heartbeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
-      debug: false,
-      logger: console,
-    },
+    }: WebSocketTransportConfig = {},
   ) {
     this.logger = prefixLoggerDecorator(DEFAULT_LOGGER_PREFIX)(
       debugLoggerDecorator(debug)(logger),
