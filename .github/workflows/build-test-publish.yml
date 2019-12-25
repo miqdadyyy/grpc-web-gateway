@@ -3,10 +3,10 @@ name: Build & Test & Publish
 on: push
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
           node-version: '12.13.x'
@@ -27,5 +27,18 @@ jobs:
           git add --all
           git reset --hard
           git checkout master
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '12.13.x'
+      - name: Setup npm
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+      - name: Install dependencies
+        run: npx lerna bootstrap
       - name: Release
         run: npx lerna publish patch --yes
