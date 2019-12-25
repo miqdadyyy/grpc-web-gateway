@@ -17,5 +17,6 @@ jobs:
       - name: Build Docker Container
         run: |
           cd packages/platform-gateway
-          npm ci
+          npm install
+          npm audit fix
           docker build -t platform-gateway .
