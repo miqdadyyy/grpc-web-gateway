@@ -2,21 +2,34 @@ name: Docker
 
 on:
   release:
-    types: [created]
+    types: [published]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      DOCKER_REGISTRY: docker.pkg.github.com
+      DOCKER_IMAGE_NAME: docker.pkg.github.com/dialogs/grpc-web-gateway/web-platform-grpc-web-gateway:${{ github.event.release.tag_name }}
+      DOCKER_USERNAME: ${{ github.actor }}
+      DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1
         with:
           node-version: '12.13.x'
       - name: Setup npm
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-      - name: Build Docker Container
+      - name: Build Docker image
+        working-directory: packages/platform-gateway
         run: |
-          cd packages/platform-gateway
           npm install
           npm audit fix
-          docker build -t platform-gateway .
+          docker build -t $DOCKER_IMAGE_NAME .
+      - name: Docker login
+        run: docker login $DOCKER_REGISTRY --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
+      - name: Docker publish
+        run: docker push $DOCKER_IMAGE_NAME
