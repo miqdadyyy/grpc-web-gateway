@@ -1,8 +1,7 @@
 {
-  "name": "@dlghq/grpc-web-gateway",
-  "version": "1.0.0-beta.14",
-  "description": "gRPC to json gateway",
-  "main": "dist/index.js",
+  "name": "grpc-web-gateway",
+  "private": true,
+  "description": "gRPC for web",
   "scripts": {
     "test": "exit 0",
     "fmt": "prettier --write \"**/*.{js,json,md,js.flow,ts}\"",

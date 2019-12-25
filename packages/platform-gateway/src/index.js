@@ -8,6 +8,7 @@ const http = require('http');
 const cors = require('cors');
 const packageInfo = require('../package.json');
 const { createServer: createGrpcGateway } = require('@dlghq/grpc-web-gateway');
+const { extractCorsConfigFromEnv } = require('./extractCorsConfigFromEnv');
 
 const config = envSchema({
   dotenv: true,
@@ -37,7 +38,7 @@ const config = envSchema({
 const app = express();
 const server = http.createServer(app);
 
-app.use(cors({ origin: true }));
+app.use(cors(extractCorsConfigFromEnv()));
 
 app.get('/info', (req, res) => {
   res.json({
