@@ -7,5 +7,8 @@
     "max-lines": "off",
     "multiline-comment-style": "off",
     "no-void": "off"
+  },
+  "env": {
+    "jest/globals": true
   }
 }

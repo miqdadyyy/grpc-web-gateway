@@ -18,6 +18,12 @@ jobs:
         run: npx lerna exec -- "(npx flow-typed install || exit 0)"
       - name: Flow check
         run: npx flow check
+      - name: Test
+        run: npm test
+      - name: Upload test coverage
+        run: npx codecov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Git reset
         run: |
           git add --all
