@@ -3,9 +3,8 @@
 
 import RpcClient from './RpcClient';
 import WebSocketTransport from './WebSocketTransport';
-import RetryWsTransport from './RetryWsTransport';
 
-export { RpcClient, WebSocketTransport, RetryWsTransport };
+export { RpcClient, WebSocketTransport };
 export * from './types';
 export * from './transport';
 export * from './RpcError.js';

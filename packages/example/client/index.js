@@ -2,7 +2,6 @@
 
 import {
   RpcClient,
-  RetryWsTransport,
   WebSocketTransport,
   type Transport,
   type StatusfulTransport,
