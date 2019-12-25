@@ -54,7 +54,6 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
 
     call.start(request).onEnd(() => {
       this.calls.delete(call.id);
-      this.seq.deleteId(call.id);
     });
 
     return call;
@@ -68,7 +67,6 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
 
     call.start(request).onEnd(() => {
       this.calls.delete(call.id);
-      this.seq.deleteId(call.id);
     });
 
     return call;
@@ -82,7 +80,6 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
 
     call.start(request).onEnd(() => {
       this.calls.delete(call.id);
-      this.seq.deleteId(call.id);
     });
 
     return call;
@@ -96,7 +93,6 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
 
     call.start(request).onEnd(() => {
       this.calls.delete(call.id);
-      this.seq.deleteId(call.id);
     });
 
     return call;
