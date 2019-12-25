@@ -14,8 +14,6 @@ jobs:
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
       - name: Install dependencies
         run: npx lerna bootstrap
-      - name: Instal flow types
-        run: npx lerna exec -- "(npx flow-typed install || exit 0)"
       - name: Flow check
         run: npx flow check
       - name: Test
