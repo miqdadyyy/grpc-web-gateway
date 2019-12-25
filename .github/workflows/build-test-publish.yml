@@ -22,6 +22,8 @@ jobs:
         run: npm test
       - name: Upload test coverage
         run: npx codecov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Git reset
         run: |
           git add --all
