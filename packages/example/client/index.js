@@ -6,15 +6,6 @@ import {
   type Transport,
   type StatusfulTransport,
 } from '@dlghq/grpc-web-gateway-client';
-import {
-  createWebsocketTransport,
-  createWebsocketTransportFactory,
-  retryTransportDecorator,
-  heartbeatTransportDecorator,
-  map,
-  chain,
-  type Factory,
-} from '@dlghq/grpc-web-gateway-client/src/transports';
 import { RxRpcClient } from '@dlghq/rx-grpc-web-gateway-client';
 import { pipe } from 'lodash/fp';
 import Protobuf from 'protobufjs/light';
@@ -25,42 +16,14 @@ import { Ping, Pong, Bytes, Long } from './api.gen';
 Protobuf.util.Long = long;
 Protobuf.configure();
 
-const endpoint = 'ws://localhost:8080';
 const makeClient = pipe(
-  createWebsocketTransportFactory,
-  map(heartbeatTransportDecorator()),
-  retryTransportDecorator(),
+  endpoint => new WebSocketTransport(endpoint),
   transport => new RpcClient(transport),
   rpcClient => new RxRpcClient(rpcClient),
 );
 
-const rxClient = makeClient(endpoint);
+const rxClient = makeClient('ws://localhost:8080');
 
-// rxClient
-//   .makeUnaryRequest({
-//     service: 'Test',
-//     method: 'Unary',
-//     payload: Ping.encode({ date: Date.now() }).finish(),
-//   })
-//   .execute()
-//   .toPromise()
-//   .then(Pong.decode)
-//   .then(console.log)
-//   .catch(console.error);
-
-// rxClient
-//   .makeUnaryRequest({
-//     service: 'Test',
-//     method: 'UnaryBytes',
-//     payload: Bytes.encode({
-//       byteString: { value: 'AQAAAAsUCIGSAxIAGAIYCBgFGAYgoYLk1gY=' },
-//     }).finish(),
-//   })
-//   .execute()
-//   .toPromise()
-//   .then(Bytes.decode)
-//   .then(console.log)
-//   .catch(console.error);
 console.log(
   'Long source',
   Long.encode({
