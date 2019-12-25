@@ -22,8 +22,7 @@
   },
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "dependencies": {
-    "@dlghq/dialog-api": "1.16.0",
-    "@dlghq/grpc-web-gateway-signaling": "^3.0.0",
+    "@dlghq/grpc-web-gateway-signaling": "3.0.0",
     "@grpc/proto-loader": "0.5.3",
     "body-parser": "1.19.0",
     "express": "4.17.1",
@@ -31,22 +30,21 @@
     "glob": "7.1.6",
     "grpc": "1.24.2",
     "lodash": "4.17.15",
-    "nanoid": "2.1.7",
-    "npm": "6.13.1",
-    "pino": "5.14.0",
-    "pino-pretty": "3.4.0",
+    "nanoid": "2.1.8",
+    "pino": "5.15.0",
+    "pino-pretty": "3.5.0",
     "protocol-buffers-schema": "3.3.2",
     "run": "1.4.0",
-    "ws": "7.2.0"
+    "ws": "7.2.1"
   },
   "devDependencies": {
-    "@babel/core": "7.7.2",
-    "@babel/plugin-proposal-class-properties": "7.7.0",
+    "@babel/core": "7.7.7",
+    "@babel/plugin-proposal-class-properties": "7.7.4",
     "@dlghq/babel-preset-dialog": "4.4.0",
     "@dlghq/eslint-config-dialog": "4.0.10",
-    "flow-bin": "0.112.0",
+    "flow-bin": "0.114.0",
     "html-webpack-plugin": "3.2.0",
-    "nodemon": "2.0.0",
+    "nodemon": "2.0.2",
     "npm-run-all": "4.1.5",
     "parcel-bundler": "1.12.4"
   }
