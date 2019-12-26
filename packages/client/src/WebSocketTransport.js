@@ -61,18 +61,17 @@ class WebSocketTransport implements StatusfulTransport {
     this.emitter = new Nanoevents();
     this.isAlive = false;
 
-    const connectivityListeners = [
+    let bindings = [
+      this.onClose(() => {
+        this.logger.log('connection closed');
+
+        bindings.forEach(unsubscribe => unsubscribe());
+        bindings = [];
+      }),
+      this.onError(() => this.close()),
       this.setupHeartbeat(heartbeatInterval),
       this.setupOfflineListener(),
     ];
-
-    this.onClose(() => {
-      this.logger.log('Ended connection');
-      unbindAll(this.emitter);
-      connectivityListeners.forEach(unsubscribe => unsubscribe());
-    });
-
-    this.onError(() => this.close());
 
     this.socket.binaryType = 'arraybuffer';
     this.socket.onopen = () => {

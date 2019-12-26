@@ -30,16 +30,19 @@ export class ClientStreamCall implements RpcCall {
     this.emitter = new Nanoevents();
     this.status = 'initial';
 
-    this.onEnd(() => {
-      this.status = 'closed';
-      unbindAll(this.emitter);
-    });
-
-    this.onError(() => {
-      this.emitter.emit('end');
-    });
-
-    this.transport.onError(error => this.emitter.emit('error', error));
+    let bindings = [
+      this.onEnd(() => {
+        this.status = 'closed';
+        bindings.forEach(unbind => unbind());
+        bindings = [];
+      }),
+      this.onError(() => {
+        this.emitter.emit('end');
+      }),
+      this.transport.onError(error => {
+        this.emitter.emit('error', error);
+      }),
+    ];
   }
 
   start({ service, method, metadata }: StreamRequest) {

@@ -39,13 +39,24 @@ const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
       return Observable.create(observer => {
         call = call ? call : makeCall();
 
-        call.onMessage(message => observer.next(message));
+        let bindings = [
+          call.onMessage(message => {
+            observer.next(message);
+          }),
+          call.onError(error => {
+            observer.error(error);
+          }),
+          call.onEnd(() => {
+            observer.complete();
+          }),
+        ];
 
-        call.onError(error => observer.error(error));
+        return () => {
+          bindings.forEach(unbind => unbind());
+          bindings = [];
 
-        call.onEnd(() => observer.complete());
-
-        return () => cancelCall(call);
+          cancelCall(call);
+        };
       }).pipe(share());
     },
     cancel: reason => cancelCall(call, reason),
@@ -61,13 +72,25 @@ const observableFromClientStreamCall = (
     execute: () => {
       return Observable.create(observer => {
         call = call ? call : makeCall();
-        call.onMessage(message => observer.next(message));
 
-        call.onError(error => observer.error(error));
+        let bindings = [
+          call.onMessage(message => {
+            observer.next(message);
+          }),
+          call.onError(error => {
+            observer.error(error);
+          }),
+          call.onEnd(() => {
+            observer.complete();
+          }),
+        ];
 
-        call.onEnd(() => observer.complete());
+        return () => {
+          bindings.forEach(unbind => unbind());
+          bindings = [];
 
-        return () => cancelCall(call);
+          cancelCall(call);
+        };
       }).pipe(share());
     },
     send: request => (call ? call.send(request) : undefined),
