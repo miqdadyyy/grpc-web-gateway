@@ -22,9 +22,13 @@ class UnaryCall implements RpcCall {
     this.emitter = new Nanoevents();
     this.status = 'initial';
 
-    this.emitter.on('end', () => {
+    this.onEnd(() => {
       this.status = 'closed';
       unbindAll(this.emitter);
+    });
+
+    this.onError(() => {
+      this.emitter.emit('end');
     });
 
     this.transport.onError(error => this.emitter.emit('error', error));
@@ -32,38 +36,30 @@ class UnaryCall implements RpcCall {
 
   start({ service, method, payload, metadata }: UnaryRequest) {
     if (this.status === 'initial') {
-      const id = this.id;
-      const message = Request.encode({
+      const { id } = this;
+
+      this.transport.send({
         id,
         unary: { service, method, payload, metadata },
-      }).finish();
+      });
 
-      this.transport.send(message);
-
-      const unbindTransport = this.transport.onMessage(message => {
-        const res = Response.decode(message);
-
+      const unbindTransport = this.transport.onMessage(res => {
         if (res.id === this.id) {
           if (res.unary) {
             this.emitter.emit('message', res.unary.payload);
             this.emitter.emit('end');
           } else if (res.error) {
-            const error = res.error;
+            const { error } = res;
             this.emitter.emit(
               'error',
               new RpcError(error.status.toString(), error.message),
             );
-            this.emitter.emit('end');
-            if (error.status === 1) {
-              this.status = 'cancelled';
-              this.emitter.emit('end');
-            }
           }
         }
       });
 
-      this.emitter.on('end', unbindTransport);
       this.status = 'open';
+      this.emitter.on('end', unbindTransport);
     }
 
     return this;
@@ -71,11 +67,10 @@ class UnaryCall implements RpcCall {
 
   cancel(reason?: string) {
     if (this.status === 'open') {
-      const message = Request.encode({
+      this.transport.send({
         id: this.id,
         cancel: { reason },
-      }).finish();
-      this.transport.send(message);
+      });
       this.emitter.emit('end');
     }
   }

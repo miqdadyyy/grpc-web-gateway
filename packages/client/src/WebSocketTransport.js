@@ -1,10 +1,13 @@
 // @flow strict
-
 // Copyright 2018 dialog LLC <info@dlg.im>
 
 import Nanoevents from 'nanoevents';
 import unbindAll from 'nanoevents/unbind-all';
-import { Request } from '@dlghq/grpc-web-gateway-signaling';
+import {
+  Request,
+  Response,
+  type RequestPayload,
+} from '@dlghq/grpc-web-gateway-signaling';
 
 import {
   type Logger,
@@ -14,7 +17,7 @@ import {
 import { type StatusfulTransport } from './transport';
 import { RpcError } from './RpcError';
 
-type MessageHandler = (message: Uint8Array) => void;
+type ResponseHandler = (message: Response) => void;
 type ErrorHandler = (error: RpcError) => void;
 type WebSocketTransportConfig = {
   heartbeatInterval?: number,
@@ -29,11 +32,11 @@ const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 const DEFAULT_LOGGER_PREFIX = '[WS Transport]';
 
 class WebSocketTransport implements StatusfulTransport {
-  queue: Array<Uint8Array>;
+  queue: Array<RequestPayload>;
   socket: WebSocket;
   emitter: Nanoevents<{
     open: void,
-    message: Uint8Array,
+    message: Response,
     error: RpcError,
     end: void,
   }>;
@@ -53,15 +56,21 @@ class WebSocketTransport implements StatusfulTransport {
       debugLoggerDecorator(debug)(logger),
     );
 
-    const socket = new WebSocket(endpoint);
-    socket.binaryType = 'arraybuffer';
-    socket.onopen = () => this.handleOpen();
     this.queue = [];
-    this.socket = socket;
+    this.socket = new WebSocket(endpoint);
     this.emitter = new Nanoevents();
     this.isAlive = false;
 
     const cancelPing = this.setupHeartbeat(heartbeatInterval);
+
+    this.onClose(() => {
+      this.logger.log('Ended connection');
+      unbindAll(this.emitter);
+      cancelPing();
+    });
+
+    this.socket.binaryType = 'arraybuffer';
+    this.socket.onopen = () => this.handleOpen();
 
     this.socket.onclose = () => {
       this.logger.log('Closed connection');
@@ -75,35 +84,20 @@ class WebSocketTransport implements StatusfulTransport {
       this.emitter.emit('end');
     };
 
-    this.emitter.on('end', () => {
-      this.logger.log('Ended connection');
-      unbindAll(this.emitter);
-      cancelPing();
-    });
-
     this.socket.onmessage = event => {
       this.logger.log('Message', event.data, event);
       this.isAlive = true;
-      if (event.data instanceof ArrayBuffer) {
-        const message = new Uint8Array(
-          // Flow hack to refine event.data type
-          (event.data: ArrayBuffer),
-        );
-
-        this.emitter.emit(
-          'message',
-          new Uint8Array(
-            // Flow hack to refine event.data type
-            message,
-          ),
-        );
-      } else {
-        this.logger.error('Serialization mismatch');
+      try {
+        // $FlowFixMe: thre is no need in this check
+        const message = Response.decode(new Uint8Array(event.data));
+        this.emitter.emit('message', message);
+      } catch (error) {
+        this.logger.error('Response deserialization failed', error);
         this.emitter.emit(
           'error',
           new RpcError(
             'SERIALIZATION_MISMATCH',
-            'Incoming message should be ArrayBuffer',
+            'Response deserialization failed',
           ),
         );
       }
@@ -161,7 +155,7 @@ class WebSocketTransport implements StatusfulTransport {
     return this.emitter.on('open', handler);
   }
 
-  onMessage(handler: MessageHandler) {
+  onMessage(handler: ResponseHandler) {
     return this.emitter.on('message', handler);
   }
 
@@ -174,17 +168,28 @@ class WebSocketTransport implements StatusfulTransport {
   }
 
   close() {
-    return this.socket.close();
+    this.socket.close();
   }
 
-  send(message: Uint8Array): void {
+  send(message: RequestPayload): void {
     switch (this.socket.readyState) {
       case WebSocket.CONNECTING:
         this.queue.push(message);
         break;
 
       case WebSocket.OPEN:
-        this.socket.send(message);
+        try {
+          this.socket.send(Request.encode(message).finish());
+        } catch (error) {
+          this.logger.error('Request serialization failed', error);
+          this.emitter.emit(
+            'error',
+            new RpcError(
+              'SERIALIZATION_MISMATCH',
+              'Request serialization failed',
+            ),
+          );
+        }
         break;
 
       default:

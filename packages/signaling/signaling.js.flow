@@ -43,19 +43,19 @@ export type GrpcStatusCode =
 type ServiceMessagePayload = { ping: {} } | { pong: {} };
 
 declare class ServiceMessage {
-  static encode(payload: ServiceMessagePayload): { finish(): Uint8Array },
-  static decode(bytes: Uint8Array): ServiceMessagePayload,
-  static verify({ [key: string]: mixed }): null | string,
+  static encode(payload: ServiceMessagePayload): { finish(): Uint8Array };
+  static decode(bytes: Uint8Array): ServiceMessagePayload;
+  static verify({ [key: string]: mixed }): null | string;
 }
 
 declare class IRequest {
-  id: string,
-  unary?: UnaryRequestBody,
-  stream?: StreamRequestBody,
-  push?: PushRequestBody,
-  end?: EndRequestBody,
-  cancel?: CancelRequestBody,
-  service?: ServiceMessagePayload,
+  id: string;
+  unary?: UnaryRequestBody;
+  stream?: StreamRequestBody;
+  push?: PushRequestBody;
+  end?: EndRequestBody;
+  cancel?: CancelRequestBody;
+  service?: ServiceMessagePayload;
 }
 
 type ResponseType = 0 | 1 | 2;
@@ -86,7 +86,7 @@ export type CancelRequestBody = {
   reason?: string,
 };
 
-declare type RequestPayload =
+export type RequestPayload =
   | {
       id: string,
       unary: UnaryRequestBody,
@@ -110,12 +110,12 @@ declare type RequestPayload =
   | { id: string, service: ServiceMessagePayload };
 
 declare class Request extends IRequest {
-  static encode(payload: RequestPayload): { finish(): Uint8Array },
-  static decode(bytes: Uint8Array): Request,
+  static encode(payload: RequestPayload): { finish(): Uint8Array };
+  static decode(bytes: Uint8Array): Request;
   static toObject(
     request: Request,
     options: { enums: typeof String | typeof Number },
-  ): Request,
+  ): Request;
 }
 
 export type ErrorResponseBody = {
@@ -125,11 +125,11 @@ export type ErrorResponseBody = {
 };
 
 declare class IResponse {
-  id: string,
-  unary?: UnaryResponseBody,
-  error?: ErrorResponseBody,
-  push?: PushResponseBody,
-  end?: EndResponseBody,
+  id: string;
+  unary?: UnaryResponseBody;
+  error?: ErrorResponseBody;
+  push?: PushResponseBody;
+  end?: EndResponseBody;
 }
 
 export type UnaryResponseBody = {
@@ -152,8 +152,8 @@ declare type ResponsePayload =
   | { id: string, end: EndResponseBody };
 
 declare class Response extends IResponse {
-  static encode(payload: ResponsePayload): { finish(): Uint8Array },
-  static decode(bytes: Uint8Array): Response,
+  static encode(payload: ResponsePayload): { finish(): Uint8Array };
+  static decode(bytes: Uint8Array): Response;
 }
 
 module.exports = {

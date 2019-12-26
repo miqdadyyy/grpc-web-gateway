@@ -1,13 +1,13 @@
 // @flow strict
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { RpcError } from './RpcError';
+import type { RpcError } from './RpcError';
+import type {
+  Response,
+  RequestPayload,
+} from '@dlghq/grpc-web-gateway-signaling';
 
-export interface WriteRpcTransport {
-  send(message: Uint8Array): void;
-}
-
-export type RpcCallStatus = 'initial' | 'open' | 'closed' | 'cancelled';
+export type RpcCallStatus = 'initial' | 'open' | 'closed';
 
 export interface RpcCall {
   status: RpcCallStatus;

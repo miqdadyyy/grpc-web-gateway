@@ -21,23 +21,18 @@ import BidiStreamCall from './BidiStreamCall';
 import ClientStreamCall from './ClientStreamCall';
 
 class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
-  transport: Transport;
-  calls: Map<string, RpcCall>;
   seq: Sequence;
-  emitter: Nanoevents<{ error: RpcError }>;
+  calls: Map<string, RpcCall>;
+  transport: Transport;
 
   constructor(transport: Transport) {
     this.calls = new Map();
     this.seq = createSequence();
-    this.emitter = new Nanoevents();
     this.setTransport(transport);
   }
 
   setTransport(transport: Transport) {
     this.transport = transport;
-    this.transport.onError(error => {
-      this.emitter.emit('error', error);
-    });
   }
 
   cancelRequest(id: string) {
@@ -96,10 +91,6 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
     });
 
     return call;
-  }
-
-  onError(errorHandler: RpcError => void) {
-    this.emitter.on('error', errorHandler);
   }
 }
 

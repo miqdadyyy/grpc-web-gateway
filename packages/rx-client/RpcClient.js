@@ -107,8 +107,4 @@ export class RxRpcClient
       this.rpcClient.makeBidiStreamRequest(request),
     );
   }
-
-  onError(handler: RpcError => void) {
-    return this.rpcClient.onError(handler);
-  }
 }
