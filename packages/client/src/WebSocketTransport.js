@@ -69,10 +69,23 @@ class WebSocketTransport implements StatusfulTransport {
       cancelPing();
     });
 
+    this.onError(() => this.close());
+
     this.socket.binaryType = 'arraybuffer';
-    this.socket.onopen = () => this.handleOpen();
+    this.socket.onopen = () => {
+      this.isAlive = true;
+      this.logger.log('Connection opened');
+      this.socket.send(new Uint8Array([1, 0]));
+      this.emitter.emit('open');
+
+      if (this.queue.length) {
+        this.queue.forEach(message => this.send(message));
+        this.queue = [];
+      }
+    };
 
     this.socket.onclose = () => {
+      this.isAlive = false;
       this.logger.log('Closed connection');
       this.emitter.emit(
         'error',
@@ -81,12 +94,11 @@ class WebSocketTransport implements StatusfulTransport {
           'Connection closed normally by the server.',
         ),
       );
-      this.emitter.emit('end');
     };
 
     this.socket.onmessage = event => {
-      this.logger.log('Message', event.data, event);
       this.isAlive = true;
+      this.logger.log('Message', event.data, event);
       try {
         // $FlowFixMe: thre is no need in this check
         const message = Response.decode(new Uint8Array(event.data));
@@ -107,7 +119,10 @@ class WebSocketTransport implements StatusfulTransport {
   setupHeartbeat(interval: number) {
     const iid = setInterval(() => {
       this.logger.log('Is alive', this.isAlive);
-      if (!this.isAlive) {
+      if (this.isAlive) {
+        this.isAlive = false;
+        this.ping();
+      } else {
         this.emitter.emit(
           'error',
           new RpcError(
@@ -115,15 +130,7 @@ class WebSocketTransport implements StatusfulTransport {
             "Server doesn't respond on client pings. That means server closed connection on their side.",
           ),
         );
-
-        this.socket.close();
-        this.emitter.emit('end');
-
-        return;
       }
-
-      this.isAlive = false;
-      this.ping();
     }, interval);
 
     return () => clearInterval(iid);
@@ -137,18 +144,6 @@ class WebSocketTransport implements StatusfulTransport {
   pong() {
     this.logger.log('Send pong');
     this.socket.send(PONG);
-  }
-
-  handleOpen() {
-    this.logger.log('Connection opened');
-    this.isAlive = true;
-    this.socket.send(new Uint8Array([1, 0]));
-    this.emitter.emit('open');
-
-    if (this.queue.length) {
-      this.queue.forEach(message => this.send(message));
-      this.queue = [];
-    }
   }
 
   onOpen(handler: () => void) {
@@ -168,7 +163,12 @@ class WebSocketTransport implements StatusfulTransport {
   }
 
   close() {
-    this.socket.close();
+    try {
+      this.socket.close();
+    } catch {
+    } finally {
+      this.emitter.emit('end');
+    }
   }
 
   send(message: RequestPayload): void {
