@@ -1,6 +1,6 @@
 {
   "name": "@dlghq/grpc-web-gateway-client",
-  "version": "4.0.0-alpha.1",
+  "version": "4.0.0-alpha.2",
   "description": "Dialog grpc web gateway client",
   "main": "src",
   "directories": {
