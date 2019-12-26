@@ -61,12 +61,15 @@ class WebSocketTransport implements StatusfulTransport {
     this.emitter = new Nanoevents();
     this.isAlive = false;
 
-    const cancelPing = this.setupHeartbeat(heartbeatInterval);
+    const connectivityListeners = [
+      this.setupHeartbeat(heartbeatInterval),
+      this.setupOfflineListener(),
+    ];
 
     this.onClose(() => {
       this.logger.log('Ended connection');
       unbindAll(this.emitter);
-      cancelPing();
+      connectivityListeners.forEach(unsubscribe => unsubscribe());
     });
 
     this.onError(() => this.close());
@@ -82,6 +85,15 @@ class WebSocketTransport implements StatusfulTransport {
         this.queue.forEach(message => this.send(message));
         this.queue = [];
       }
+    };
+
+    this.socket.onerror = () => {
+      this.isAlive = false;
+      this.logger.log('Closed connection');
+      this.emitter.emit(
+        'error',
+        new RpcError('CONNECTION_ERROR', 'Connection unexpectedly closed.'),
+      );
     };
 
     this.socket.onclose = () => {
@@ -113,6 +125,21 @@ class WebSocketTransport implements StatusfulTransport {
           ),
         );
       }
+    };
+  }
+
+  setupOfflineListener() {
+    const onOffline = () => {
+      this.emitter.emit(
+        'error',
+        new RpcError('CONNECTION_ERROR', 'Application is offline.'),
+      );
+    };
+
+    window.addEventListener('offline', onOffline);
+
+    return () => {
+      window.removeEventListener('offline', onOffline);
     };
   }
 
