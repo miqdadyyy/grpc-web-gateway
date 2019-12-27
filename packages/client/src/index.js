@@ -9,3 +9,7 @@ export * from './types';
 export * from './transport';
 export * from './RpcError.js';
 export * from './IRpcClient.js';
+export * from './UnaryCall.js';
+export * from './BidiStreamCall.js';
+export * from './ClientStreamCall.js';
+export * from './ServerStreamCall.js';

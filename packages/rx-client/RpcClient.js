@@ -13,6 +13,9 @@ import {
   type StreamRequest,
   type PushRequest,
   type IRpcClient,
+  type UnaryCall,
+  type ServerStreamCall,
+  type BidiStreamCall,
 } from '@dlghq/grpc-web-gateway-client';
 
 export type RxUnaryCall = {
@@ -31,14 +34,13 @@ function cancelCall(call, reason) {
   }
 }
 
-const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
-  let call = null;
-
+const observableFromUnaryCall = (
+  call: UnaryCall | ServerStreamCall,
+  request: UnaryRequest,
+) => {
   return {
     execute: () => {
       return Observable.create(observer => {
-        call = call ? call : makeCall();
-
         let bindings = [
           call.onMessage(message => {
             observer.next(message);
@@ -50,6 +52,8 @@ const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
             observer.complete();
           }),
         ];
+
+        call.start(request);
 
         return () => {
           bindings.forEach(unbind => unbind());
@@ -64,15 +68,12 @@ const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
 };
 
 const observableFromClientStreamCall = (
-  makeCall: () => ClientStreamCall,
+  call: ClientStreamCall | BidiStreamCall,
+  request: StreamRequest,
 ): RxClientStreamCall => {
-  let call = null;
-
   return {
     execute: () => {
       return Observable.create(observer => {
-        call = call ? call : makeCall();
-
         let bindings = [
           call.onMessage(message => {
             observer.next(message);
@@ -84,6 +85,8 @@ const observableFromClientStreamCall = (
             observer.complete();
           }),
         ];
+
+        call.start(request);
 
         return () => {
           bindings.forEach(unbind => unbind());
@@ -99,8 +102,7 @@ const observableFromClientStreamCall = (
   };
 };
 
-export class RxRpcClient
-  implements IRpcClient<RxUnaryCall, RxClientStreamCall> {
+export class RxRpcClient {
   rpcClient: RpcClient;
 
   constructor(rpcClient: RpcClient) {
@@ -108,26 +110,27 @@ export class RxRpcClient
   }
 
   makeUnaryRequest(request: UnaryRequest): RxUnaryCall {
-    return observableFromUnaryCall(() =>
-      this.rpcClient.makeUnaryRequest(request),
-    );
+    return observableFromUnaryCall(this.rpcClient.makeUnaryRequest(), request);
   }
 
   makeServerStreamRequest(request: UnaryRequest): RxUnaryCall {
-    return observableFromUnaryCall(() =>
-      this.rpcClient.makeServerStreamRequest(request),
+    return observableFromUnaryCall(
+      this.rpcClient.makeServerStreamRequest(),
+      request,
     );
   }
 
   makeClientStreamRequest(request: StreamRequest): RxClientStreamCall {
-    return observableFromClientStreamCall(() =>
-      this.rpcClient.makeClientStreamRequest(request),
+    return observableFromClientStreamCall(
+      this.rpcClient.makeClientStreamRequest(),
+      request,
     );
   }
 
   makeBidiStreamRequest(request: StreamRequest): RxClientStreamCall {
-    return observableFromClientStreamCall(() =>
-      this.rpcClient.makeBidiStreamRequest(request),
+    return observableFromClientStreamCall(
+      this.rpcClient.makeBidiStreamRequest(),
+      request,
     );
   }
 }

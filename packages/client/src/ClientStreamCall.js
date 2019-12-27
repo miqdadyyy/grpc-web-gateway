@@ -113,5 +113,3 @@ export class ClientStreamCall implements RpcCall {
     return this.emitter.on('end', handler);
   }
 }
-
-export default ClientStreamCall;

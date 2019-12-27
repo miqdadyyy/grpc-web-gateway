@@ -15,10 +15,10 @@ import { createSequence, type Sequence } from './utils/sequence';
 import { RpcError } from './RpcError';
 import { IRpcClient } from './IRpcClient';
 
-import UnaryCall from './UnaryCall';
-import ServerStreamCall from './ServerStreamCall';
-import BidiStreamCall from './BidiStreamCall';
-import ClientStreamCall from './ClientStreamCall';
+import { UnaryCall } from './UnaryCall';
+import { ServerStreamCall } from './ServerStreamCall';
+import { BidiStreamCall } from './BidiStreamCall';
+import { ClientStreamCall } from './ClientStreamCall';
 
 class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
   seq: Sequence;
@@ -41,52 +41,52 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
     if (call) call.cancel();
   }
 
-  makeUnaryRequest(request: UnaryRequest) {
+  makeUnaryRequest() {
     const id = this.seq.next();
 
     const call = new UnaryCall(id, this.transport);
     this.calls.set(call.id, call);
 
-    call.start(request).onEnd(() => {
+    call.onEnd(() => {
       this.calls.delete(call.id);
     });
 
     return call;
   }
 
-  makeServerStreamRequest(request: UnaryRequest) {
+  makeServerStreamRequest() {
     const id = this.seq.next();
 
     const call = new ServerStreamCall(id, this.transport);
     this.calls.set(call.id, call);
 
-    call.start(request).onEnd(() => {
+    call.onEnd(() => {
       this.calls.delete(call.id);
     });
 
     return call;
   }
 
-  makeClientStreamRequest(request: StreamRequest) {
+  makeClientStreamRequest() {
     const id = this.seq.next();
 
     const call = new ClientStreamCall(id, this.transport);
     this.calls.set(call.id, call);
 
-    call.start(request).onEnd(() => {
+    call.onEnd(() => {
       this.calls.delete(call.id);
     });
 
     return call;
   }
 
-  makeBidiStreamRequest(request: StreamRequest) {
+  makeBidiStreamRequest() {
     const id = this.seq.next();
 
     const call = new BidiStreamCall(id, this.transport);
     this.calls.set(call.id, call);
 
-    call.start(request).onEnd(() => {
+    call.onEnd(() => {
       this.calls.delete(call.id);
     });
 

@@ -101,5 +101,3 @@ export class ServerStreamCall implements RpcCall {
     return this.emitter.on('end', handler);
   }
 }
-
-export default ServerStreamCall;

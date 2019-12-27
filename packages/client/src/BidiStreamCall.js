@@ -120,5 +120,3 @@ export class BidiStreamCall implements RpcCall {
     return this.emitter.on('end', handler);
   }
 }
-
-export default BidiStreamCall;

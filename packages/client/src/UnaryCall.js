@@ -10,7 +10,7 @@ import { RpcError } from './RpcError';
 import type { RpcCall, UnaryRequest, RpcCallStatus } from './types';
 import { type Transport } from './transport';
 
-class UnaryCall implements RpcCall {
+export class UnaryCall implements RpcCall {
   id: string;
   transport: Transport;
   emitter: Nanoevents<{ message: Uint8Array, error: RpcError, end: void }>;
@@ -97,5 +97,3 @@ class UnaryCall implements RpcCall {
     });
   }
 }
-
-export default UnaryCall;
