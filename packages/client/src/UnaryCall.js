@@ -29,7 +29,11 @@ export class UnaryCall implements RpcCall {
         bindings = [];
       }),
       this.onError(() => {
-        this.emitter.emit('end');
+        setImmediate(() => {
+          if (this.status !== 'closed') {
+            this.emitter.emit('end');
+          }
+        });
       }),
       this.transport.onError(error => {
         this.emitter.emit('error', error);
