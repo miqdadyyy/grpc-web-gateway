@@ -1,5 +1,7 @@
 // @flow strict
+
 // Copyright 2018 dialog LLC <info@dlg.im>
+
 import { type Response } from '@dlghq/grpc-web-gateway-signaling';
 
 import { type UnaryRequest } from './types';
