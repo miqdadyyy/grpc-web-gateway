@@ -12,7 +12,7 @@ import {
   type UnaryRequest,
   type StreamRequest,
   type PushRequest,
-  type IRxRpcClient,
+  type IRpcClient,
 } from '@dlghq/grpc-web-gateway-client';
 
 export type RxUnaryCall = {
@@ -31,24 +31,19 @@ function cancelCall(call, reason) {
   }
 }
 
-const observableFromUnaryCall = (
-  makeCall: () => [RpcCall, () => void],
-): RxUnaryCall => {
+const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
   let call = null;
-  let start = null;
 
   return {
     execute: () => {
       return Observable.create(observer => {
-        [call, start] = makeCall();
+        call = makeCall();
 
         call.onMessage(message => observer.next(message));
 
         call.onError(error => observer.error(error));
 
         call.onEnd(() => observer.complete());
-
-        start();
 
         return () => cancelCall(call);
       }).pipe(share());
@@ -58,23 +53,20 @@ const observableFromUnaryCall = (
 };
 
 const observableFromClientStreamCall = (
-  makeCall: () => [ClientStreamCall, () => void],
+  makeCall: () => ClientStreamCall,
 ): RxClientStreamCall => {
   let call = null;
-  let start = null;
 
   return {
     execute: () => {
       return Observable.create(observer => {
-        [call, start] = makeCall();
+        call = makeCall();
 
         call.onMessage(message => observer.next(message));
 
         call.onError(error => observer.error(error));
 
         call.onEnd(() => observer.complete());
-
-        start();
 
         return () => cancelCall(call);
       }).pipe(share());
@@ -86,7 +78,7 @@ const observableFromClientStreamCall = (
 };
 
 export class RxRpcClient
-  implements IRxRpcClient<RxUnaryCall, RxClientStreamCall> {
+  implements IRpcClient<RxUnaryCall, RxClientStreamCall> {
   rpcClient: RpcClient;
 
   constructor(rpcClient: RpcClient) {

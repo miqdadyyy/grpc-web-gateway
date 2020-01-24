@@ -57,12 +57,11 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
       this.seq.deleteId(call.id);
     });
 
-    return [
-      call,
-      () => {
-        call.start(request);
-      },
-    ];
+    setImmediate(() => {
+      call.start(request);
+    });
+
+    return call;
   }
 
   makeServerStreamRequest(request: UnaryRequest) {
@@ -76,12 +75,11 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
       this.seq.deleteId(call.id);
     });
 
-    return [
-      call,
-      () => {
-        call.start(request);
-      },
-    ];
+    setImmediate(() => {
+      call.start(request);
+    });
+
+    return call;
   }
 
   makeClientStreamRequest(request: StreamRequest) {
@@ -95,12 +93,11 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
       this.seq.deleteId(call.id);
     });
 
-    return [
-      call,
-      () => {
-        call.start(request);
-      },
-    ];
+    setImmediate(() => {
+      call.start(request);
+    });
+
+    return call;
   }
 
   makeBidiStreamRequest(request: StreamRequest) {
@@ -114,12 +111,11 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
       this.seq.deleteId(call.id);
     });
 
-    return [
-      call,
-      () => {
-        call.start(request);
-      },
-    ];
+    setImmediate(() => {
+      call.start(request);
+    });
+
+    return call;
   }
 
   onError(errorHandler: RpcError => void) {
