@@ -20,6 +20,7 @@ type WebSocketTransportConfig = {
   heartbeatInterval?: number,
   logger?: Logger,
   debug?: boolean,
+  ...
 };
 
 const PING = Request.encode({ id: 'service', service: { ping: {} } }).finish();
@@ -36,6 +37,7 @@ class WebSocketTransport implements StatusfulTransport {
     message: Uint8Array,
     error: RpcError,
     end: void,
+    ...
   }>;
   isAlive: boolean;
   logger: Logger;

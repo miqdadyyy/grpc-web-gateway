@@ -40,12 +40,12 @@ export type GrpcStatusCode =
   | 15
   | 16;
 
-type ServiceMessagePayload = { ping: {} } | { pong: {} };
+type ServiceMessagePayload = { ping: {...}, ... } | { pong: {...}, ... };
 
 declare class ServiceMessage {
-  static encode(payload: ServiceMessagePayload): { finish(): Uint8Array },
+  static encode(payload: ServiceMessagePayload): { finish(): Uint8Array, ... },
   static decode(bytes: Uint8Array): ServiceMessagePayload,
-  static verify({ [key: string]: mixed }): null | string,
+  static verify({ [key: string]: mixed, ... }): null | string,
 }
 
 declare class IRequest {
@@ -64,64 +64,75 @@ export type UnaryRequestBody = {
   service: string,
   method: string,
   payload: Uint8Array,
-  metadata?: { [key: string]: string },
+  metadata?: { [key: string]: string, ... },
   responseType?: ResponseType,
+  ...
 };
 
 export type PushRequestBody = {
   payload: Uint8Array,
-  metadata?: { [key: string]: string },
+  metadata?: { [key: string]: string, ... },
+  ...
 };
 
 export type StreamRequestBody = {
   service: string,
   method: string,
-  metadata?: { [key: string]: string },
+  metadata?: { [key: string]: string, ... },
   responseType?: ResponseType,
+  ...
 };
 
-export type EndRequestBody = {};
+export type EndRequestBody = {...};
 
-export type CancelRequestBody = {
-  reason?: string,
-};
+export type CancelRequestBody = { reason?: string, ... };
 
 declare type RequestPayload =
   | {
-      id: string,
-      unary: UnaryRequestBody,
-    }
+  id: string,
+  unary: UnaryRequestBody,
+  ...
+}
   | {
-      id: string,
-      push: PushRequestBody,
-    }
+  id: string,
+  push: PushRequestBody,
+  ...
+}
   | {
-      id: string,
-      stream: StreamRequestBody,
-    }
+  id: string,
+  stream: StreamRequestBody,
+  ...
+}
   | {
-      id: string,
-      end: EndRequestBody,
-    }
+  id: string,
+  end: EndRequestBody,
+  ...
+}
   | {
-      id: string,
-      cancel: CancelRequestBody,
-    }
-  | { id: string, service: ServiceMessagePayload };
+  id: string,
+  cancel: CancelRequestBody,
+  ...
+}
+  | {
+  id: string,
+  service: ServiceMessagePayload,
+  ...
+};
 
 declare class Request extends IRequest {
-  static encode(payload: RequestPayload): { finish(): Uint8Array },
+  static encode(payload: RequestPayload): { finish(): Uint8Array, ... },
   static decode(bytes: Uint8Array): Request,
   static toObject(
     request: Request,
-    options: { enums: typeof String | typeof Number },
+    options: { enums: typeof String | typeof Number, ... },
   ): Request,
 }
 
 export type ErrorResponseBody = {
   status: GrpcStatusCode,
   message: string,
-  metadata?: { [key: string]: string | Buffer },
+  metadata?: { [key: string]: string | Buffer, ... },
+  ...
 };
 
 declare class IResponse {
@@ -132,27 +143,36 @@ declare class IResponse {
   end?: EndResponseBody,
 }
 
-export type UnaryResponseBody = {
-  payload: Uint8Array,
-};
+export type UnaryResponseBody = { payload: Uint8Array, ... };
 
-export type PushResponseBody = {
-  payload: Uint8Array,
-};
+export type PushResponseBody = { payload: Uint8Array, ... };
 
-export type EndResponseBody = {};
+export type EndResponseBody = {...};
 
 declare type ResponsePayload =
   | {
-      id: string,
-      unary: UnaryResponseBody,
-    }
-  | { id: string, push: PushResponseBody }
-  | { id: string, error: ErrorResponseBody }
-  | { id: string, end: EndResponseBody };
+  id: string,
+  unary: UnaryResponseBody,
+  ...
+}
+  | {
+  id: string,
+  push: PushResponseBody,
+  ...
+}
+  | {
+  id: string,
+  error: ErrorResponseBody,
+  ...
+}
+  | {
+  id: string,
+  end: EndResponseBody,
+  ...
+};
 
 declare class Response extends IResponse {
-  static encode(payload: ResponsePayload): { finish(): Uint8Array },
+  static encode(payload: ResponsePayload): { finish(): Uint8Array, ... },
   static decode(bytes: Uint8Array): Response,
 }
 

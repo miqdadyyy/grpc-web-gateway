@@ -8,6 +8,7 @@
 
 [lints]
 deprecated-utility=off
+implicit-inexact-object=error
 
 [options]
 server.max_workers=1

@@ -23,6 +23,7 @@ export const createWebsocketTransport = (
     message: Uint8Array,
     error: RpcError,
     close: void,
+    ...
   }> = new Nanoevents();
 
   const send = (message: Uint8Array): void => {

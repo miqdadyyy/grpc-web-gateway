@@ -23,6 +23,7 @@ export class ClientStreamCall implements RpcCall {
     error: RpcError,
     end: void,
     cancel: void,
+    ...
   }>;
   status: RpcCallStatus;
 

@@ -24,7 +24,7 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
   transport: Transport;
   calls: Map<string, RpcCall>;
   seq: Sequence;
-  emitter: Nanoevents<{ error: RpcError }>;
+  emitter: Nanoevents<{ error: RpcError, ... }>;
 
   constructor(transport: Transport) {
     this.calls = new Map();

@@ -11,17 +11,14 @@ type GrpcMetadata = {
   add(key: string, value: MetadataValue): void,
   add(key: string, value: MetadataValue): void,
   get(key: string): Array<MetadataValue>,
-  getMap(): {
-    [key: string]: MetadataValue,
-  },
+  getMap(): { [key: string]: MetadataValue, ... },
   remove(key: string): void,
+  ...
 };
 
 export function createMetadata(
   initialMetadata: Metadata,
-  values: {
-    [key: string]: string,
-  },
+  values: { [key: string]: string, ... },
 ): GrpcMetadata {
   const metadata = initialMetadata.clone();
   _.forOwn(values, (value, key) => metadata.set(key, value));
@@ -29,9 +26,7 @@ export function createMetadata(
   return metadata;
 }
 
-export function normalizeGrpcMetadata(grpcMetadata: {
-  [string]: mixed,
-}): { [string]: string | Buffer } {
+export function normalizeGrpcMetadata(grpcMetadata: { [string]: mixed, ... }): { [string]: string | Buffer, ... } {
   return Object.entries(grpcMetadata).reduce((metadata, [key, value]) => {
     try {
       return { ...metadata, [key]: JSON.stringify(value) };

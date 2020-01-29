@@ -20,6 +20,6 @@
   },
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "devDependencies": {
-    "flow-bin": "0.114.0"
+    "flow-bin": "0.117.0"
   }
 }

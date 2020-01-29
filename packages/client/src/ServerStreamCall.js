@@ -18,6 +18,7 @@ export class ServerStreamCall implements RpcCall {
     error: RpcError,
     end: void,
     cancel: void,
+    ...
   }>;
   status: 'initial' | 'open' | 'closed' | 'cancelled';
 

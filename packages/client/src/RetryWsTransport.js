@@ -7,9 +7,7 @@ import { Transport } from './transport';
 
 type WsTransportFactory = () => WebSocketTransport;
 
-type RetryWsTransportConfig = {
-  debug: boolean,
-};
+type RetryWsTransportConfig = { debug: boolean, ... };
 
 const LOG_PREFIX = 'RetryTransport';
 
@@ -17,9 +15,7 @@ class RetryWsTransport implements Transport {
   origin: WebSocketTransport;
   factory: WsTransportFactory;
   nextPeriod: number;
-  logger: {
-    log(...Array<mixed>): void,
-  };
+  logger: { log(...Array<mixed>): void, ... };
 
   constructor(
     factory: WsTransportFactory,

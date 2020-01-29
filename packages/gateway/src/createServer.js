@@ -32,6 +32,7 @@ type GrpcGatewayServerConfig = {
   credentials?: CredentialsConfig,
   heartbeatInterval?: number,
   filterHeaders: HeaderFilter,
+  ...
 };
 
 const SECONDS = 1000;
@@ -40,7 +41,8 @@ const DEFAULT_HEARTBEAT_INTERVAL = 30 * SECONDS;
 type GrpcStatus = {
   code: GrpcStatusCode,
   details: string,
-  metadata?: { [string]: mixed },
+  metadata?: { [string]: mixed, ... },
+  ...
 };
 
 export function createServer(config: GrpcGatewayServerConfig) {

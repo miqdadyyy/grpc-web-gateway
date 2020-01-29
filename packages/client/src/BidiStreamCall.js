@@ -23,6 +23,7 @@ export class BidiStreamCall implements RpcCall {
     error: RpcError,
     end: void,
     cancel: void,
+    ...
   }>;
   status: RpcCallStatus;
 

@@ -11,6 +11,7 @@ type GrpcMethodDefinition = {
   requestStream: boolean,
   responseStream: boolean,
   originalName: string,
+  ...
 };
 
 export const loadDefinitions = (files: Array<string>) => {
@@ -33,7 +34,7 @@ export const getDefinitions = pipe([
 
 export const parseProtoFiles: (
   protoFiles: Array<string>,
-) => Map<string, { [methodName: string]: GrpcMethodDefinition }> = pipe([
+) => Map<string, { [methodName: string]: GrpcMethodDefinition, ... }> = pipe([
   getDefinitions,
   mergeAll,
   toPairs,

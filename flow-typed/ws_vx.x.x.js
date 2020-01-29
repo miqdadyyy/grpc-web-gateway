@@ -25,6 +25,7 @@ declare module 'ws' {
     origin: string,
     secure: boolean,
     req: http$IncomingMessage<>,
+    ...
   }) => boolean;
 
   /**
@@ -33,7 +34,12 @@ declare module 'ws' {
    * whether or not to accept the handshake.
    */
   declare type VerifyClientCallbackAsync = (
-    info: { origin: string, secure: boolean, req: http$IncomingMessage<> },
+    info: {
+      origin: string,
+      secure: boolean,
+      req: http$IncomingMessage<>,
+      ...
+    },
     callback: (
       res: boolean,
       code?: number,
@@ -48,7 +54,7 @@ declare module 'ws' {
     perMessageDeflate?: boolean | PerMessageDeflateOptions;
     localAddress?: string;
     protocolVersion?: number;
-    headers?: { [key: string]: string };
+    headers?: { [key: string]: string, ... };
     origin?: string;
     agent?: http$Agent<>;
     host?: string;
@@ -79,6 +85,7 @@ declare module 'ws' {
       strategy?: number,
       dictionary?: Buffer | Buffer[] | DataView,
       info?: boolean,
+      ...
     };
     threshold?: number;
     concurrencyLimit?: number;
@@ -124,23 +131,26 @@ declare module 'ws' {
     CLOSING: number;
     CLOSED: number;
 
-    onopen: (event: { target: WebSocket }) => void;
+    onopen: (event: { target: WebSocket, ... }) => void;
     onerror: (event: {
       error: any,
       message: string,
       type: string,
       target: WebSocket,
+      ...
     }) => void;
     onclose: (event: {
       wasClean: boolean,
       code: number,
       reason: string,
       target: WebSocket,
+      ...
     }) => void;
     onmessage: (event: {
       data: Data,
       type: string,
       target: WebSocket,
+      ...
     }) => void;
 
     constructor(address: string, options?: ClientOptions): this;
@@ -161,6 +171,7 @@ declare module 'ws' {
         binary?: boolean,
         compress?: boolean,
         fin?: boolean,
+        ...
       },
       cb?: (err?: Error) => void,
     ): void;
@@ -169,7 +180,12 @@ declare module 'ws' {
     // HTML5 WebSocket events
     addEventListener(
       method: 'message',
-      cb?: (event: { data: any, type: string, target: WebSocket }) => void,
+      cb?: (event: {
+        data: any,
+        type: string,
+        target: WebSocket,
+        ...
+      }) => void,
     ): void;
     addEventListener(
       method: 'close',
@@ -178,6 +194,7 @@ declare module 'ws' {
         code: number,
         reason: string,
         target: WebSocket,
+        ...
       }) => void,
     ): void;
     addEventListener(
@@ -187,17 +204,23 @@ declare module 'ws' {
         message: any,
         type: string,
         target: WebSocket,
+        ...
       }) => void,
     ): void;
     addEventListener(
       method: 'open',
-      cb?: (event: { target: WebSocket }) => void,
+      cb?: (event: { target: WebSocket, ... }) => void,
     ): void;
     addEventListener(method: string, listener?: () => void): void;
 
     removeEventListener(
       method: 'message',
-      cb?: (event: { data: any, type: string, target: WebSocket }) => void,
+      cb?: (event: {
+        data: any,
+        type: string,
+        target: WebSocket,
+        ...
+      }) => void,
     ): void;
     removeEventListener(
       method: 'close',
@@ -206,6 +229,7 @@ declare module 'ws' {
         code: number,
         reason: string,
         target: WebSocket,
+        ...
       }) => void,
     ): void;
     removeEventListener(
@@ -215,11 +239,12 @@ declare module 'ws' {
         message: any,
         type: string,
         target: WebSocket,
+        ...
       }) => void,
     ): void;
     removeEventListener(
       method: 'open',
-      cb?: (event: { target: WebSocket }) => void,
+      cb?: (event: { target: WebSocket, ... }) => void,
     ): void;
     removeEventListener(method: string, listener?: () => void): void;
 
@@ -358,5 +383,6 @@ declare module 'ws' {
   declare module.exports: {
     Server: typeof Server,
     WebSocket: typeof WebSocket,
+    ...
   };
 }

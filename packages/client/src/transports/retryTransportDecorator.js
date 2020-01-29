@@ -4,14 +4,12 @@
 import { type Transport, type StatusfulTransport } from '../transport';
 
 export const retryTransportDecorator = (
-  { debug }: { debug: boolean } = { debug: false },
+  { debug }: { debug: boolean, ... } = { debug: false },
 ) => (factory: () => StatusfulTransport): Transport => {
   const LOG_PREFIX = 'RetryTransport';
   let nextPeriod = 0;
-  let logger: {
-    // eslint-disable-next-line
-    log: <T>(...Array<T>) => void,
-  } = {
+  let logger: { // eslint-disable-next-line
+  log: <T>(...Array<T>) => void, ... } = {
     log: () => undefined,
   };
 

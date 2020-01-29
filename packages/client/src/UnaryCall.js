@@ -13,7 +13,12 @@ import { type Transport } from './transport';
 class UnaryCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: Nanoevents<{ message: Uint8Array, error: RpcError, end: void }>;
+  emitter: Nanoevents<{
+    message: Uint8Array,
+    error: RpcError,
+    end: void,
+    ...
+  }>;
   status: RpcCallStatus;
 
   constructor(id: string, transport: Transport) {

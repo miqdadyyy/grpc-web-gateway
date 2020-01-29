@@ -18,11 +18,13 @@ import {
 export type RxUnaryCall = {
   execute(): Observable<Uint8Array>,
   cancel(reason?: string): void,
+  ...
 };
 
 export type RxClientStreamCall = RxUnaryCall & {
   send(PushRequest): void,
   end(): void,
+  ...
 };
 
 function cancelCall(call, reason) {

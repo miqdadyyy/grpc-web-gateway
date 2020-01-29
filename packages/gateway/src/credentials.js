@@ -8,16 +8,16 @@ export type SslCredentialsConfig = {
   rootCerts: Buffer,
   privateKey: Buffer,
   certChain: Buffer,
+  ...
 };
 
 export type CredentialsConfig =
   | {
-      type: 'ssl',
-      config?: SslCredentialsConfig,
-    }
-  | {
-      type: 'insecure',
-    };
+  type: 'ssl',
+  config?: SslCredentialsConfig,
+  ...
+}
+  | { type: 'insecure', ... };
 
 export function createCredentials(
   config: CredentialsConfig = { type: 'insecure' },

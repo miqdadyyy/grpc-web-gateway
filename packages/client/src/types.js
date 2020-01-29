@@ -17,24 +17,27 @@ export interface RpcCall {
   onEnd(handler: () => void): () => void;
 }
 
-export type Metadata = { [key: string]: string };
+export type Metadata = { [key: string]: string, ... };
 
 export type UnaryRequest = {
   service: string,
   method: string,
   payload: Uint8Array,
   metadata?: Metadata,
+  ...
 };
 
 export type PushRequest = {
   payload: Uint8Array,
   metadata?: Metadata,
+  ...
 };
 
 export type StreamRequest = {
   service: string,
   method: string,
   metadata?: Metadata,
+  ...
 };
 
 export interface ClientStreamCall extends RpcCall {

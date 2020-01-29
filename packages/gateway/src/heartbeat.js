@@ -11,7 +11,11 @@ import { logger } from './logger';
 export function setupPingConnections(wss: Server, heartbeatInterval: number) {
   const connectionsMap: WeakMap<
     WebSocket,
-    { isAlive: boolean, id: string },
+    {
+      isAlive: boolean,
+      id: string,
+      ...
+    },
   > = new WeakMap();
 
   function heartbeat() {
