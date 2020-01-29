@@ -12,6 +12,7 @@ implicit-inexact-object=error
 
 [options]
 server.max_workers=1
+exact_by_default=true
 
 [strict]
 nonstrict-import
