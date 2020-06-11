@@ -22,11 +22,6 @@ jobs:
         run: npx codecov
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      - name: Git reset
-        run: |
-          git add --all
-          git reset --hard
-          git checkout master
 
   publish:
     needs: test
