@@ -26,6 +26,7 @@ function extractOrigin() {
 function extractCorsConfigFromEnv() {
   return {
     origin: extractOrigin(),
+    methods: 'OPTIONS,GET,HEAD,PUT,PATCH,POST,DELETE',
   };
 }
 
