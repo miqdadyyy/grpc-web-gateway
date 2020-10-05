@@ -17,6 +17,7 @@ class UnaryCall implements RpcCall {
     message: Uint8Array,
     error: RpcError,
     end: void,
+    cancel: void,
     ...
   }>;
   status: RpcCallStatus;
