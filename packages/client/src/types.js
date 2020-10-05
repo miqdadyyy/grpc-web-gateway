@@ -15,6 +15,7 @@ export interface RpcCall {
   onMessage(handler: (Uint8Array) => void): () => void;
   onError(handler: (RpcError) => void): () => void;
   onEnd(handler: () => void): () => void;
+  onCancel(handler: () => void): () => void;
 }
 
 export type Metadata = { [key: string]: string, ... };

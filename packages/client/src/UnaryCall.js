@@ -7,7 +7,7 @@ import unbindAll from 'nanoevents/unbind-all';
 import { Request, Response } from '@dlghq/grpc-web-gateway-signaling';
 
 import { RpcError } from './RpcError';
-import type { RpcCall, UnaryRequest, RpcCallStatus } from './types';
+import type { RpcCall, RpcCallStatus, UnaryRequest } from './types';
 import { type Transport } from './transport';
 
 class UnaryCall implements RpcCall {
@@ -29,6 +29,11 @@ class UnaryCall implements RpcCall {
 
     this.emitter.on('end', () => {
       this.status = 'closed';
+      unbindAll(this.emitter);
+    });
+
+    this.emitter.on('cancel', () => {
+      this.status = 'cancelled';
       unbindAll(this.emitter);
     });
 
@@ -54,13 +59,14 @@ class UnaryCall implements RpcCall {
             this.emitter.emit('end');
           } else if (res.error) {
             const error = res.error;
-            this.emitter.emit(
-              'error',
-              new RpcError(error.status.toString(), error.message),
-            );
-            this.emitter.emit('end');
+
             if (error.status === 1) {
-              this.status = 'cancelled';
+              this.emitter.emit('cancel');
+            } else {
+              this.emitter.emit(
+                'error',
+                new RpcError(error.status.toString(), error.message),
+              );
               this.emitter.emit('end');
             }
           }
@@ -95,6 +101,10 @@ class UnaryCall implements RpcCall {
 
   onEnd(handler: () => void) {
     return this.emitter.on('end', handler);
+  }
+
+  onCancel(handler: () => void) {
+    return this.emitter.on('cancel', handler);
   }
 
   toPromise(): Promise<Uint8Array> {

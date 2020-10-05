@@ -20,8 +20,10 @@
   },
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "dependencies": {
-    "@dlghq/grpc-web-gateway-client": "^3.0.8",
-    "rxjs": "6.5.3"
+    "@dlghq/grpc-web-gateway-client": "^3.0.8"
+  },
+  "peerDependencies": {
+    "rxjs": "^6.5.3"
   },
   "devDependencies": {
     "@babel/core": "7.7.7",

@@ -5,10 +5,10 @@
 import Nanoevents from 'nanoevents';
 
 import type {
-  RpcCall,
-  UnaryRequest,
-  StreamRequest,
   ClientStreamCall as IClientStreamCall,
+  RpcCall,
+  StreamRequest,
+  UnaryRequest,
 } from './types';
 import { type Transport } from './transport';
 import { createSequence, type Sequence } from './utils/sequence';
@@ -46,16 +46,19 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
     if (call) call.cancel();
   }
 
+  disposeRequest(id: string) {
+    this.calls.delete(id);
+    this.seq.deleteId(id);
+  }
+
   makeUnaryRequest(request: UnaryRequest) {
     const id = this.seq.next();
 
     const call = new UnaryCall(id, this.transport);
     this.calls.set(call.id, call);
 
-    call.onEnd(() => {
-      this.calls.delete(call.id);
-      this.seq.deleteId(call.id);
-    });
+    call.onEnd(() => this.disposeRequest(call.id));
+    call.onCancel(() => this.disposeRequest(call.id));
 
     setImmediate(() => {
       call.start(request);
@@ -70,10 +73,8 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
     const call = new ServerStreamCall(id, this.transport);
     this.calls.set(call.id, call);
 
-    call.onEnd(() => {
-      this.calls.delete(call.id);
-      this.seq.deleteId(call.id);
-    });
+    call.onEnd(() => this.disposeRequest(call.id));
+    call.onCancel(() => this.disposeRequest(call.id));
 
     setImmediate(() => {
       call.start(request);
@@ -88,10 +89,8 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
     const call = new ClientStreamCall(id, this.transport);
     this.calls.set(call.id, call);
 
-    call.onEnd(() => {
-      this.calls.delete(call.id);
-      this.seq.deleteId(call.id);
-    });
+    call.onEnd(() => this.disposeRequest(call.id));
+    call.onCancel(() => this.disposeRequest(call.id));
 
     setImmediate(() => {
       call.start(request);
@@ -106,10 +105,8 @@ class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
     const call = new BidiStreamCall(id, this.transport);
     this.calls.set(call.id, call);
 
-    call.onEnd(() => {
-      this.calls.delete(call.id);
-      this.seq.deleteId(call.id);
-    });
+    call.onEnd(() => this.disposeRequest(call.id));
+    call.onCancel(() => this.disposeRequest(call.id));
 
     setImmediate(() => {
       call.start(request);
