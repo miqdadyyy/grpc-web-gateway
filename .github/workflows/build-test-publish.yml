@@ -34,6 +34,11 @@ jobs:
           node-version: '12.13.x'
       - name: Setup npm
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+      - name: Configure git
+        run: |
+          git config user.name ${{ secrets.GIT_BOT_USERNAME }}
+          git config user.email ${{ secrets.GIT_BOT_EMAIL }}
+          git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/dialogs/grpc-web-gateway.git
       - name: Install dependencies
         run: npx lerna bootstrap
       - name: Release
