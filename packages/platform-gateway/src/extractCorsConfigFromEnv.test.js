@@ -11,28 +11,40 @@ describe('extractCorsConfigFromEnv', () => {
 
   it('should return default if there is no env', () => {
     const result = extractCorsConfigFromEnv();
-    expect(result).toEqual({ origin: true });
+    expect(result).toEqual({
+      origin: true,
+      methods: 'OPTIONS,GET,HEAD,PUT,PATCH,POST,DELETE',
+    });
   });
 
   it('should parse "true"', () => {
     process.env.CORS_ORIGIN = 'true';
 
     const result = extractCorsConfigFromEnv();
-    expect(result).toEqual({ origin: true });
+    expect(result).toEqual({
+      origin: true,
+      methods: 'OPTIONS,GET,HEAD,PUT,PATCH,POST,DELETE',
+    });
   });
 
   it('should parse "false"', () => {
     process.env.CORS_ORIGIN = 'false';
 
     const result = extractCorsConfigFromEnv();
-    expect(result).toEqual({ origin: false });
+    expect(result).toEqual({
+      origin: false,
+      methods: 'OPTIONS,GET,HEAD,PUT,PATCH,POST,DELETE',
+    });
   });
 
   it('should parse array', () => {
     process.env.CORS_ORIGIN = 'https://dlg.im';
 
     const result = extractCorsConfigFromEnv();
-    expect(result).toEqual({ origin: ['https://dlg.im'] });
+    expect(result).toEqual({
+      origin: ['https://dlg.im'],
+      methods: 'OPTIONS,GET,HEAD,PUT,PATCH,POST,DELETE',
+    });
   });
 
   it('should parse array and filter bad characters', () => {
@@ -42,6 +54,7 @@ describe('extractCorsConfigFromEnv', () => {
     const result = extractCorsConfigFromEnv();
     expect(result).toEqual({
       origin: ['https://dlg.im', 'https://test.dlg.im', 'https://example.org'],
+      methods: 'OPTIONS,GET,HEAD,PUT,PATCH,POST,DELETE',
     });
   });
 });

@@ -3,6 +3,7 @@
   "private": true,
   "description": "gRPC for web",
   "scripts": {
+    "postinstall": "lerna bootstrap",
     "test": "jest --coverage",
     "fmt": "prettier --write \"**/*.{js,json,md,js.flow,ts}\"",
     "flow": "flow --retries=20 --timeout=300",

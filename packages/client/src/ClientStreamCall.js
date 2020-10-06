@@ -34,13 +34,13 @@ export class ClientStreamCall implements RpcCall {
     this.status = 'initial';
 
     this.emitter.on('end', () => {
-      unbindAll(this.emitter);
       this.status = 'closed';
+      unbindAll(this.emitter);
     });
 
     this.emitter.on('cancel', () => {
-      unbindAll(this.emitter);
       this.status = 'cancelled';
+      unbindAll(this.emitter);
     });
 
     this.transport.onError(error => this.emitter.emit('error', error));
