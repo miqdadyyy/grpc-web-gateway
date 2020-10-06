@@ -1,7 +1,7 @@
 {
   "name": "@dlghq/web-platform-grpc-web-gateway",
   "private": true,
-  "version": "3.0.8",
+  "version": "3.0.9",
   "description": "Dialog Web Platform gRPC Web Gateway",
   "scripts": {
     "start": "node src/index.js",
