@@ -7,15 +7,15 @@ import type { Server as HttpsServer } from 'https';
 import nanoid from 'nanoid';
 import { Server as WebSocketServer } from 'ws';
 import grpc, { Client } from 'grpc';
-import { identity, noop } from 'lodash/fp';
+import { identity } from 'lodash/fp';
 import {
+  type GrpcStatusCode,
   Request,
   Response,
-  type GrpcStatusCode,
 } from '../../signaling/signaling';
 import {
-  type HeaderFilter,
   createMetadataParser,
+  type HeaderFilter,
 } from './createMetadataParser';
 
 // $FlowFixMe
@@ -25,6 +25,9 @@ import { createCredentials, type CredentialsConfig } from './credentials';
 import { createMetadata, normalizeGrpcMetadata } from './grpcMetadata';
 import { GrpcError } from './GrpcError';
 import { setupPingConnections } from './heartbeat';
+import { SocketCalls } from './socketCalls';
+
+export default createServer;
 
 type GrpcGatewayServerConfig = {
   api: string,
@@ -45,121 +48,112 @@ type GrpcStatus = {
   ...
 };
 
-export function createServer(config: GrpcGatewayServerConfig) {
-  logger.info('Starting gateway version: ', pkg.version);
+const SERVICE_PONG_RESPONSE = createServicePongResponse();
 
+export function createServer(config: GrpcGatewayServerConfig) {
   const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
 
-  const wss = new WebSocketServer({
-    server: config.server,
-  });
+  logger.info('Starting gateway version: ', pkg.version);
 
   const parseMetadata = createMetadataParser(config.filterHeaders);
 
-  const heartbeat = setupPingConnections(wss, heartbeatInterval);
-
   grpc.setLogger(logger);
+  const grpcCredentials = createCredentials(config.credentials);
+  const createGrpcClient = () => new Client(config.api, grpcCredentials, {});
 
-  wss.on('error', (err: Error) => {
-    logger.error('Connection error:', err);
+  const wsServer = new WebSocketServer({ server: config.server });
+  const heartbeat = setupPingConnections(wsServer, heartbeatInterval);
+
+  const socketCalls = new SocketCalls();
+
+  wsServer.on('error', (err: Error) => {
+    logger.error('WebSocket connection error:', err);
   });
 
-  wss.on('connection', (ws, httpRequest: http$IncomingMessage<>) => {
+  wsServer.on('connection', (ws, httpRequest: http$IncomingMessage<>) => {
     const connectionId = nanoid();
-    const initialMetadata = parseMetadata(httpRequest);
-
     heartbeat.addConnection(connectionId, ws);
 
-    const calls = new Map();
-    const grpcClient = new Client(
-      config.api,
-      createCredentials(config.credentials),
-      {},
-    );
-
+    const initialMetadata = parseMetadata(httpRequest);
+    const grpcClient = createGrpcClient();
     const connectionLogger = logger.child({ connectionId });
-    const wsSend = (data, cb) =>
-      ws.readyState === ws.OPEN ? ws.send(data, cb) : noop;
 
-    const handleGrpcClientError = (requestId, error: GrpcStatus) => {
-      connectionLogger.error(requestId, error);
-      connectionLogger.info('Sending error', error);
+    ws.on('close', () => {
+      logger.info('WebSocket is closed', connectionId);
+      socketCalls.cancelSocketCalls(ws);
+      grpcClient.close();
+    });
 
-      wsSend(
-        Response.encode({
-          id: requestId,
-          error: {
-            status: error.code,
-            message: error.details,
-            metadata: error.metadata
-              ? normalizeGrpcMetadata(error.metadata)
-              : undefined,
-          },
-        }).finish(),
-      );
+    const wsSend = data => {
+      if (ws.readyState === ws.OPEN) {
+        ws.send(data);
+      }
     };
 
-    const handleGrpcError = (requestId, error) => {
-      connectionLogger.error(error);
-      wsSend(Response.encode({ id: requestId, error }).finish());
+    const sendGrpcStatusErrorToSocket = (requestId, error: GrpcStatus) => {
+      connectionLogger.info(`Sending error for request "${requestId}"`, error);
+
+      wsSend(createErrorResponseFromGrpcStatus(requestId, error));
     };
 
-    const handleServerStream = (id, call) => {
-      connectionLogger.info('Handler server stream', id);
+    const handleServerStreamResponse = (requestId, call) => {
+      connectionLogger.info('Handler server stream', requestId);
 
       call.on('data', (response: Uint8Array) => {
-        connectionLogger.info('Push Data', id, response);
-        wsSend(
-          Response.encode({
-            id,
-            push: { payload: response },
-          }).finish(),
-        );
+        connectionLogger.info('Push data to stream', requestId);
+        wsSend(createPushResponse(requestId, response));
       });
 
       call.on('end', () => {
-        connectionLogger.info('Stream was ended', id);
-        wsSend(
-          Response.encode({
-            id,
-            end: {},
-          }).finish(),
-        );
-        calls.delete(id);
+        connectionLogger.info('Stream was ended', requestId);
+        wsSend(createEndResponse(requestId));
+        socketCalls.removeCall(ws, requestId);
       });
 
       call.on('close', () => {
-        connectionLogger.info('Closing stream', id);
-        wsSend(
-          Response.encode({
-            id,
-            end: {},
-          }).finish(),
-        );
-        calls.delete(id);
+        connectionLogger.info('Closing stream', requestId);
+        wsSend(createEndResponse(requestId));
+        socketCalls.removeCall(ws, requestId);
       });
 
       call.on('error', (error: GrpcStatus) => {
-        handleGrpcClientError(id, error);
+        sendGrpcStatusErrorToSocket(requestId, error);
+        socketCalls.removeCall(ws, requestId);
       });
     };
 
-    const processUnaryRequest = (id, unaryPayload) => {
+    ws.on('message', message => {
+      let request;
       try {
-        const { service, method, payload, metadata } = unaryPayload;
+        request = parseRequestMessage(message);
+      } catch (error) {
+        connectionLogger.error('Failed to parse a request', error);
+        return;
+      }
+
+      const requestId = request.id;
+
+      if (request.unary) {
+        const {
+          service,
+          method,
+          payload,
+          metadata,
+          responseType,
+        } = request.unary;
         const path = `/${service}/${method}`;
-        if (unaryPayload.responseType === 'STREAM') {
+
+        if (responseType === 'STREAM') {
           const call = grpcClient.makeServerStreamRequest(
             path,
             identity,
             identity,
             payload,
             createMetadata(initialMetadata, metadata || {}),
-            {},
           );
 
-          handleServerStream(id, call);
-          calls.set(id, call);
+          socketCalls.setCall(ws, requestId, call);
+          handleServerStreamResponse(requestId, call);
         } else {
           const call = grpcClient.makeUnaryRequest(
             path,
@@ -169,34 +163,29 @@ export function createServer(config: GrpcGatewayServerConfig) {
             createMetadata(initialMetadata, metadata || {}),
             {},
             (error: GrpcStatus, response: Uint8Array) => {
+              socketCalls.removeCall(ws, requestId);
+
               if (error) {
-                handleGrpcClientError(id, error);
+                sendGrpcStatusErrorToSocket(requestId, error);
               } else {
-                connectionLogger.info('Unary Data', response);
-                wsSend(
-                  Response.encode({
-                    id,
-                    unary: { payload: response },
-                  }).finish(),
+                connectionLogger.debug(
+                  'Send response for unary request',
+                  requestId,
                 );
-                calls.delete(id);
+                wsSend(createUnaryResponse(requestId, response));
               }
             },
           );
-          calls.set(id, call);
+
+          socketCalls.setCall(ws, requestId, call);
         }
-      } catch (error) {
-        handleGrpcError(id, error);
       }
-    };
 
-    const processStreamRequest = (id, streamPayload) => {
-      try {
-        const { service, method, metadata } = streamPayload;
-
+      if (request.stream) {
+        const { service, method, metadata, responseType } = request.stream;
         const path = `/${service}/${method}`;
 
-        if (streamPayload.responseType === 'STREAM') {
+        if (responseType === 'STREAM') {
           const call = grpcClient.makeBidiStreamRequest(
             path,
             identity,
@@ -204,9 +193,9 @@ export function createServer(config: GrpcGatewayServerConfig) {
             createMetadata(initialMetadata, metadata || {}),
             {},
           );
-          calls.set(id, call);
 
-          handleServerStream(id, call);
+          socketCalls.setCall(ws, requestId, call);
+          handleServerStreamResponse(requestId, call);
         } else {
           const call = grpcClient.makeClientStreamRequest(
             path,
@@ -215,125 +204,135 @@ export function createServer(config: GrpcGatewayServerConfig) {
             createMetadata(initialMetadata, metadata || {}),
             {},
             (error: GrpcStatus, response: Uint8Array) => {
+              socketCalls.removeCall(ws, requestId);
+
               if (error) {
-                handleGrpcClientError(id, error);
+                sendGrpcStatusErrorToSocket(requestId, error);
               } else {
-                connectionLogger.info('Client Stream Unary Response');
-                wsSend(
-                  Response.encode({
-                    id,
-                    unary: { payload: response },
-                  }).finish(),
+                connectionLogger.debug(
+                  'Send unary response for a client stream',
+                  requestId,
                 );
+                wsSend(createUnaryResponse(requestId, response));
               }
             },
           );
-          calls.set(id, call);
+
+          socketCalls.setCall(ws, requestId, call);
+
           call.on('error', (error: GrpcStatus) => {
-            handleGrpcClientError(id, error);
+            socketCalls.removeCall(ws, requestId);
+            sendGrpcStatusErrorToSocket(requestId, error);
           });
         }
-      } catch (error) {
-        connectionLogger.error({ error });
-        handleGrpcError(id, error);
       }
-    };
 
-    ws.on('message', message => {
-      try {
-        if (!(message instanceof Buffer))
-          throw GrpcError.fromStatusName(
-            'UNKNOWN',
-            'Message should be ArrayBuffer',
+      if (request.push) {
+        const { payload } = request.push;
+
+        const call = socketCalls.getCall(ws, requestId);
+        if (call) {
+          connectionLogger.info('Push request', requestId);
+          call.write(payload);
+        } else {
+          const error = GrpcError.fromStatusName(
+            'NOT_FOUND',
+            `There is no a call with id ${requestId}. Probably this is server problem`,
           );
-        const request = Request.toObject(
-          Request.decode(new Uint8Array(message)),
-          { enums: String },
-        );
-        const { id } = request;
 
-        if (request.unary) {
-          processUnaryRequest(id, request.unary);
-        } else if (request.stream) {
-          processStreamRequest(id, request.stream);
-        } else if (request.push) {
-          try {
-            const { payload } = request.push;
-
-            connectionLogger.info('Push request', id, payload);
-
-            const call = calls.get(id);
-            if (!call) {
-              throw GrpcError.fromStatusName(
-                'NOT_FOUND',
-                `There is no opened stream with id ${id}. Probably this is server problem`,
-              );
-            }
-
-            call.write(payload);
-          } catch (error) {
-            handleGrpcError(id, error);
-          }
-        } else if (request.end) {
-          connectionLogger.info('End request');
-          try {
-            const call = calls.get(id);
-            if (!call) {
-              throw GrpcError.fromStatusName(
-                'NOT_FOUND',
-                `There is no opened stream with id ${id}. Probably this is server problem`,
-              );
-            }
-
-            call.end();
-            calls.delete(id);
-          } catch (error) {
-            handleGrpcError(id, error);
-          }
-        } else if (request.cancel) {
-          const { reason } = request.cancel;
-          connectionLogger.info('Cancel request');
-          try {
-            const call = calls.get(id);
-            if (!call) {
-              throw GrpcError.fromStatusName(
-                'NOT_FOUND',
-                `There is no opened stream with id ${id}. Probably this is server problem`,
-              );
-            }
-
-            connectionLogger.info('Cancelling call', id, { reason });
-
-            call.cancel();
-            calls.delete(id);
-          } catch (error) {
-            handleGrpcError(id, error);
-          }
-        } else if (request.service) {
-          if (request.service.ping) {
-            ws.send(
-              Request.encode({
-                id: 'service',
-                service: {
-                  pong: {},
-                },
-              }).finish(),
-            );
-          }
+          connectionLogger.error(error);
+          wsSend(createErrorResponseFromGrpcError(requestId, error));
         }
-      } catch (e) {
-        connectionLogger.error('Not a Request', e);
       }
-    });
 
-    ws.on('close', () => {
-      logger.info('Ws closed');
-      Array.from(calls.values()).forEach(call => call.cancel());
-      grpcClient.close();
+      if (request.end) {
+        const call = socketCalls.getCall(ws, requestId);
+        if (call) {
+          connectionLogger.info('End request', requestId);
+          socketCalls.removeCall(ws, requestId);
+          call.end();
+        }
+      }
+
+      if (request.cancel) {
+        const { reason } = request.cancel;
+        const call = socketCalls.getCall(ws, requestId);
+        if (call) {
+          connectionLogger.info('Cancel request', requestId, { reason });
+          socketCalls.removeCall(ws, requestId);
+          call.cancel();
+        }
+      }
+
+      if (request.service && request.service.ping) {
+        wsSend(SERVICE_PONG_RESPONSE);
+      }
     });
   });
 
-  return wss;
+  return wsServer;
 }
 
-export default createServer;
+function parseRequestMessage(message: *): Request {
+  if (!(message instanceof Buffer)) {
+    throw new Error('Message should be ArrayBuffer');
+  }
+
+  return Request.toObject(Request.decode(new Uint8Array(message)), {
+    enums: String,
+  });
+}
+
+function createServicePongResponse(): Uint8Array {
+  return Request.encode({
+    id: 'service',
+    service: { pong: {} },
+  }).finish();
+}
+
+function createErrorResponseFromGrpcStatus(
+  requestId: string,
+  error: GrpcStatus,
+): Uint8Array {
+  return Response.encode({
+    id: requestId,
+    error: {
+      status: error.code,
+      message: error.details,
+      metadata: error.metadata
+        ? normalizeGrpcMetadata(error.metadata)
+        : undefined,
+    },
+  }).finish();
+}
+
+function createErrorResponseFromGrpcError(
+  requestId: string,
+  error: GrpcError,
+): Uint8Array {
+  return Response.encode({
+    id: requestId,
+    error: {
+      status: error.statusCode,
+      message: error.message,
+    },
+  }).finish();
+}
+
+function createUnaryResponse(
+  requestId: string,
+  payload: Uint8Array,
+): Uint8Array {
+  return Response.encode({ id: requestId, unary: { payload } }).finish();
+}
+
+function createPushResponse(
+  requestId: string,
+  payload: Uint8Array,
+): Uint8Array {
+  return Response.encode({ id: requestId, push: { payload } }).finish();
+}
+
+function createEndResponse(requestId: string): Uint8Array {
+  return Response.encode({ id: requestId, end: {} }).finish();
+}
