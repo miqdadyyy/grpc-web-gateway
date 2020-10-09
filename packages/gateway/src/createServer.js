@@ -102,6 +102,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
     const handleGrpcError = (requestId, error) => {
       connectionLogger.error(error);
       wsSend(Response.encode({ id: requestId, error }).finish());
+      calls.delete(requestId);
     };
 
     const handleServerStream = (id, call) => {
@@ -171,6 +172,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
             (error: GrpcStatus, response: Uint8Array) => {
               if (error) {
                 handleGrpcClientError(id, error);
+                calls.delete(id);
               } else {
                 connectionLogger.info('Unary Data', response);
                 wsSend(
@@ -241,11 +243,13 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
     ws.on('message', message => {
       try {
-        if (!(message instanceof Buffer))
+        if (!(message instanceof Buffer)) {
           throw GrpcError.fromStatusName(
             'UNKNOWN',
             'Message should be ArrayBuffer',
           );
+        }
+
         const request = Request.toObject(
           Request.decode(new Uint8Array(message)),
           { enums: String },
@@ -329,6 +333,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
     ws.on('close', () => {
       logger.info('Ws closed');
       Array.from(calls.values()).forEach(call => call.cancel());
+      calls.clear();
       grpcClient.close();
     });
   });
