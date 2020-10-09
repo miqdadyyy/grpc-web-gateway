@@ -9,13 +9,13 @@ import { Server as WebSocketServer } from 'ws';
 import grpc, { Client } from 'grpc';
 import { identity, noop } from 'lodash/fp';
 import {
+  type GrpcStatusCode,
   Request,
   Response,
-  type GrpcStatusCode,
 } from '../../signaling/signaling';
 import {
-  type HeaderFilter,
   createMetadataParser,
+  type HeaderFilter,
 } from './createMetadataParser';
 
 // $FlowFixMe
@@ -32,11 +32,13 @@ type GrpcGatewayServerConfig = {
   credentials?: CredentialsConfig,
   heartbeatInterval?: number,
   filterHeaders: HeaderFilter,
+  grpcClientPoolSize?: number,
   ...
 };
 
 const SECONDS = 1000;
 const DEFAULT_HEARTBEAT_INTERVAL = 30 * SECONDS;
+const DEFAULT_GRPC_CLIENT_POOL_SIZE = 10;
 
 type GrpcStatus = {
   code: GrpcStatusCode,
@@ -48,7 +50,10 @@ type GrpcStatus = {
 export function createServer(config: GrpcGatewayServerConfig) {
   logger.info('Starting gateway version: ', pkg.version);
 
-  const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
+  const {
+    heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL,
+    grpcClientPoolSize = DEFAULT_GRPC_CLIENT_POOL_SIZE,
+  } = config;
 
   const wss = new WebSocketServer({
     server: config.server,
@@ -59,6 +64,25 @@ export function createServer(config: GrpcGatewayServerConfig) {
   const heartbeat = setupPingConnections(wss, heartbeatInterval);
 
   grpc.setLogger(logger);
+
+  const grpcClientPool: Array<Client> = [];
+  for (let i = 0; i < grpcClientPoolSize; i++) {
+    grpcClientPool[i] = new Client(
+      config.api,
+      createCredentials(config.credentials),
+      {},
+    );
+  }
+
+  let grpcClientIndex = 0;
+  function getNextGrpcClient(): Client {
+    grpcClientIndex = (grpcClientIndex + 1) % grpcClientPool.length;
+    return grpcClientPool[grpcClientIndex];
+  }
+
+  config.server.on('close', () => {
+    grpcClientPool.forEach(grpcClient => grpcClient.close());
+  });
 
   wss.on('error', (err: Error) => {
     logger.error('Connection error:', err);
@@ -71,11 +95,6 @@ export function createServer(config: GrpcGatewayServerConfig) {
     heartbeat.addConnection(connectionId, ws);
 
     const calls = new Map();
-    const grpcClient = new Client(
-      config.api,
-      createCredentials(config.credentials),
-      {},
-    );
 
     const connectionLogger = logger.child({ connectionId });
     const wsSend = (data, cb) =>
@@ -147,6 +166,8 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
     const processUnaryRequest = (id, unaryPayload) => {
       try {
+        const grpcClient = getNextGrpcClient();
+
         const { service, method, payload, metadata } = unaryPayload;
         const path = `/${service}/${method}`;
         if (unaryPayload.responseType === 'STREAM') {
@@ -194,6 +215,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
     const processStreamRequest = (id, streamPayload) => {
       try {
+        const grpcClient = getNextGrpcClient();
         const { service, method, metadata } = streamPayload;
 
         const path = `/${service}/${method}`;
@@ -334,7 +356,6 @@ export function createServer(config: GrpcGatewayServerConfig) {
       logger.info('Ws closed');
       Array.from(calls.values()).forEach(call => call.cancel());
       calls.clear();
-      grpcClient.close();
     });
   });
 
