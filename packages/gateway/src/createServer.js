@@ -48,12 +48,13 @@ type GrpcStatus = {
 };
 
 export function createServer(config: GrpcGatewayServerConfig) {
-  logger.info('Starting gateway version: ', pkg.version);
-
   const {
     heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL,
     grpcClientPoolSize = DEFAULT_GRPC_CLIENT_POOL_SIZE,
   } = config;
+
+  logger.info('Starting gateway version: ', pkg.version);
+  logger.info('Size of gRPC client pool:', grpcClientPoolSize);
 
   const wss = new WebSocketServer({
     server: config.server,
