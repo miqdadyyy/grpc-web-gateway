@@ -4,3 +4,4 @@ example/dist
 **/.cache
 **/dist
 *.log
+coverage

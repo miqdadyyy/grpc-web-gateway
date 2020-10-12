@@ -7,7 +7,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublish": "npm run build",
-    "build": "parcel build src/index.js --target=node --detailed-report --no-minify"
+    "build": "parcel build src/index.js --target=node --detailed-report --no-minify",
+    "watch": "parcel watch src/index.js --target=node"
   },
   "repository": {
     "type": "git",
