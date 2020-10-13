@@ -9,13 +9,13 @@ import { Server as WebSocketServer } from 'ws';
 import grpc, { Client } from 'grpc';
 import { identity, noop } from 'lodash/fp';
 import {
-  type GrpcStatusCode,
   Request,
   Response,
+  type GrpcStatusCode,
 } from '../../signaling/signaling';
 import {
-  createMetadataParser,
   type HeaderFilter,
+  createMetadataParser,
 } from './createMetadataParser';
 
 // $FlowFixMe
@@ -32,13 +32,11 @@ type GrpcGatewayServerConfig = {
   credentials?: CredentialsConfig,
   heartbeatInterval?: number,
   filterHeaders: HeaderFilter,
-  grpcClientPoolSize?: number,
   ...
 };
 
 const SECONDS = 1000;
 const DEFAULT_HEARTBEAT_INTERVAL = 30 * SECONDS;
-const DEFAULT_GRPC_CLIENT_POOL_SIZE = 10;
 
 type GrpcStatus = {
   code: GrpcStatusCode,
@@ -48,13 +46,9 @@ type GrpcStatus = {
 };
 
 export function createServer(config: GrpcGatewayServerConfig) {
-  const {
-    heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL,
-    grpcClientPoolSize = DEFAULT_GRPC_CLIENT_POOL_SIZE,
-  } = config;
-
   logger.info('Starting gateway version: ', pkg.version);
-  logger.info('Size of gRPC client pool:', grpcClientPoolSize);
+
+  const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
 
   const wss = new WebSocketServer({
     server: config.server,
@@ -65,25 +59,6 @@ export function createServer(config: GrpcGatewayServerConfig) {
   const heartbeat = setupPingConnections(wss, heartbeatInterval);
 
   grpc.setLogger(logger);
-
-  const grpcClientPool: Array<Client> = [];
-  for (let i = 0; i < grpcClientPoolSize; i++) {
-    grpcClientPool[i] = new Client(
-      config.api,
-      createCredentials(config.credentials),
-      {},
-    );
-  }
-
-  let grpcClientIndex = 0;
-  function getNextGrpcClient(): Client {
-    grpcClientIndex = (grpcClientIndex + 1) % grpcClientPool.length;
-    return grpcClientPool[grpcClientIndex];
-  }
-
-  config.server.on('close', () => {
-    grpcClientPool.forEach(grpcClient => grpcClient.close());
-  });
 
   wss.on('error', (err: Error) => {
     logger.error('Connection error:', err);
@@ -96,6 +71,11 @@ export function createServer(config: GrpcGatewayServerConfig) {
     heartbeat.addConnection(connectionId, ws);
 
     const calls = new Map();
+    const grpcClient = new Client(
+      config.api,
+      createCredentials(config.credentials),
+      {},
+    );
 
     const connectionLogger = logger.child({ connectionId });
     const wsSend = (data, cb) =>
@@ -122,7 +102,6 @@ export function createServer(config: GrpcGatewayServerConfig) {
     const handleGrpcError = (requestId, error) => {
       connectionLogger.error(error);
       wsSend(Response.encode({ id: requestId, error }).finish());
-      calls.delete(requestId);
     };
 
     const handleServerStream = (id, call) => {
@@ -167,8 +146,6 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
     const processUnaryRequest = (id, unaryPayload) => {
       try {
-        const grpcClient = getNextGrpcClient();
-
         const { service, method, payload, metadata } = unaryPayload;
         const path = `/${service}/${method}`;
         if (unaryPayload.responseType === 'STREAM') {
@@ -194,7 +171,6 @@ export function createServer(config: GrpcGatewayServerConfig) {
             (error: GrpcStatus, response: Uint8Array) => {
               if (error) {
                 handleGrpcClientError(id, error);
-                calls.delete(id);
               } else {
                 connectionLogger.info('Unary Data', response);
                 wsSend(
@@ -216,7 +192,6 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
     const processStreamRequest = (id, streamPayload) => {
       try {
-        const grpcClient = getNextGrpcClient();
         const { service, method, metadata } = streamPayload;
 
         const path = `/${service}/${method}`;
@@ -266,13 +241,11 @@ export function createServer(config: GrpcGatewayServerConfig) {
 
     ws.on('message', message => {
       try {
-        if (!(message instanceof Buffer)) {
+        if (!(message instanceof Buffer))
           throw GrpcError.fromStatusName(
             'UNKNOWN',
             'Message should be ArrayBuffer',
           );
-        }
-
         const request = Request.toObject(
           Request.decode(new Uint8Array(message)),
           { enums: String },
@@ -356,7 +329,7 @@ export function createServer(config: GrpcGatewayServerConfig) {
     ws.on('close', () => {
       logger.info('Ws closed');
       Array.from(calls.values()).forEach(call => call.cancel());
-      calls.clear();
+      grpcClient.close();
     });
   });
 
