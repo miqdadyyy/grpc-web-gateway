@@ -1,6 +1,6 @@
 {
   "name": "@dlghq/grpc-web-gateway-signaling",
-  "version": "3.0.10",
+  "version": "3.0.11",
   "description": "Signaling for grpc web gateway and its clients",
   "main": "signaling.js",
   "scripts": {
