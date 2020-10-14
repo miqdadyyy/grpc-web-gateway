@@ -3,10 +3,10 @@ const { Request } = require('@dlghq/grpc-web-gateway-signaling');
 
 const ENDPOINT = 'ws://localhost:8080';
 const AUTH_TOKEN = 'blabla';
-const CLIENT_COUNT = 500;
+const REQUEST_COUNT = 1000;
 const REQUEST_INTERVAL = 1000;
 
-for (let i = 1; i <= CLIENT_COUNT; i++) {
+for (let i = 1; i <= REQUEST_COUNT; i++) {
   try {
     const ws = new WebSocket(ENDPOINT);
     ws.on('open', () => {

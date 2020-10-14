@@ -31,10 +31,6 @@ const config = envSchema({
         type: 'boolean',
         default: false,
       },
-      GRPC_CLIENT_POOL_SIZE: {
-        type: 'number',
-        default: 10
-      }
     },
   },
 });
@@ -60,7 +56,6 @@ createGrpcGateway({
   credentials: {
     type: config.API_SECURE ? 'ssl' : 'insecure',
   },
-  grpcClientPoolSize: config.GRPC_CLIENT_POOL_SIZE,
   filterHeaders(header) {
     switch (header) {
       case 'dn':
