@@ -1,7 +1,7 @@
 // @flow strict
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 
 export type Sequence = {|
   resetSequence(): void,

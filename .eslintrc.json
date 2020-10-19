@@ -1,14 +1,20 @@
 {
-  "extends": ["@dlghq/eslint-config-dialog", "prettier"],
+  "extends": ["prettier", "plugin:@typescript-eslint/recommended"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "ignorePatterns": ["packages/signaling"],
   "rules": {
-    "consistent-return": "off",
-    "no-shadow": "off",
-    "no-invalid-this": "off",
-    "max-lines": "off",
-    "multiline-comment-style": "off",
-    "no-void": "off"
-  },
-  "env": {
-    "jest/globals": true
+    "@typescript-eslint/ban-ts-comment": 0,
+    "@typescript-eslint/no-empty-function": "warn",
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/ban-types": [
+      "error",
+      {
+        "extendDefaults": true,
+        "types": {
+          "object": false
+        }
+      }
+    ]
   }
 }

@@ -2,24 +2,31 @@
   "name": "@dlghq/grpc-web-gateway-signaling",
   "version": "3.0.11",
   "description": "Signaling for grpc web gateway and its clients",
-  "main": "signaling.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "generate-api": "pbjs -t static-module -o signaling.js ./signaling.proto && pbts -o signaling.d.ts signaling.js"
-  },
+  "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dialogs/grpc-web-gateway.git"
   },
-  "keywords": [
-    "grpc"
-  ],
-  "author": "meafmira <i@meafmira.me>",
   "bugs": {
     "url": "https://github.com/dialogs/grpc-web-gateway/issues"
   },
-  "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
+  "author": "meafmira <i@meafmira.me>",
+  "contributors": [
+    "Mikhail Nasyrov <mikhail@mnasyrov.com>"
+  ],
+  "keywords": [
+    "grpc"
+  ],
+  "sideEffects": false,
+  "main": "signaling.js",
+  "peerDependencies": {
+    "protobufjs": "^6.9.0"
+  },
   "devDependencies": {
-    "flow-bin": "0.117.0"
+    "protobufjs": "6.10.1"
+  },
+  "scripts": {
+    "generate-api": "pbjs -t static-module -o signaling.js ./signaling.proto && pbts -o signaling.d.ts signaling.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }

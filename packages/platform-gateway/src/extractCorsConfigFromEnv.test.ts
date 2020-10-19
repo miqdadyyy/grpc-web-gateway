@@ -2,7 +2,10 @@
  * Copyright 2017 dialog LLC <info@dlg.im>
  */
 
-const { extractCorsConfigFromEnv } = require('./extractCorsConfigFromEnv');
+import {
+  CORS_HTTP_METHODS,
+  extractCorsConfigFromEnv,
+} from './extractCorsConfigFromEnv';
 
 describe('extractCorsConfigFromEnv', () => {
   beforeEach(() => {
@@ -13,7 +16,7 @@ describe('extractCorsConfigFromEnv', () => {
     const result = extractCorsConfigFromEnv();
     expect(result).toEqual({
       origin: true,
-      methods: 'OPTIONS,GET,HEAD,PUT,PATCH,POST,DELETE',
+      methods: CORS_HTTP_METHODS,
     });
   });
 
@@ -23,7 +26,7 @@ describe('extractCorsConfigFromEnv', () => {
     const result = extractCorsConfigFromEnv();
     expect(result).toEqual({
       origin: true,
-      methods: 'OPTIONS,GET,HEAD,PUT,PATCH,POST,DELETE',
+      methods: CORS_HTTP_METHODS,
     });
   });
 
@@ -33,7 +36,7 @@ describe('extractCorsConfigFromEnv', () => {
     const result = extractCorsConfigFromEnv();
     expect(result).toEqual({
       origin: false,
-      methods: 'OPTIONS,GET,HEAD,PUT,PATCH,POST,DELETE',
+      methods: CORS_HTTP_METHODS,
     });
   });
 
@@ -43,7 +46,7 @@ describe('extractCorsConfigFromEnv', () => {
     const result = extractCorsConfigFromEnv();
     expect(result).toEqual({
       origin: ['https://dlg.im'],
-      methods: 'OPTIONS,GET,HEAD,PUT,PATCH,POST,DELETE',
+      methods: CORS_HTTP_METHODS,
     });
   });
 
@@ -54,7 +57,7 @@ describe('extractCorsConfigFromEnv', () => {
     const result = extractCorsConfigFromEnv();
     expect(result).toEqual({
       origin: ['https://dlg.im', 'https://test.dlg.im', 'https://example.org'],
-      methods: 'OPTIONS,GET,HEAD,PUT,PATCH,POST,DELETE',
+      methods: CORS_HTTP_METHODS,
     });
   });
 });

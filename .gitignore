@@ -1,7 +1,6 @@
+.cache
 .vscode
-**/node_modules/
-example/dist
-**/.cache
-**/dist
-*.log
+node_modules
+dist
 coverage
+*.log

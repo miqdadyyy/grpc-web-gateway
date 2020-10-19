@@ -3,7 +3,8 @@ FROM node:lts-alpine3.10
 
 WORKDIR /opt/web-platform-grpc-web-gateway
 
-COPY src/ src/
 COPY package.json package.json
+COPY node_modules/ node_modules/
+COPY dist/ dist/
 
-ENTRYPOINT ["npm", "start"]
+ENTRYPOINT ["node", "dist/src/index.js"]

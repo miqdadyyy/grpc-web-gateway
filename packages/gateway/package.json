@@ -2,51 +2,53 @@
   "name": "@dlghq/grpc-web-gateway",
   "version": "3.0.11",
   "description": "Dialog grpc gateway web server",
-  "main": "dist/index.js",
-  "module": "src/index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublish": "npm run build",
-    "build": "parcel build --no-cache src/index.js --target=node --detailed-report --no-minify",
-    "watch": "parcel watch --no-cache src/index.js --target=node"
-  },
+  "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dialogs/grpc-web-gateway.git"
   },
-  "keywords": [
-    "grpc"
-  ],
-  "author": "meafmira (i@meafmira.me)",
   "bugs": {
     "url": "https://github.com/dialogs/grpc-web-gateway/issues"
   },
-  "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
+  "author": "meafmira (i@meafmira.me)",
+  "contributors": [
+    "Mikhail Nasyrov <mikhail@mnasyrov.com>"
+  ],
+  "keywords": [
+    "grpc"
+  ],
+  "engines": {
+    "node": ">=12"
+  },
+  "source": "src/index.ts",
+  "typings": "dist/index.d.ts",
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "src",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "tsc --build --watch",
+    "clean": "rimraf dist",
+    "build": "tsc --build",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "npm-run-all -s clean build"
+  },
   "dependencies": {
     "@dlghq/grpc-web-gateway-signaling": "^3.0.11",
-    "@grpc/proto-loader": "0.5.3",
-    "body-parser": "1.19.0",
-    "express": "4.17.1",
-    "express-ws": "4.0.0",
-    "glob": "7.1.6",
     "grpc": "1.24.2",
-    "lodash": "4.17.15",
-    "nanoid": "2.1.8",
-    "pino": "5.15.0",
-    "pino-pretty": "3.5.0",
-    "protocol-buffers-schema": "3.3.2",
-    "run": "1.4.0",
-    "ws": "7.2.1"
+    "nanoid": "3.1.12",
+    "pino": "6.7.0",
+    "pino-pretty": "4.3.0",
+    "ws": "7.3.1"
   },
   "devDependencies": {
-    "@babel/core": "7.7.7",
-    "@babel/plugin-proposal-class-properties": "7.7.4",
-    "@dlghq/babel-preset-dialog": "4.4.0",
-    "@dlghq/eslint-config-dialog": "4.0.10",
-    "flow-bin": "0.117.0",
-    "html-webpack-plugin": "3.2.0",
-    "nodemon": "2.0.2",
+    "@types/pino": "6.3.2",
+    "@types/ws": "7.2.7",
     "npm-run-all": "4.1.5",
-    "parcel-bundler": "1.12.4"
+    "rimraf": "3.0.2",
+    "typescript": "4.0.3"
   }
 }

@@ -19,9 +19,8 @@
     "express": "4.17.1",
     "glob": "7.1.6",
     "grpc": "1.24.2",
-    "lodash": "4.17.15",
     "long": "4.0.0",
-    "protobufjs": "6.8.8",
+    "protobufjs": "6.10.1",
     "rxjs": "6.5.3"
   },
   "devDependencies": {

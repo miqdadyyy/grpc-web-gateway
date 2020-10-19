@@ -1,25 +1,5 @@
 syntax = "proto3";
 
-enum Status {
-  UNKNOWN = 0;
-  OK = 1;
-  CANCELLED = 2;
-  INVALID_ARGUMENT = 3;
-  DEADLINE_EXCEEDED = 4;
-  NOT_FOUND = 5;
-  ALREADY_EXISTS = 6;
-  PERMISSION_DENIED = 7;
-  UNAUTHENTICATED = 8;
-  RESOURCE_EXHAUSTED = 9;
-  FAILED_PRECONDITION = 10;
-  ABORTED = 11;
-  OUT_OF_RANGE = 12;
-  UNIMPLEMENTED = 13;
-  INTERNAL = 14;
-  UNAVAILABLE = 15;
-  DATA_LOSS = 16;
-}
-
 message ServiceRequestBody {
   oneof body {
     Ping ping = 1;
@@ -41,12 +21,6 @@ message Request {
     ServiceRequestBody service = 7;
   }
 }
-
-enum ResponseType {
-  UNKNOWN = 0;
-  UNARY = 1;
-  STREAM = 2;
-};
 
 message UnaryRequestBody {
   string service = 1;
@@ -70,7 +44,7 @@ message PushRequestBody {
 
 message EndRequestBody {}
 
-message CancelRequestBody { optional string reason = 1; }
+message CancelRequestBody { string reason = 1; }
 
 message Response {
   string id = 1;
@@ -90,6 +64,32 @@ message EndResponseBody {}
 
 message ErrorResponseBody {
   Status status = 1;
-  optional string message = 2;
+  string message = 2;
   map<string, string> metadata = 3;
 }
+
+enum Status {
+  UNKNOWN = 0;
+  OK = 1;
+  CANCELLED = 2;
+  INVALID_ARGUMENT = 3;
+  DEADLINE_EXCEEDED = 4;
+  NOT_FOUND = 5;
+  ALREADY_EXISTS = 6;
+  PERMISSION_DENIED = 7;
+  UNAUTHENTICATED = 8;
+  RESOURCE_EXHAUSTED = 9;
+  FAILED_PRECONDITION = 10;
+  ABORTED = 11;
+  OUT_OF_RANGE = 12;
+  UNIMPLEMENTED = 13;
+  INTERNAL = 14;
+  UNAVAILABLE = 15;
+  DATA_LOSS = 16;
+}
+
+enum ResponseType {
+  UNKNOWN = 0;
+  UNARY = 1;
+  STREAM = 2;
+};

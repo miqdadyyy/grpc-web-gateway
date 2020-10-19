@@ -1,24 +1,25 @@
-// @flow strict
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { noop } from 'lodash/fp';
-import nanoid from 'nanoid';
-
-import type { Server, WebSocket } from 'ws';
-
+import { nanoid } from 'nanoid';
+import { Server } from 'ws';
 import { logger } from './logger';
+import { WebSocket } from './types';
 
-export function setupPingConnections(wss: Server, heartbeatInterval: number) {
+export type HeartbeatController = {
+  addConnection(connectionId: string, connection: WebSocket): void;
+  stop(): void;
+};
+
+export function setupPingConnections(
+  wss: Server,
+  heartbeatInterval: number,
+): HeartbeatController {
   const connectionsMap: WeakMap<
     WebSocket,
-    {
-      isAlive: boolean,
-      id: string,
-      ...
-    },
+    { isAlive: boolean; id: string }
   > = new WeakMap();
 
-  function heartbeat() {
+  function heartbeat(this: WebSocket) {
     const wsMeta = connectionsMap.get(this);
     logger.info('Heartbeat', wsMeta ? wsMeta.id : 'undefined');
     connectionsMap.set(this, {
@@ -30,9 +31,9 @@ export function setupPingConnections(wss: Server, heartbeatInterval: number) {
   const iid = setInterval(() => {
     logger.info('Clearing dead connections...');
 
-    wss.clients.forEach(ws => {
+    wss.clients.forEach((ws) => {
       const wsMeta = connectionsMap.get(ws);
-      if (!wsMeta || wsMeta.isAlive === false) {
+      if (!wsMeta || !wsMeta.isAlive) {
         logger.info(
           'Terminate dead connection',
           wsMeta ? wsMeta.id : 'undefined id',
@@ -42,7 +43,7 @@ export function setupPingConnections(wss: Server, heartbeatInterval: number) {
       }
 
       connectionsMap.set(ws, { isAlive: false, id: wsMeta.id });
-      ws.ping(noop);
+      ws.ping();
     });
   }, heartbeatInterval);
 

@@ -112,7 +112,3 @@ export const createWebsocketTransport = (
     close,
   };
 };
-
-export const createWebsocketTransportFactory = (
-  endpoint: string,
-) => (): StatusfulTransport => createWebsocketTransport(endpoint);

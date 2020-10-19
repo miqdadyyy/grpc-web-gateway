@@ -1,39 +1,30 @@
 // @flow
 
-import {
-  RpcClient,
-  RetryWsTransport,
-  WebSocketTransport,
-  type Transport,
-  type StatusfulTransport,
-} from '@dlghq/grpc-web-gateway-client';
+import { RpcClient } from '@dlghq/grpc-web-gateway-client';
 import {
   createWebsocketTransport,
-  createWebsocketTransportFactory,
-  retryTransportDecorator,
   heartbeatTransportDecorator,
-  map,
-  chain,
-  type Factory,
+  retryTransportDecorator,
 } from '@dlghq/grpc-web-gateway-client/src/transports';
 import { RxRpcClient } from '@dlghq/rx-grpc-web-gateway-client';
-import { pipe } from 'lodash/fp';
 import Protobuf from 'protobufjs/light';
 import long from 'long';
 
-import { Ping, Pong, Bytes, Long } from './api.gen';
+import { Long, Ping, Pong } from './api.gen';
 
 Protobuf.util.Long = long;
 Protobuf.configure();
 
 const endpoint = 'ws://localhost:8080';
-const makeClient = pipe(
-  createWebsocketTransportFactory,
-  map(heartbeatTransportDecorator()),
-  retryTransportDecorator(),
-  transport => new RpcClient(transport),
-  rpcClient => new RxRpcClient(rpcClient),
-);
+
+function makeClient(endpoint) {
+  const transport = retryTransportDecorator()(
+    heartbeatTransportDecorator()(createWebsocketTransport(endpoint)),
+  );
+  const rpcClient = new RpcClient(transport);
+  const rxRpcClient = new RxRpcClient(rpcClient);
+  return rxRpcClient;
+}
 
 const rxClient = makeClient(endpoint);
 
@@ -79,7 +70,7 @@ rxClient
   .execute()
   .toPromise()
   .then(
-    resp => (
+    (resp) => (
       console.log({ resp }), Long.toObject(Long.decode(resp), { longs: String })
     ),
   )
@@ -93,11 +84,11 @@ const serverStreamRequest = rxClient.makeServerStreamRequest({
 });
 
 serverStreamRequest.execute().subscribe({
-  next: response => {
+  next: (response) => {
     const message = Pong.decode(response);
     console.log('Server stream', message);
   },
-  error: error => {
+  error: (error) => {
     console.error('Server stream', error);
   },
   complete: () => {
@@ -117,11 +108,11 @@ bidiStreamRequest.send({
 });
 
 bidiStreamRequest.execute().subscribe({
-  next: response => {
+  next: (response) => {
     const message = Pong.decode(response);
     console.log('Bidi stream', message);
   },
-  error: error => {
+  error: (error) => {
     console.error('Bidi stream', error);
   },
   complete: () => {
@@ -150,11 +141,11 @@ const clientStreamRequest = rxClient.makeClientStreamRequest({
 });
 
 clientStreamRequest.execute().subscribe({
-  next: response => {
+  next: (response) => {
     const message = Pong.decode(response);
     console.log('Client stream', message);
   },
-  error: error => {
+  error: (error) => {
     console.error('Client stream', error);
   },
   complete: () => {
