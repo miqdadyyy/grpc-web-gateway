@@ -5,7 +5,12 @@ import { IncomingMessage } from 'http';
 import type { Server as HttpsServer } from 'https';
 import { nanoid } from 'nanoid';
 import { Server as WebSocketServer } from 'ws';
-import { Call, Client, ClientWritableStream, ServiceError } from 'grpc';
+import {
+  Call,
+  Client,
+  ClientWritableStream,
+  ServiceError,
+} from '@grpc/grpc-js';
 import {
   IErrorResponseBody,
   IRequest,
@@ -33,8 +38,7 @@ export type GrpcGatewayServerConfig = {
 const SECONDS = 1000;
 const DEFAULT_HEARTBEAT_INTERVAL = 30 * SECONDS;
 
-const SERIALIZER = (value: Uint8Array) =>
-  Buffer.from(value.buffer, 0, value.buffer.byteLength);
+const SERIALIZER = (value: Uint8Array) => Buffer.from(value);
 const DESERIALIZER = (data: Buffer) => data;
 
 const SERVICE_PONG_RESPONSE = createServicePongResponse();
@@ -135,6 +139,10 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
         request = parseRequestMessage(message);
       } catch (error) {
         connectionLogger.error('Failed to parse a request', error);
+        return;
+      }
+
+      if (!request) {
         return;
       }
 
@@ -290,13 +298,24 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
   return wsServer;
 }
 
-function parseRequestMessage(message: Buffer | unknown): IRequest {
+function parseRequestMessage(message: Buffer | unknown): IRequest | void {
   if (!(message instanceof Buffer)) {
     throw new Error('Message should be ArrayBuffer');
   }
 
   const data = new Uint8Array(message);
-  const request = Request.decode(data);
+  let request;
+  try {
+    request = Request.decode(data);
+  } catch (error) {
+    const isEmptyPacketFromClientTransport =
+      data.length === 2 && data[0] === 1 && data[1] === 0;
+    if (isEmptyPacketFromClientTransport) {
+      return undefined;
+    }
+    throw error;
+  }
+
   return Request.toObject(request);
 }
 

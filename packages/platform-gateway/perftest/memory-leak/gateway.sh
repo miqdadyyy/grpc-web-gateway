@@ -6,4 +6,4 @@ export API_SECURE=true
 node --trace-gc --inspect \
   --max-old-space-size=256 \
   --require=../utils/memory-usage.js \
-  ../../src/index.js
+  ../../dist/src/index.js

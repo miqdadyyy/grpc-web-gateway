@@ -1,6 +1,6 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { Metadata } from 'grpc';
+import { Metadata } from '@grpc/grpc-js';
 
 export function createMetadata(
   initialMetadata: Metadata,

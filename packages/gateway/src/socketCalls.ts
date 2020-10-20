@@ -1,4 +1,4 @@
-import { Call } from 'grpc';
+import { Call } from '@grpc/grpc-js';
 import { WebSocket } from './types';
 
 export class SocketCalls {

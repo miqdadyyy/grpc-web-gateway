@@ -1,6 +1,6 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { ChannelCredentials, credentials } from 'grpc';
+import { ChannelCredentials, credentials } from '@grpc/grpc-js';
 
 export type SslCredentialsConfig = {
   rootCerts: Buffer;
