@@ -2,36 +2,45 @@
   "name": "@dlghq/grpc-web-gateway-client",
   "version": "3.0.11",
   "description": "Dialog grpc web gateway client",
-  "main": "src",
-  "directories": {
-    "transports": "./src/transports"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "parcel build --no-cache src/index.js --experimental-scope-hoisting",
-    "prepublish": "npm run build"
-  },
+  "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dialogs/grpc-web-gateway.git"
   },
-  "keywords": [
-    "grpc"
-  ],
-  "author": "meafmira <i@meafmira.me>",
   "bugs": {
     "url": "https://github.com/dialogs/grpc-web-gateway/issues"
   },
-  "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
+  "author": "meafmira <i@meafmira.me>",
+  "contributors": [
+    "Mikhail Nasyrov <mikhail@mnasyrov.com>"
+  ],
+  "keywords": [
+    "grpc"
+  ],
+  "sideEffects": false,
+  "source": "src/index.ts",
+  "types": "dist/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.module.js",
+  "scripts": {
+    "clean": "rimraf dist",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "parcel watch .",
+    "build": "npm-run-all build:*",
+    "build:compile": "parcel build .",
+    "build:flow": "copyfiles -V -f src/index.js.flow dist",
+    "prepublish": "npm-run-all -s clean build"
+  },
   "dependencies": {
-    "@dlghq/grpc-web-gateway-signaling": "^3.0.11",
-    "nanoevents": "2.0.0",
+    "@dlghq/grpc-web-gateway-signaling": "3.0.11",
+    "nanoevents": "5.1.8",
     "nanoid": "3.1.12"
   },
   "devDependencies": {
-    "@babel/core": "7.7.7",
-    "@babel/plugin-proposal-class-properties": "7.7.4",
-    "flow-bin": "0.117.0",
-    "parcel-bundler": "1.12.4"
+    "@parcel/transformer-typescript-tsc": "2.0.0-nightly.427",
+    "copyfiles": "2.4.0",
+    "parcel": "2.0.0-nightly.427",
+    "npm-run-all": "4.1.5",
+    "rimraf": "3.0.2"
   }
 }

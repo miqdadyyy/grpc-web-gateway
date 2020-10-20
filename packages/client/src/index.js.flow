@@ -1,0 +1,255 @@
+// @flow strict
+
+// Types
+
+declare export class RpcError extends Error {
+  code: string;
+  constructor(code: string, message: string): RpcError;
+}
+
+export type RpcCallStatus = 'initial' | 'open' | 'closed' | 'cancelled';
+
+export type Metadata = { [key: string]: string, ... };
+
+export type UnaryRequest = {
+  service: string,
+  method: string,
+  payload: Uint8Array,
+  metadata?: Metadata,
+  ...
+};
+
+export type PushRequest = {
+  payload: Uint8Array,
+  metadata?: Metadata,
+  ...
+};
+
+export type StreamRequest = {
+  service: string,
+  method: string,
+  metadata?: Metadata,
+  ...
+};
+
+export interface ClientStreamCall extends RpcCall {
+  send(PushRequest): void;
+  end(): void;
+}
+
+// Util types
+
+export interface Logger {
+  log(...Array<mixed>): mixed;
+  error(...Array<mixed>): mixed;
+  info(...Array<mixed>): mixed;
+  warn(...Array<mixed>): mixed;
+}
+
+export type Sequence = {
+  next(): string,
+};
+
+export interface NanoEvents<T> {
+  on<K: $Keys<T>>(event: K, cb: ($ElementType<T, K>) => void): () => void;
+  emit<K: $Keys<T>>(event: K, data?: $ElementType<T, K>): void;
+}
+
+// Transport
+
+type Unbind = () => void;
+
+export interface TransportReadable {
+  onMessage(messageHandler: (message: Uint8Array) => void): Unbind;
+  onError(errorHandler: (error: RpcError) => void): Unbind;
+}
+
+export interface TransportWritable {
+  send(message: Uint8Array): void;
+}
+
+export interface Transport extends TransportReadable, TransportWritable {}
+
+export interface StatusfulTransport extends Transport {
+  close(): void;
+  onOpen(() => void): Unbind;
+  onClose(() => void): Unbind;
+}
+
+// Calls
+
+export interface RpcCall {
+  status: RpcCallStatus;
+  cancel(reason?: string): void;
+  onMessage(handler: (Uint8Array) => void): () => void;
+  onError(handler: (RpcError) => void): () => void;
+  onEnd(handler: () => void): () => void;
+  onCancel(handler: () => void): () => void;
+}
+
+declare export class UnaryCall implements RpcCall {
+  id: string;
+  transport: Transport;
+  emitter: NanoEvents<{
+    message: Uint8Array,
+    error: RpcError,
+    end: void,
+    cancel: void,
+    ...
+  }>;
+  status: RpcCallStatus;
+
+  constructor(id: string, transport: Transport): UnaryCall;
+
+  start(request: UnaryRequest): UnaryCall;
+  cancel(reason?: string): void;
+
+  onMessage(handler: (response: Uint8Array) => void): Unbind;
+  onError(errorHandler: (error: RpcError) => void): Unbind;
+  onEnd(handler: () => void): Unbind;
+  onCancel(handler: () => void): Unbind;
+
+  toPromise(): Promise<Uint8Array>;
+}
+
+declare export class BidiStreamCall implements RpcCall {
+  id: string;
+  transport: Transport;
+  emitter: NanoEvents<{
+    message: Uint8Array,
+    error: RpcError,
+    end: void,
+    cancel: void,
+    ...
+  }>;
+  status: RpcCallStatus;
+
+  constructor(id: string, transport: Transport): BidiStreamCall;
+
+  start(request: StreamRequest): BidiStreamCall;
+  send(request: PushRequest): void;
+  end(): void;
+  cancel(reason?: string): void;
+
+  onMessage(handler: (response: Uint8Array) => void): Unbind;
+  onError(errorHandler: (error: RpcError) => void): Unbind;
+  onEnd(handler: () => void): Unbind;
+  onCancel(handler: () => void): Unbind;
+}
+
+declare export class ServerStreamCall implements RpcCall {
+  id: string;
+  transport: Transport;
+  emitter: NanoEvents<{
+    message: Uint8Array,
+    error: RpcError,
+    end: void,
+    cancel: void,
+    ...
+  }>;
+  status: 'initial' | 'open' | 'closed' | 'cancelled';
+
+  constructor(id: string, transport: Transport): ServerStreamCall;
+
+  start(request: UnaryRequest): ServerStreamCall;
+  cancel(reason?: string): void;
+
+  onMessage(handler: (response: Uint8Array) => void): Unbind;
+  onError(errorHandler: (error: RpcError) => void): Unbind;
+  onEnd(handler: () => void): Unbind;
+  onCancel(handler: () => void): Unbind;
+}
+
+// RpcClient
+
+export interface IRpcClient<UnaryCall, ClientStreamCall> {
+  makeUnaryRequest(request: UnaryRequest): UnaryCall;
+  makeServerStreamRequest(request: UnaryRequest): UnaryCall;
+  makeClientStreamRequest(request: StreamRequest): ClientStreamCall;
+  makeBidiStreamRequest(request: StreamRequest): ClientStreamCall;
+}
+
+declare export class RpcClient
+  implements IRpcClient<RpcCall, ClientStreamCall> {
+  transport: Transport;
+  calls: Map<string, RpcCall>;
+  seq: Sequence;
+  emitter: NanoEvents<{ error: RpcError, ... }>;
+
+  constructor(transport: Transport): RpcClient;
+
+  setTransport(transport: Transport): void;
+  cancelRequest(id: string): void;
+  disposeRequest(id: string): void;
+  makeUnaryRequest(request: UnaryRequest): UnaryCall;
+  makeServerStreamRequest(request: UnaryRequest): ServerStreamCall;
+  makeClientStreamRequest(request: StreamRequest): ClientStreamCall;
+  makeBidiStreamRequest(request: StreamRequest): BidiStreamCall;
+
+  onError(errorHandler: (RpcError) => void): void;
+}
+
+// Transport implementations
+
+type MessageHandler = (message: Uint8Array) => void;
+type ErrorHandler = (error: RpcError) => void;
+export type WebSocketTransportConfig = {
+  heartbeatInterval?: number,
+  logger?: Logger,
+  debug?: boolean,
+  ...
+};
+
+declare export class WebSocketTransport implements StatusfulTransport {
+  queue: Array<Uint8Array>;
+  socket: WebSocket;
+  emitter: NanoEvents<{
+    open: void,
+    message: Uint8Array,
+    error: RpcError,
+    end: void,
+    ...
+  }>;
+  isAlive: boolean;
+  logger: Logger;
+  debug: boolean;
+
+  constructor(
+    endpoint: string,
+    config?: WebSocketTransportConfig,
+  ): WebSocketTransport;
+
+  setupHeartbeat(interval: number): Unbind;
+  ping(): void;
+  pong(): void;
+  handleOpen(): void;
+
+  onOpen(handler: () => void): Unbind;
+  onMessage(handler: MessageHandler): Unbind;
+  onError(handler: ErrorHandler): Unbind;
+  onClose(handler: (void) => void): Unbind;
+
+  close(): void;
+  send(message: Uint8Array): void;
+}
+
+type WsTransportFactory = () => WebSocketTransport;
+type RetryWsTransportConfig = { debug: boolean, ... };
+
+declare export class RetryWsTransport implements Transport {
+  origin: WebSocketTransport;
+  factory: WsTransportFactory;
+  nextPeriod: number;
+  logger: { log(...Array<mixed>): void, ... };
+
+  constructor(
+    factory: WsTransportFactory,
+    config?: RetryWsTransportConfig,
+  ): RetryWsTransport;
+
+  setupWsTransport(): void;
+  send(message: Uint8Array): void;
+
+  onError(handler: (RpcError) => void): Unbind;
+  onMessage(handler: (Uint8Array) => void): Unbind;
+}

@@ -2,33 +2,46 @@
   "name": "@dlghq/rx-grpc-web-gateway-client",
   "version": "3.0.11",
   "description": "Rx client for dialog grpc web gateway",
-  "main": "RpcClient.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "parcel build --no-cache RpcClient.js --experimental-scope-hoisting"
-  },
+  "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dialogs/grpc-web-gateway.git"
   },
-  "keywords": [
-    "grpc"
-  ],
-  "author": "meafmira <i@meafmira.me>",
   "bugs": {
     "url": "https://github.com/dialogs/grpc-web-gateway/issues"
   },
-  "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
+  "author": "meafmira <i@meafmira.me>",
+  "contributors": [
+    "Mikhail Nasyrov <mikhail@mnasyrov.com>"
+  ],
+  "keywords": [
+    "grpc"
+  ],
+  "sideEffects": false,
+  "source": "src/index.ts",
+  "types": "dist/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.module.js",
+  "scripts": {
+    "clean": "rimraf dist",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "npx parcel watch .",
+    "build": "npm-run-all build:*",
+    "build:compile": "parcel build .",
+    "build:flow": "copyfiles -V -f src/index.js.flow dist",
+    "prepublish": "npm-run-all -s clean build"
+  },
   "dependencies": {
-    "@dlghq/grpc-web-gateway-client": "^3.0.11"
+    "@dlghq/grpc-web-gateway-client": "3.0.11"
   },
   "peerDependencies": {
     "rxjs": "^6.5.3"
   },
   "devDependencies": {
-    "@babel/core": "7.7.7",
-    "@babel/plugin-proposal-class-properties": "7.7.4",
-    "flow-bin": "0.117.0",
-    "parcel-bundler": "1.12.4"
+    "@parcel/transformer-typescript-tsc": "2.0.0-nightly.427",
+    "copyfiles": "2.4.0",
+    "parcel": "2.0.0-nightly.427",
+    "npm-run-all": "4.1.5",
+    "rimraf": "3.0.2"
   }
 }

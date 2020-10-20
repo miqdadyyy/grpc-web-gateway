@@ -1,20 +1,17 @@
-// @flow strict
 // Copyright 2018 dialog LLC <info@dlg.im>
 
 export interface Logger {
-  log(...Array<mixed>): mixed;
-  error(...Array<mixed>): mixed;
-  info(...Array<mixed>): mixed;
-  warn(...Array<mixed>): mixed;
+  log(...args: Array<unknown>): unknown;
+  error(...args: Array<unknown>): unknown;
+  info(...args: Array<unknown>): unknown;
+  warn(...args: Array<unknown>): unknown;
 }
 
-const noop = () => void 'noop';
-
 export const silentLogger: Logger = {
-  log: noop,
-  error: noop,
-  info: noop,
-  warn: noop,
+  log: () => undefined,
+  error: () => undefined,
+  info: () => undefined,
+  warn: () => undefined,
 };
 
 export const debugLoggerDecorator = (debug: boolean) => (

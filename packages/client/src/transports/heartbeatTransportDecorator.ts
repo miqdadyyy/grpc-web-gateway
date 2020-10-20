@@ -1,11 +1,10 @@
-// @flow strict
 // Copyright 2018 dialog LLC <info@dlg.im>
 
 import { Request } from '@dlghq/grpc-web-gateway-signaling';
-import Nanoevents from 'nanoevents';
+import { Emitter } from 'nanoevents';
 
 import { RpcError } from '../RpcError';
-import { type StatusfulTransport } from '../transport';
+import { StatusfulTransport } from '../transport';
 
 const PING = Request.encode({ id: 'service', service: { ping: {} } }).finish();
 const DEFAULT_HEARTBEAT_INTERVAL = 30000;
@@ -13,7 +12,7 @@ const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 export const heartbeatTransportDecorator = (
   heartbeatInterval: number = DEFAULT_HEARTBEAT_INTERVAL,
 ) => (origin: StatusfulTransport): StatusfulTransport => {
-  const emitter = new Nanoevents();
+  const emitter = new Emitter();
   let isAlive = false;
 
   const setupHeartbeat = (interval: number) => {

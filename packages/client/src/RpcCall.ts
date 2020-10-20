@@ -1,25 +1,22 @@
-// @flow strict
-
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { type Response } from '@dlghq/grpc-web-gateway-signaling';
-
-import { type UnaryRequest } from './types';
+import { Response } from '@dlghq/grpc-web-gateway-signaling';
+import { UnaryRequest } from './types';
 
 interface RpcUnaryRequest {
-  start(UnaryRequest): void;
+  start(request: UnaryRequest): void;
 }
 
 interface RpcUnaryResponse {
-  onMessage((response: Response) => void): void;
+  onMessage(handler: (response: Response) => void): void;
 }
 
 interface RpcClientStream {
-  push(UnaryRequest): void;
+  push(request: UnaryRequest): void;
 }
 
 interface RpcServerStream {
-  onMessage((response: Response) => void): void;
+  onMessage(handler: (response: Response) => void): void;
 }
 
 export interface RpcUnaryCall extends RpcUnaryRequest, RpcUnaryResponse {}

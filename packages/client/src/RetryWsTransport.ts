@@ -1,21 +1,21 @@
-// @flow strict
 // Copyright 2018 dialog LLC <info@dlg.im>
 
 import { RpcError } from './RpcError';
-import WebSocketTransport from './WebSocketTransport';
+import { WebSocketTransport } from './WebSocketTransport';
 import { Transport } from './transport';
+import { Unsubscribe } from 'nanoevents';
 
 type WsTransportFactory = () => WebSocketTransport;
 
-type RetryWsTransportConfig = { debug: boolean, ... };
+type RetryWsTransportConfig = { debug: boolean };
 
 const LOG_PREFIX = 'RetryTransport';
 
-class RetryWsTransport implements Transport {
-  origin: WebSocketTransport;
+export class RetryWsTransport implements Transport {
+  origin!: WebSocketTransport;
   factory: WsTransportFactory;
   nextPeriod: number;
-  logger: { log(...Array<mixed>): void, ... };
+  logger: { log(...args: Array<unknown>): void };
 
   constructor(
     factory: WsTransportFactory,
@@ -37,7 +37,7 @@ class RetryWsTransport implements Transport {
     this.setupWsTransport();
   }
 
-  setupWsTransport() {
+  setupWsTransport(): void {
     const nextInterval = Math.E ** (this.nextPeriod * 0.2) * 1000;
     this.logger.log({ nextInterval });
     this.origin = this.factory();
@@ -60,13 +60,11 @@ class RetryWsTransport implements Transport {
     this.origin.send(message);
   }
 
-  onError(handler: RpcError => void) {
+  onError(handler: (error: RpcError) => void): Unsubscribe {
     return this.origin.onError(handler);
   }
 
-  onMessage(handler: Uint8Array => void) {
+  onMessage(handler: (message: Uint8Array) => void): Unsubscribe {
     return this.origin.onMessage(handler);
   }
 }
-
-export default RetryWsTransport;

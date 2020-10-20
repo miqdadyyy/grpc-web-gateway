@@ -1,49 +1,45 @@
-// @flow strict
-
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { Observable } from 'rxjs';
+import { Observable, Subscriber } from 'rxjs';
 import { share } from 'rxjs/operators';
 import {
+  ClientStreamCall,
+  IRpcClient,
+  PushRequest,
+  RpcCall,
   RpcClient,
   RpcError,
-  type RpcCall,
-  type ClientStreamCall,
-  type UnaryRequest,
-  type StreamRequest,
-  type PushRequest,
-  type IRpcClient,
+  StreamRequest,
+  UnaryRequest,
 } from '@dlghq/grpc-web-gateway-client';
 
 export type RxUnaryCall = {
-  execute(): Observable<Uint8Array>,
-  cancel(reason?: string): void,
-  ...
+  execute(): Observable<Uint8Array>;
+  cancel(reason?: string): void;
 };
 
 export type RxClientStreamCall = RxUnaryCall & {
-  send(PushRequest): void,
-  end(): void,
-  ...
+  send(request: PushRequest): void;
+  end(): void;
 };
 
-function cancelCall(call, reason) {
+function cancelCall(call: RpcCall | void, reason?: string): void {
   if (call) {
     call.cancel(reason);
   }
 }
 
 const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
-  let call = null;
+  let call: RpcCall | void;
 
   return {
     execute: () => {
-      return Observable.create(observer => {
+      return Observable.create((observer: Subscriber<Uint8Array>) => {
         call = makeCall();
 
-        call.onMessage(message => observer.next(message));
+        call.onMessage((message) => observer.next(message));
 
-        call.onError(error => observer.error(error));
+        call.onError((error) => observer.error(error));
 
         call.onEnd(() => observer.complete());
 
@@ -52,23 +48,23 @@ const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
         return () => cancelCall(call);
       }).pipe(share());
     },
-    cancel: reason => cancelCall(call, reason),
+    cancel: (reason) => cancelCall(call, reason),
   };
 };
 
 const observableFromClientStreamCall = (
   makeCall: () => ClientStreamCall,
 ): RxClientStreamCall => {
-  let call = null;
+  let call: ClientStreamCall | void;
 
   return {
     execute: () => {
-      return Observable.create(observer => {
+      return Observable.create((observer: Subscriber<Uint8Array>) => {
         call = makeCall();
 
-        call.onMessage(message => observer.next(message));
+        call.onMessage((message) => observer.next(message));
 
-        call.onError(error => observer.error(error));
+        call.onError((error) => observer.error(error));
 
         call.onEnd(() => observer.complete());
 
@@ -77,9 +73,9 @@ const observableFromClientStreamCall = (
         return () => cancelCall(call);
       }).pipe(share());
     },
-    send: request => (call ? call.send(request) : undefined),
+    send: (request) => (call ? call.send(request) : undefined),
     end: () => (call ? call.end() : undefined),
-    cancel: reason => cancelCall(call, reason),
+    cancel: (reason) => cancelCall(call, reason),
   };
 };
 
@@ -115,7 +111,7 @@ export class RxRpcClient
     );
   }
 
-  onError(handler: RpcError => void) {
+  onError(handler: (error: RpcError) => void): () => void {
     return this.rpcClient.onError(handler);
   }
 }

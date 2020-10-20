@@ -21,7 +21,7 @@
     "node": ">=12"
   },
   "source": "src/index.ts",
-  "typings": "dist/index.d.ts",
+  "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "files": [
     "dist",
@@ -31,9 +31,9 @@
   ],
   "scripts": {
     "dev": "tsc --build --watch",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rimraf dist",
     "build": "tsc --build",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "prepublish": "npm-run-all -s clean build"
   },
   "dependencies": {

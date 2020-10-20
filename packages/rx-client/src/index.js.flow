@@ -1,0 +1,41 @@
+// @flow strict
+
+// Copyright 2018 dialog LLC <info@dlg.im>
+
+import { Observable } from 'rxjs';
+import {
+  type IRpcClient,
+  type PushRequest,
+  RpcClient,
+  RpcError,
+  type StreamRequest,
+  type UnaryRequest,
+} from '@dlghq/grpc-web-gateway-client';
+
+export type RxUnaryCall = {
+  execute(): Observable<Uint8Array>,
+  cancel(reason?: string): void,
+  ...
+};
+
+export type RxClientStreamCall = RxUnaryCall & {
+  send(PushRequest): void,
+  end(): void,
+  ...
+};
+
+type Unsubscribe = () => void;
+
+declare export class RxRpcClient
+  implements IRpcClient<RxUnaryCall, RxClientStreamCall> {
+  rpcClient: RpcClient;
+
+  constructor(rpcClient: RpcClient): RxRpcClient;
+
+  makeUnaryRequest(request: UnaryRequest): RxUnaryCall;
+  makeServerStreamRequest(request: UnaryRequest): RxUnaryCall;
+  makeClientStreamRequest(request: StreamRequest): RxClientStreamCall;
+  makeBidiStreamRequest(request: StreamRequest): RxClientStreamCall;
+
+  onError(handler: (error: RpcError) => void): Unsubscribe;
+}

@@ -1,7 +1,6 @@
-// @flow strict
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { type RpcError } from './RpcError';
+import { RpcError } from './RpcError';
 
 type Unbind = () => void;
 
@@ -18,6 +17,6 @@ export interface Transport extends TransportReadable, TransportWritable {}
 
 export interface StatusfulTransport extends Transport {
   close(): void;
-  onOpen(() => void): Unbind;
-  onClose(() => void): Unbind;
+  onOpen(handler: () => void): Unbind;
+  onClose(handler: () => void): Unbind;
 }

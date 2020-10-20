@@ -1,11 +1,10 @@
-// @flow strict
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import Nanoevents from 'nanoevents';
-import unbindAll from 'nanoevents/unbind-all';
+import { Emitter } from 'nanoevents';
 
-import { type StatusfulTransport } from '../transport';
+import { StatusfulTransport } from '../transport';
 import { RpcError } from '../RpcError';
+import { unbindAll } from '../utils/emitterUtils';
 
 type MessageHandler = (message: Uint8Array) => void;
 type ErrorHandler = (error: RpcError) => void;
@@ -13,18 +12,17 @@ type ErrorHandler = (error: RpcError) => void;
 export const createWebsocketTransport = (
   endpoint: string,
 ): StatusfulTransport => {
-  let queue = [];
+  let queue: Array<Uint8Array> = [];
   const socket = new WebSocket(endpoint);
 
   socket.binaryType = 'arraybuffer';
 
-  const emitter: Nanoevents<{
-    open: void,
-    message: Uint8Array,
-    error: RpcError,
-    close: void,
-    ...
-  }> = new Nanoevents();
+  const emitter: Emitter<{
+    open: () => void;
+    message: (data: Uint8Array) => void;
+    error: (error: RpcError) => void;
+    close: () => void;
+  }> = new Emitter();
 
   const send = (message: Uint8Array): void => {
     switch (socket.readyState) {
@@ -41,36 +39,26 @@ export const createWebsocketTransport = (
     }
   };
 
-  const handleOpen = () => {
+  socket.addEventListener('open', () => {
     emitter.emit('open');
     if (queue.length) {
       queue.forEach(send);
       queue = [];
     }
-  };
-  socket.onopen = handleOpen;
+  });
 
-  socket.onclose = () => {
+  socket.addEventListener('close', () => {
     emitter.emit('close');
-  };
+  });
 
   emitter.on('close', () => {
     unbindAll(emitter);
   });
 
-  socket.onmessage = event => {
+  socket.addEventListener('message', (event) => {
     if (event.data instanceof ArrayBuffer) {
-      const message = new Uint8Array(
-        // Flow hack to refine event.data type
-        (event.data: ArrayBuffer),
-      );
-      emitter.emit(
-        'message',
-        new Uint8Array(
-          // Flow hack to refine event.data type
-          message,
-        ),
-      );
+      const message = new Uint8Array(event.data);
+      emitter.emit('message', message);
     } else {
       emitter.emit(
         'error',
@@ -80,7 +68,7 @@ export const createWebsocketTransport = (
         ),
       );
     }
-  };
+  });
 
   const onOpen = (handler: () => void) => {
     return emitter.on('open', handler);
@@ -94,7 +82,7 @@ export const createWebsocketTransport = (
     return emitter.on('error', handler);
   };
 
-  const onClose = (handler: void => void) => {
+  const onClose = (handler: () => void) => {
     return emitter.on('close', handler);
   };
 

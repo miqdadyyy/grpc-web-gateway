@@ -1,31 +1,27 @@
-// @flow strict
-
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import Nanoevents from 'nanoevents';
-import unbindAll from 'nanoevents/unbind-all';
+import { Emitter, Unsubscribe } from 'nanoevents';
 import { Request, Response } from '@dlghq/grpc-web-gateway-signaling';
-
-import { type RpcCall, type UnaryRequest } from './types';
+import { RpcCall, UnaryRequest } from './types';
 import { Transport } from './transport';
 import { RpcError } from './RpcError';
+import { unbindAll } from './utils/emitterUtils';
 
 export class ServerStreamCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: Nanoevents<{
-    message: Uint8Array,
-    error: RpcError,
-    end: void,
-    cancel: void,
-    ...
+  emitter: Emitter<{
+    message: (message: Uint8Array) => void;
+    error: (error: RpcError) => void;
+    end: () => void;
+    cancel: () => void;
   }>;
   status: 'initial' | 'open' | 'closed' | 'cancelled';
 
   constructor(id: string, transport: Transport) {
     this.id = id;
     this.transport = transport;
-    this.emitter = new Nanoevents();
+    this.emitter = new Emitter();
     this.status = 'initial';
 
     this.emitter.on('end', () => {
@@ -38,10 +34,15 @@ export class ServerStreamCall implements RpcCall {
       unbindAll(this.emitter);
     });
 
-    this.transport.onError(error => this.emitter.emit('error', error));
+    this.transport.onError((error) => this.emitter.emit('error', error));
   }
 
-  start({ service, method, payload, metadata }: UnaryRequest) {
+  start({
+    service,
+    method,
+    payload,
+    metadata,
+  }: UnaryRequest): ServerStreamCall {
     if (this.status === 'initial') {
       const id = this.id;
       const message = Request.encode({
@@ -58,11 +59,11 @@ export class ServerStreamCall implements RpcCall {
 
       this.transport.send(message);
 
-      const unbindTransport = this.transport.onMessage(message => {
+      const unbindTransport = this.transport.onMessage((message) => {
         const res = Response.decode(message);
 
         if (res.id === this.id) {
-          if (res.push) {
+          if (res.push && res.push.payload) {
             this.emitter.emit('message', res.push.payload);
           } else if (res.end) {
             this.emitter.emit('end');
@@ -71,10 +72,12 @@ export class ServerStreamCall implements RpcCall {
             if (error.status === 1) {
               this.emitter.emit('cancel');
             } else {
-              this.emitter.emit(
-                'error',
-                new RpcError(error.status.toString(), error.message),
-              );
+              if (error.status && error.message) {
+                this.emitter.emit(
+                  'error',
+                  new RpcError(String(error.status), error.message),
+                );
+              }
               this.emitter.emit('end');
             }
           }
@@ -87,7 +90,7 @@ export class ServerStreamCall implements RpcCall {
     return this;
   }
 
-  cancel(reason?: string) {
+  cancel(reason?: string): void {
     if (this.status === 'open') {
       const message = Request.encode({
         id: this.id,
@@ -98,21 +101,19 @@ export class ServerStreamCall implements RpcCall {
     }
   }
 
-  onMessage(handler: (response: Uint8Array) => void) {
+  onMessage(handler: (response: Uint8Array) => void): Unsubscribe {
     return this.emitter.on('message', handler);
   }
 
-  onError(errorHandler: (error: RpcError) => void) {
+  onError(errorHandler: (error: RpcError) => void): Unsubscribe {
     return this.emitter.on('error', errorHandler);
   }
 
-  onEnd(handler: () => void) {
+  onEnd(handler: () => void): Unsubscribe {
     return this.emitter.on('end', handler);
   }
 
-  onCancel(handler: () => void) {
+  onCancel(handler: () => void): Unsubscribe {
     return this.emitter.on('cancel', handler);
   }
 }
-
-export default ServerStreamCall;

@@ -1,36 +1,27 @@
-// @flow strict
-
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import Nanoevents from 'nanoevents';
-import unbindAll from 'nanoevents/unbind-all';
+import { Emitter, Unsubscribe } from 'nanoevents';
 import { Request, Response } from '@dlghq/grpc-web-gateway-signaling';
-
-import type {
-  RpcCall,
-  PushRequest,
-  StreamRequest,
-  RpcCallStatus,
-} from './types';
+import { PushRequest, RpcCall, RpcCallStatus, StreamRequest } from './types';
 import { Transport } from './transport';
 import { RpcError } from './RpcError';
+import { unbindAll } from './utils/emitterUtils';
 
 export class ClientStreamCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: Nanoevents<{
-    message: Uint8Array,
-    error: RpcError,
-    end: void,
-    cancel: void,
-    ...
+  emitter: Emitter<{
+    message: (message: Uint8Array) => void;
+    error: (error: RpcError) => void;
+    end: () => void;
+    cancel: () => void;
   }>;
   status: RpcCallStatus;
 
   constructor(id: string, transport: Transport) {
     this.id = id;
     this.transport = transport;
-    this.emitter = new Nanoevents();
+    this.emitter = new Emitter();
     this.status = 'initial';
 
     this.emitter.on('end', () => {
@@ -43,10 +34,10 @@ export class ClientStreamCall implements RpcCall {
       unbindAll(this.emitter);
     });
 
-    this.transport.onError(error => this.emitter.emit('error', error));
+    this.transport.onError((error) => this.emitter.emit('error', error));
   }
 
-  start({ service, method, metadata }: StreamRequest) {
+  start({ service, method, metadata }: StreamRequest): ClientStreamCall {
     if (this.status === 'initial') {
       const id = this.id;
       const message = Request.encode({
@@ -56,11 +47,11 @@ export class ClientStreamCall implements RpcCall {
 
       this.transport.send(message);
 
-      const unbindTransport = this.transport.onMessage(message => {
+      const unbindTransport = this.transport.onMessage((message) => {
         const res = Response.decode(message);
 
         if (res.id === this.id) {
-          if (res.unary) {
+          if (res.unary && res.unary.payload) {
             this.emitter.emit('message', res.unary.payload);
             this.emitter.emit('end');
           } else if (res.error) {
@@ -69,10 +60,12 @@ export class ClientStreamCall implements RpcCall {
             if (error.status === 1) {
               this.emitter.emit('cancel');
             } else {
-              this.emitter.emit(
-                'error',
-                new RpcError(error.status.toString(), error.message),
-              );
+              if (error.status && error.message) {
+                this.emitter.emit(
+                  'error',
+                  new RpcError(String(error.status), error.message),
+                );
+              }
               this.emitter.emit('end');
             }
           }
@@ -85,7 +78,7 @@ export class ClientStreamCall implements RpcCall {
     return this;
   }
 
-  send({ payload, metadata }: PushRequest) {
+  send({ payload, metadata }: PushRequest): void {
     if (this.status === 'open') {
       const id = this.id;
       const message = Request.encode({
@@ -97,14 +90,14 @@ export class ClientStreamCall implements RpcCall {
     }
   }
 
-  end() {
+  end(): void {
     if (this.status === 'open') {
       const message = Request.encode({ id: this.id, end: {} }).finish();
       this.transport.send(message);
     }
   }
 
-  cancel(reason?: string) {
+  cancel(reason?: string): void {
     if (this.status === 'open') {
       const message = Request.encode({
         id: this.id,
@@ -115,21 +108,19 @@ export class ClientStreamCall implements RpcCall {
     }
   }
 
-  onMessage(handler: (response: Uint8Array) => void) {
+  onMessage(handler: (response: Uint8Array) => void): Unsubscribe {
     return this.emitter.on('message', handler);
   }
 
-  onError(errorHandler: (error: RpcError) => void) {
+  onError(errorHandler: (error: RpcError) => void): Unsubscribe {
     return this.emitter.on('error', errorHandler);
   }
 
-  onEnd(handler: () => void) {
+  onEnd(handler: () => void): Unsubscribe {
     return this.emitter.on('end', handler);
   }
 
-  onCancel(handler: () => void) {
+  onCancel(handler: () => void): Unsubscribe {
     return this.emitter.on('cancel', handler);
   }
 }
-
-export default ClientStreamCall;

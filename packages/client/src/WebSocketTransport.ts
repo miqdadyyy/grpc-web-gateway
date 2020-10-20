@@ -1,26 +1,19 @@
-// @flow strict
-
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import Nanoevents from 'nanoevents';
-import unbindAll from 'nanoevents/unbind-all';
+import { Emitter, Unsubscribe } from 'nanoevents';
 import { Request } from '@dlghq/grpc-web-gateway-signaling';
-
-import {
-  type Logger,
-  debugLoggerDecorator,
-  prefixLoggerDecorator,
-} from './Logger';
-import { type StatusfulTransport } from './transport';
+import { debugLoggerDecorator, Logger, prefixLoggerDecorator } from './Logger';
+import { StatusfulTransport } from './transport';
 import { RpcError } from './RpcError';
+import { unbindAll } from './utils/emitterUtils';
 
 type MessageHandler = (message: Uint8Array) => void;
 type ErrorHandler = (error: RpcError) => void;
-type WebSocketTransportConfig = {
-  heartbeatInterval?: number,
-  logger?: Logger,
-  debug?: boolean,
-  ...
+
+export type WebSocketTransportConfig = {
+  heartbeatInterval?: number;
+  logger?: Logger;
+  debug?: boolean;
 };
 
 const PING = Request.encode({ id: 'service', service: { ping: {} } }).finish();
@@ -29,19 +22,17 @@ const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 
 const DEFAULT_LOGGER_PREFIX = '[WS Transport]';
 
-class WebSocketTransport implements StatusfulTransport {
+export class WebSocketTransport implements StatusfulTransport {
   queue: Array<Uint8Array>;
   socket: WebSocket;
-  emitter: Nanoevents<{
-    open: void,
-    message: Uint8Array,
-    error: RpcError,
-    end: void,
-    ...
+  emitter: Emitter<{
+    open: () => void;
+    message: (message: Uint8Array) => void;
+    error: (error: RpcError) => void;
+    end: () => void;
   }>;
   isAlive: boolean;
   logger: Logger;
-  debug: boolean;
 
   constructor(
     endpoint: string,
@@ -64,7 +55,7 @@ class WebSocketTransport implements StatusfulTransport {
     socket.onopen = () => this.handleOpen();
     this.queue = [];
     this.socket = socket;
-    this.emitter = new Nanoevents();
+    this.emitter = new Emitter();
     this.isAlive = false;
 
     const cancelPing = this.setupHeartbeat(heartbeatInterval);
@@ -87,22 +78,12 @@ class WebSocketTransport implements StatusfulTransport {
       cancelPing();
     });
 
-    this.socket.onmessage = event => {
+    this.socket.onmessage = (event) => {
       this.logger.log('Message', event.data, event);
       this.isAlive = true;
       if (event.data instanceof ArrayBuffer) {
-        const message = new Uint8Array(
-          // Flow hack to refine event.data type
-          (event.data: ArrayBuffer),
-        );
-
-        this.emitter.emit(
-          'message',
-          new Uint8Array(
-            // Flow hack to refine event.data type
-            message,
-          ),
-        );
+        const message = new Uint8Array(event.data);
+        this.emitter.emit('message', message);
       } else {
         this.logger.error('Serialization mismatch');
         this.emitter.emit(
@@ -116,7 +97,7 @@ class WebSocketTransport implements StatusfulTransport {
     };
   }
 
-  setupHeartbeat(interval: number) {
+  setupHeartbeat(interval: number): () => void {
     const iid = setInterval(() => {
       this.logger.log('Is alive', this.isAlive);
       if (!this.isAlive) {
@@ -141,46 +122,46 @@ class WebSocketTransport implements StatusfulTransport {
     return () => clearInterval(iid);
   }
 
-  ping() {
+  ping(): void {
     this.logger.log('Send ping');
     this.socket.send(PING);
   }
 
-  pong() {
+  pong(): void {
     this.logger.log('Send pong');
     this.socket.send(PONG);
   }
 
-  handleOpen() {
+  handleOpen(): void {
     this.logger.log('Connection opened');
     this.isAlive = true;
     this.socket.send(new Uint8Array([1, 0]));
     this.emitter.emit('open');
 
     if (this.queue.length) {
-      this.queue.forEach(message => this.send(message));
+      this.queue.forEach((message) => this.send(message));
       this.queue = [];
     }
   }
 
-  onOpen(handler: () => void) {
+  onOpen(handler: () => void): Unsubscribe {
     return this.emitter.on('open', handler);
   }
 
-  onMessage(handler: MessageHandler) {
+  onMessage(handler: MessageHandler): Unsubscribe {
     return this.emitter.on('message', handler);
   }
 
-  onError(handler: ErrorHandler) {
+  onError(handler: ErrorHandler): Unsubscribe {
     return this.emitter.on('error', handler);
   }
 
-  onClose(handler: void => void) {
+  onClose(handler: () => void): Unsubscribe {
     return this.emitter.on('end', handler);
   }
 
-  close() {
-    return this.socket.close();
+  close(): void {
+    this.socket.close();
   }
 
   send(message: Uint8Array): void {
@@ -201,5 +182,3 @@ class WebSocketTransport implements StatusfulTransport {
     }
   }
 }
-
-export default WebSocketTransport;

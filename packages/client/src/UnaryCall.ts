@@ -1,31 +1,27 @@
-// @flow strict
-
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import Nanoevents from 'nanoevents';
-import unbindAll from 'nanoevents/unbind-all';
+import { Emitter, Unsubscribe } from 'nanoevents';
 import { Request, Response } from '@dlghq/grpc-web-gateway-signaling';
-
 import { RpcError } from './RpcError';
 import type { RpcCall, RpcCallStatus, UnaryRequest } from './types';
-import { type Transport } from './transport';
+import { Transport } from './transport';
+import { unbindAll } from './utils/emitterUtils';
 
-class UnaryCall implements RpcCall {
+export class UnaryCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: Nanoevents<{
-    message: Uint8Array,
-    error: RpcError,
-    end: void,
-    cancel: void,
-    ...
+  emitter: Emitter<{
+    message: (message: Uint8Array) => void;
+    error: (error: RpcError) => void;
+    end: () => void;
+    cancel: () => void;
   }>;
   status: RpcCallStatus;
 
   constructor(id: string, transport: Transport) {
     this.transport = transport;
     this.id = id;
-    this.emitter = new Nanoevents();
+    this.emitter = new Emitter();
     this.status = 'initial';
 
     this.emitter.on('end', () => {
@@ -38,10 +34,10 @@ class UnaryCall implements RpcCall {
       unbindAll(this.emitter);
     });
 
-    this.transport.onError(error => this.emitter.emit('error', error));
+    this.transport.onError((error) => this.emitter.emit('error', error));
   }
 
-  start({ service, method, payload, metadata }: UnaryRequest) {
+  start({ service, method, payload, metadata }: UnaryRequest): UnaryCall {
     if (this.status === 'initial') {
       const id = this.id;
       const message = Request.encode({
@@ -51,11 +47,11 @@ class UnaryCall implements RpcCall {
 
       this.transport.send(message);
 
-      const unbindTransport = this.transport.onMessage(message => {
+      const unbindTransport = this.transport.onMessage((message) => {
         const res = Response.decode(message);
 
         if (res.id === this.id) {
-          if (res.unary) {
+          if (res.unary && res.unary.payload) {
             this.emitter.emit('message', res.unary.payload);
             this.emitter.emit('end');
           } else if (res.error) {
@@ -64,10 +60,12 @@ class UnaryCall implements RpcCall {
             if (error.status === 1) {
               this.emitter.emit('cancel');
             } else {
-              this.emitter.emit(
-                'error',
-                new RpcError(error.status.toString(), error.message),
-              );
+              if (error.status && error.message) {
+                this.emitter.emit(
+                  'error',
+                  new RpcError(String(error.status), error.message),
+                );
+              }
               this.emitter.emit('end');
             }
           }
@@ -81,7 +79,7 @@ class UnaryCall implements RpcCall {
     return this;
   }
 
-  cancel(reason?: string) {
+  cancel(reason?: string): void {
     if (this.status === 'open') {
       const message = Request.encode({
         id: this.id,
@@ -92,19 +90,19 @@ class UnaryCall implements RpcCall {
     }
   }
 
-  onMessage(handler: (response: Uint8Array) => void) {
+  onMessage(handler: (response: Uint8Array) => void): Unsubscribe {
     return this.emitter.on('message', handler);
   }
 
-  onError(errorHandler: (error: RpcError) => void) {
+  onError(errorHandler: (error: RpcError) => void): Unsubscribe {
     return this.emitter.on('error', errorHandler);
   }
 
-  onEnd(handler: () => void) {
+  onEnd(handler: () => void): Unsubscribe {
     return this.emitter.on('end', handler);
   }
 
-  onCancel(handler: () => void) {
+  onCancel(handler: () => void): Unsubscribe {
     return this.emitter.on('cancel', handler);
   }
 
@@ -115,5 +113,3 @@ class UnaryCall implements RpcCall {
     });
   }
 }
-
-export default UnaryCall;
