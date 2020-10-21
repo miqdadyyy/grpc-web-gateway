@@ -1,6 +1,6 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { Emitter, Unsubscribe } from 'nanoevents';
+import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import { Request } from '@dlghq/grpc-web-gateway-signaling';
 import { debugLoggerDecorator, Logger, prefixLoggerDecorator } from './Logger';
 import { StatusfulTransport } from './transport';
@@ -55,7 +55,7 @@ export class WebSocketTransport implements StatusfulTransport {
     socket.onopen = () => this.handleOpen();
     this.queue = [];
     this.socket = socket;
-    this.emitter = new Emitter();
+    this.emitter = createNanoEvents();
     this.isAlive = false;
 
     const cancelPing = this.setupHeartbeat(heartbeatInterval);

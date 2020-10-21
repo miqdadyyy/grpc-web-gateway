@@ -25,9 +25,9 @@
   "scripts": {
     "clean": "rimraf dist",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "watch": "parcel watch .",
+    "watch": "parcel watch --no-cache .",
     "build": "npm-run-all build:*",
-    "build:compile": "parcel build .",
+    "build:compile": "parcel build --no-cache .",
     "build:flow": "copyfiles -V -f src/index.js.flow dist",
     "prepublish": "npm-run-all -s clean build"
   },
@@ -37,7 +37,6 @@
     "nanoid": "3.1.12"
   },
   "devDependencies": {
-    "@parcel/transformer-typescript-tsc": "2.0.0-nightly.427",
     "copyfiles": "2.4.0",
     "parcel": "2.0.0-nightly.427",
     "npm-run-all": "4.1.5",

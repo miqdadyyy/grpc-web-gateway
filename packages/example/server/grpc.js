@@ -34,7 +34,7 @@ class TestService {
   }
 
   clientStream(call, callback) {
-    call.on('data', message => {
+    call.on('data', (message) => {
       console.log(`[grpc] clientStream: `, message);
     });
     call.on('end', () => {
@@ -46,7 +46,7 @@ class TestService {
   bidiStream(call) {
     const iid = setInterval(() => call.write({ date: Date.now() }), 10000);
 
-    call.on('data', message => {
+    call.on('data', (message) => {
       console.log(`[grpc] bidiStream:`, message);
       call.write({ date: Date.now() });
     });
@@ -68,7 +68,7 @@ function startGrpcServer({ protoRoot, listen }) {
   const protoFiles = glob.sync(protoRoot);
   const server = new grpc.Server();
 
-  protoFiles.forEach(protoRoot => {
+  protoFiles.forEach((protoRoot) => {
     const definition = protoLoader.loadSync(protoRoot, {
       keepCase: false,
       longs: String,
@@ -80,7 +80,7 @@ function startGrpcServer({ protoRoot, listen }) {
 
     console.log(descriptor);
 
-    Object.keys(definition).forEach(serviceName => {
+    Object.keys(definition).forEach((serviceName) => {
       const service = descriptor[serviceName].service;
       if (service) {
         server.addService(service, new TestService());
@@ -88,8 +88,9 @@ function startGrpcServer({ protoRoot, listen }) {
     });
   });
 
-  server.bind(listen, grpc.ServerCredentials.createInsecure());
-  server.start();
+  server.bindAsync(listen, grpc.ServerCredentials.createInsecure(), () => {
+    server.start();
+  });
 }
 
 export default startGrpcServer;

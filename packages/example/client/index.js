@@ -2,14 +2,15 @@
 
 import { RpcClient } from '@dlghq/grpc-web-gateway-client';
 import {
-  createWebsocketTransport,
+  createWebsocketTransportFactory,
   heartbeatTransportDecorator,
+  map,
   retryTransportDecorator,
-} from '@dlghq/grpc-web-gateway-client/src/transports';
+} from './transports';
 import { RxRpcClient } from '@dlghq/rx-grpc-web-gateway-client';
+import { pipe } from 'lodash/fp';
 import Protobuf from 'protobufjs/light';
 import long from 'long';
-
 import { Long, Ping, Pong } from './api.gen';
 
 Protobuf.util.Long = long;
@@ -17,14 +18,13 @@ Protobuf.configure();
 
 const endpoint = 'ws://localhost:8080';
 
-function makeClient(endpoint) {
-  const transport = retryTransportDecorator()(
-    heartbeatTransportDecorator()(createWebsocketTransport(endpoint)),
-  );
-  const rpcClient = new RpcClient(transport);
-  const rxRpcClient = new RxRpcClient(rpcClient);
-  return rxRpcClient;
-}
+const makeClient = pipe(
+  createWebsocketTransportFactory,
+  map(heartbeatTransportDecorator()),
+  retryTransportDecorator(),
+  (transport) => new RpcClient(transport),
+  (rpcClient) => new RxRpcClient(rpcClient),
+);
 
 const rxClient = makeClient(endpoint);
 

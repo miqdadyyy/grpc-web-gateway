@@ -10,6 +10,29 @@
   "engines": {
     "node": ">=12"
   },
+  "source": "src/index.ts",
+  "main": "dist/index.js",
+  "targets": {
+    "main": {
+      "isLibrary": false,
+      "includeNodeModules": true
+    }
+  },
+  "scripts": {
+    "dev": "nodemon --exec 'ts-node' src/index.ts",
+    "start": "node dist/index.js",
+    "clean": "rimraf dist",
+    "build": "parcel build --no-cache ."
+  },
+  "nodemonConfig": {
+    "ignoreRoot": [
+      ".git"
+    ],
+    "watch": [
+      "src/**/*.ts",
+      "node_modules/@dlghq/grpc-web-gateway"
+    ]
+  },
   "dependencies": {
     "@dlghq/grpc-web-gateway": "3.0.11",
     "cors": "2.8.5",
@@ -22,23 +45,9 @@
     "@types/express": "4.17.8",
     "nodemon": "2.0.5",
     "npm-run-all": "4.1.5",
+    "parcel": "2.0.0-nightly.427",
     "rimraf": "3.0.2",
     "ts-node": "9.0.0",
     "typescript": "4.0.3"
-  },
-  "scripts": {
-    "dev": "nodemon --exec 'ts-node' src/index.ts",
-    "start": "node dist/src/index.js",
-    "clean": "rimraf dist",
-    "build": "tsc --build"
-  },
-  "nodemonConfig": {
-    "ignoreRoot": [
-      ".git"
-    ],
-    "watch": [
-      "src/**/*.ts",
-      "node_modules/@dlghq/grpc-web-gateway"
-    ]
   }
 }

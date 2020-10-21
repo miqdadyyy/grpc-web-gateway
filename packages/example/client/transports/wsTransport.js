@@ -1,10 +1,11 @@
+// @flow strict
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { Emitter } from 'nanoevents';
-
-import { StatusfulTransport } from '../transport';
-import { RpcError } from '../RpcError';
-import { unbindAll } from '../utils/emitterUtils';
+import { createNanoEvents } from 'nanoevents';
+import {
+  RpcError,
+  type StatusfulTransport,
+} from '@dlghq/grpc-web-gateway-client';
 
 type MessageHandler = (message: Uint8Array) => void;
 type ErrorHandler = (error: RpcError) => void;
@@ -12,17 +13,18 @@ type ErrorHandler = (error: RpcError) => void;
 export const createWebsocketTransport = (
   endpoint: string,
 ): StatusfulTransport => {
-  let queue: Array<Uint8Array> = [];
+  let queue = [];
   const socket = new WebSocket(endpoint);
 
   socket.binaryType = 'arraybuffer';
 
-  const emitter: Emitter<{
-    open: () => void;
-    message: (data: Uint8Array) => void;
-    error: (error: RpcError) => void;
-    close: () => void;
-  }> = new Emitter();
+  const emitter: Nanoevents<{
+    open: void,
+    message: Uint8Array,
+    error: RpcError,
+    close: void,
+    ...
+  }> = createNanoEvents();
 
   const send = (message: Uint8Array): void => {
     switch (socket.readyState) {
@@ -39,26 +41,36 @@ export const createWebsocketTransport = (
     }
   };
 
-  socket.addEventListener('open', () => {
+  const handleOpen = () => {
     emitter.emit('open');
     if (queue.length) {
       queue.forEach(send);
       queue = [];
     }
-  });
+  };
+  socket.onopen = handleOpen;
 
-  socket.addEventListener('close', () => {
+  socket.onclose = () => {
     emitter.emit('close');
-  });
+  };
 
   emitter.on('close', () => {
-    unbindAll(emitter);
+    emitter.events = {};
   });
 
-  socket.addEventListener('message', (event) => {
+  socket.onmessage = (event) => {
     if (event.data instanceof ArrayBuffer) {
-      const message = new Uint8Array(event.data);
-      emitter.emit('message', message);
+      const message = new Uint8Array(
+        // Flow hack to refine event.data type
+        (event.data: ArrayBuffer),
+      );
+      emitter.emit(
+        'message',
+        new Uint8Array(
+          // Flow hack to refine event.data type
+          message,
+        ),
+      );
     } else {
       emitter.emit(
         'error',
@@ -68,7 +80,7 @@ export const createWebsocketTransport = (
         ),
       );
     }
-  });
+  };
 
   const onOpen = (handler: () => void) => {
     return emitter.on('open', handler);
@@ -82,7 +94,7 @@ export const createWebsocketTransport = (
     return emitter.on('error', handler);
   };
 
-  const onClose = (handler: () => void) => {
+  const onClose = (handler: (void) => void) => {
     return emitter.on('close', handler);
   };
 
@@ -100,3 +112,7 @@ export const createWebsocketTransport = (
     close,
   };
 };
+
+export const createWebsocketTransportFactory = (
+  endpoint: string,
+) => (): StatusfulTransport => createWebsocketTransport(endpoint);

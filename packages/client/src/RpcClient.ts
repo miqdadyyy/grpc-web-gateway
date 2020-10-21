@@ -1,6 +1,6 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { Emitter, Unsubscribe } from 'nanoevents';
+import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import {
   ClientStreamCall as IClientStreamCall,
   RpcCall,
@@ -25,7 +25,7 @@ export class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
   constructor(transport: Transport) {
     this.calls = new Map();
     this.seq = createSequence();
-    this.emitter = new Emitter();
+    this.emitter = createNanoEvents();
     this.setTransport(transport);
   }
 

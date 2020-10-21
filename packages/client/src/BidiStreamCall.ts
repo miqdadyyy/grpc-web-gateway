@@ -1,6 +1,6 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { Emitter, Unsubscribe } from 'nanoevents';
+import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import { Request, Response } from '@dlghq/grpc-web-gateway-signaling';
 import { PushRequest, RpcCall, RpcCallStatus, StreamRequest } from './types';
 import { Transport } from './transport';
@@ -21,7 +21,7 @@ export class BidiStreamCall implements RpcCall {
   constructor(id: string, transport: Transport) {
     this.id = id;
     this.transport = transport;
-    this.emitter = new Emitter();
+    this.emitter = createNanoEvents();
     this.status = 'initial';
 
     this.emitter.on('end', () => {

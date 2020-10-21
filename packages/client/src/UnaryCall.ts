@@ -1,6 +1,6 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { Emitter, Unsubscribe } from 'nanoevents';
+import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import { Request, Response } from '@dlghq/grpc-web-gateway-signaling';
 import { RpcError } from './RpcError';
 import type { RpcCall, RpcCallStatus, UnaryRequest } from './types';
@@ -21,7 +21,7 @@ export class UnaryCall implements RpcCall {
   constructor(id: string, transport: Transport) {
     this.transport = transport;
     this.id = id;
-    this.emitter = new Emitter();
+    this.emitter = createNanoEvents();
     this.status = 'initial';
 
     this.emitter.on('end', () => {

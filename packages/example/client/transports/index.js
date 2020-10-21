@@ -1,5 +1,6 @@
-// Copyright 2018 dialog LLC <info@dlg.im>
+// @flow strict
 
 export * from './heartbeatTransportDecorator';
 export * from './retryTransportDecorator';
 export * from './wsTransport';
+export * from './utils';

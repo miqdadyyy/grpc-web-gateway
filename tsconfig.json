@@ -2,12 +2,13 @@
   // see https://www.typescriptlang.org/tsconfig
   "compilerOptions": {
     "noEmit": true,
-    "module": "esnext",
+    "module": "ES2015",
     "target": "ES2015",
     "lib": ["ES2015", "DOM"],
     "declaration": true,
     "sourceMap": true,
     "strict": true,
+    "isolatedModules": true,
     // linter checks for common issues
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,

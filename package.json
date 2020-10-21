@@ -7,13 +7,16 @@
     "Mikhail Nasyrov <mikhail@mnasyrov.com>"
   ],
   "scripts": {
-    "postinstall": "lerna bootstrap",
-    "clean": "rimraf coverage",
+    "postinstall": "lerna bootstrap --ignore-prepublish",
     "lint": "npm-run-all lint:*",
     "lint:eslint": "eslint \"packages/**/{src,test}/**/*.ts\"",
     "lint:tsc": "tsc --noEmit",
     "test": "jest --coverage",
     "test:watch": "npm test -- --watch",
+    "clean": "npm-run-all clean:*",
+    "clean:dirs": "rimraf coverage .parcel-cache",
+    "clean:lerna": "lerna run clean",
+    "build": "lerna run build",
     "fmt": "prettier --write '**/**/*.{js,ts,js.flow,json,md}' --write",
     "example": "lerna exec --scope example -- npm start"
   },
@@ -36,6 +39,7 @@
   "devDependencies": {
     "@parcel/transformer-typescript-tsc": "2.0.0-nightly.427",
     "@types/jest": "26.0.14",
+    "@types/node": "14.14.0",
     "@typescript-eslint/eslint-plugin": "4.4.1",
     "@typescript-eslint/parser": "4.4.1",
     "eslint": "7.11.0",
