@@ -26,11 +26,6 @@ export function createPollingServer(params: {
     const grpcClient = grpcClientFactory();
     const connectionLogger = logger.child({ connectionId });
 
-    // TODO: Remove this debug log
-    console.log('Connected to polling transport');
-    console.log('headers', socket.request.headers);
-    console.log('initialMetadata', initialMetadata);
-
     const socketSend = (data: Uint8Array) => {
       if (socket.readyState === 'open') {
         socket.send(data);
