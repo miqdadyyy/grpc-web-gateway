@@ -191,8 +191,6 @@ declare export class RpcClient
 
 // Transport implementations
 
-type MessageHandler = (message: Uint8Array) => void;
-type ErrorHandler = (error: RpcError) => void;
 export type WebSocketTransportConfig = {
   heartbeatInterval?: number,
   logger?: Logger,
@@ -201,19 +199,6 @@ export type WebSocketTransportConfig = {
 };
 
 declare export class WebSocketTransport implements StatusfulTransport {
-  queue: Array<Uint8Array>;
-  socket: WebSocket;
-  emitter: NanoEvents<{
-    open: void,
-    message: Uint8Array,
-    error: RpcError,
-    end: void,
-    ...
-  }>;
-  isAlive: boolean;
-  logger: Logger;
-  debug: boolean;
-
   constructor(
     endpoint: string,
     config?: WebSocketTransportConfig,
@@ -225,8 +210,35 @@ declare export class WebSocketTransport implements StatusfulTransport {
   handleOpen(): void;
 
   onOpen(handler: () => void): Unbind;
-  onMessage(handler: MessageHandler): Unbind;
-  onError(handler: ErrorHandler): Unbind;
+  onMessage(handler: (message: Uint8Array) => void): Unbind;
+  onError(handler: (error: RpcError) => void): Unbind;
+  onClose(handler: (void) => void): Unbind;
+
+  close(): void;
+  send(message: Uint8Array): void;
+}
+
+export type PollingTransportConfig = {
+  heartbeatInterval?: number,
+  logger?: Logger,
+  debug?: boolean,
+  ...
+};
+
+declare export class PollingTransport implements StatusfulTransport {
+  constructor(
+    endpoint: string,
+    config?: PollingTransportConfig,
+  ): PollingTransport;
+
+  setupHeartbeat(interval: number): Unbind;
+  ping(): void;
+  pong(): void;
+  handleOpen(): void;
+
+  onOpen(handler: () => void): Unbind;
+  onMessage(handler: (message: Uint8Array) => void): Unbind;
+  onError(handler: (error: RpcError) => void): Unbind;
   onClose(handler: (void) => void): Unbind;
 
   close(): void;
@@ -237,11 +249,6 @@ type WsTransportFactory = () => WebSocketTransport;
 type RetryWsTransportConfig = { debug: boolean, ... };
 
 declare export class RetryWsTransport implements Transport {
-  origin: WebSocketTransport;
-  factory: WsTransportFactory;
-  nextPeriod: number;
-  logger: { log(...Array<mixed>): void, ... };
-
   constructor(
     factory: WsTransportFactory,
     config?: RetryWsTransportConfig,

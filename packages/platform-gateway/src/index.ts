@@ -2,62 +2,34 @@
  * Copyright 2017 dialog LLC <info@dlg.im>
  */
 
-import envSchema from 'env-schema';
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import packageInfo from '../package.json';
-import { extractCorsConfigFromEnv } from './extractCorsConfigFromEnv';
-import { createServer as createGrpcGateway } from '@dlghq/grpc-web-gateway';
+import {
+  CorsConfig,
+  parseCorsConfigFromEnv,
+  parseServerConfigFromEnv,
+} from './configParsers';
+import {
+  CANCEL_UPGRADE_MIDDLEWARE,
+  composeHttpRequestHandler,
+  composeHttpUpgradeHandler,
+  createGrpcGatewayMiddlewares,
+  HttpRequestMiddleware,
+} from '@dlghq/grpc-web-gateway';
 
 console.log(`Starting gateway version: ${packageInfo.version}`);
 
-const config = envSchema({
-  dotenv: true,
-  schema: {
-    type: 'object',
-    properties: {
-      HOST: {
-        type: 'string',
-        default: '0.0.0.0',
-      },
-      PORT: {
-        type: 'number',
-        default: 8080,
-      },
-      API_HOST: {
-        type: 'string',
-        default: 'localhost:3000',
-      },
-      API_SECURE: {
-        type: 'boolean',
-        default: false,
-      },
-    },
-  },
-});
+const { host, port, apiHost, apiSecure } = parseServerConfigFromEnv();
+const corsConfig = parseCorsConfigFromEnv();
 
-const app = express();
-const server = http.createServer(app);
+const corsMiddleware = createCorsMiddleware(corsConfig);
+const webAppMiddleware = createWebAppMiddleware();
 
-app.use(cors(extractCorsConfigFromEnv()));
-
-app.get('/info', (_, response) => {
-  response.json({
-    status: 'OK',
-    data: {
-      name: packageInfo.name,
-      version: packageInfo.version,
-    },
-  });
-});
-
-createGrpcGateway({
-  server,
-  api: config.API_HOST as string,
-  credentials: {
-    type: config.API_SECURE ? 'ssl' : 'insecure',
-  },
+const gatewayMiddlewares = createGrpcGatewayMiddlewares({
+  api: apiHost,
+  credentials: { type: apiSecure ? 'ssl' : 'insecure' },
   filterHeaders(header: string) {
     switch (header) {
       case 'dn':
@@ -73,12 +45,56 @@ createGrpcGateway({
   },
 });
 
-const { HOST: host, PORT: port } = config;
+const httpServer = http.createServer();
+httpServer.on(
+  'request',
+  composeHttpRequestHandler([
+    corsMiddleware,
+    gatewayMiddlewares.requestMiddleware,
+    webAppMiddleware,
+  ]),
+);
+httpServer.on(
+  'upgrade',
+  composeHttpUpgradeHandler([
+    gatewayMiddlewares.upgradeMiddleware,
+    CANCEL_UPGRADE_MIDDLEWARE,
+  ]),
+);
 
-server.listen({ host, port }, () => {
+httpServer.listen({ host, port }, () => {
   const listening = `http://${host}:${port}`;
-  const proxying = `http${config.API_SECURE ? 's' : ''}://${config.API_HOST}`;
+  const proxying = `http${apiSecure ? 's' : ''}://${apiHost}`;
   console.info(
     `Gateway started. Listening ${listening}. Proxying ${proxying}.`,
   );
 });
+
+function createCorsMiddleware(corsConfig: CorsConfig): HttpRequestMiddleware {
+  const corsApp = express()
+    .use(cors(corsConfig))
+    .use(() => {
+      // Prevent 404 response, will handled by web app later.
+    });
+
+  return (next) => (request, response) => {
+    corsApp(request, response);
+    next(request, response);
+  };
+}
+
+function createWebAppMiddleware(): HttpRequestMiddleware {
+  const app = express();
+
+  app.get('/info', (_, response) => {
+    response.json({
+      status: 'OK',
+      data: {
+        name: packageInfo.name,
+        version: packageInfo.version,
+      },
+    });
+  });
+
+  return () => app;
+}

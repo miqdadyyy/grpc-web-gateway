@@ -7,15 +7,15 @@ import { Unsubscribe } from 'nanoevents';
 
 type WsTransportFactory = () => WebSocketTransport;
 
-type RetryWsTransportConfig = { debug: boolean };
+export type RetryWsTransportConfig = { debug: boolean };
 
 const LOG_PREFIX = 'RetryTransport';
 
 export class RetryWsTransport implements Transport {
-  origin!: WebSocketTransport;
-  factory: WsTransportFactory;
-  nextPeriod: number;
-  logger: { log(...args: Array<unknown>): void };
+  private origin!: WebSocketTransport;
+  private factory: WsTransportFactory;
+  private nextPeriod: number;
+  private logger: { log(...args: Array<unknown>): void };
 
   constructor(
     factory: WsTransportFactory,

@@ -1,10 +1,6 @@
-// Copyright 2018 dialog LLC <info@dlg.im>
-
-import type { Server as HttpServer } from 'http';
+import { logger } from './logger';
 import { IncomingMessage } from 'http';
-import type { Server as HttpsServer } from 'https';
 import { nanoid } from 'nanoid';
-import { Server as WebSocketServer } from 'ws';
 import {
   Call,
   Client,
@@ -13,48 +9,39 @@ import {
 } from '@grpc/grpc-js';
 import {
   IErrorResponseBody,
-  IRequest,
-  Request,
-  Response,
   ResponseType,
   Status,
 } from '@dlghq/grpc-web-gateway-signaling';
-import { logger } from './logger';
 import { createMetadata, normalizeGrpcMetadata } from './grpcMetadata';
 import { GrpcError } from './GrpcError';
-import { setupPingConnections } from './heartbeat';
+import { Server as WebSocketServer } from 'ws';
+import {
+  createEndResponse,
+  createErrorResponse,
+  createErrorResponseFromGrpcError,
+  createPushResponse,
+  createUnaryResponse,
+  deserializeMessage,
+  parseRequestMessage,
+  serializeMessage,
+  SERVICE_PONG_RESPONSE,
+} from './grpcUtils';
 import { SocketCalls } from './socketCalls';
-import { createMetadataParser, HeaderFilter } from './createMetadataParser';
-import { createCredentials, CredentialsConfig } from './credentials';
+import { setupPingConnections } from './heartbeat';
+import { MetadataParser } from './metadataParser';
+import { WebSocket } from './types';
 
-export type GrpcGatewayServerConfig = {
-  api: string;
-  server: HttpServer | HttpsServer;
-  credentials?: CredentialsConfig;
-  heartbeatInterval?: number;
-  filterHeaders: HeaderFilter;
-};
+export function createWebSocketServer(params: {
+  heartbeatInterval: number;
+  grpcClientFactory: () => Client;
+  httpMetadataParser: MetadataParser;
+}): WebSocketServer {
+  const { heartbeatInterval, grpcClientFactory, httpMetadataParser } = params;
 
-const SECONDS = 1000;
-const DEFAULT_HEARTBEAT_INTERVAL = 30 * SECONDS;
+  const socketCalls = new SocketCalls<WebSocket>();
 
-const SERIALIZER = (value: Uint8Array) => Buffer.from(value);
-const DESERIALIZER = (data: Buffer) => data;
-
-const SERVICE_PONG_RESPONSE = createServicePongResponse();
-
-export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
-  const { heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL } = config;
-
-  const parseMetadata = createMetadataParser(config.filterHeaders);
-
-  const grpcCredentials = createCredentials(config.credentials);
-  const createGrpcClient = () => new Client(config.api, grpcCredentials, {});
-
-  const wsServer = new WebSocketServer({ server: config.server });
+  const wsServer = new WebSocketServer({ noServer: true });
   const heartbeat = setupPingConnections(wsServer, heartbeatInterval);
-
-  const socketCalls = new SocketCalls();
 
   wsServer.on('error', (error: Error) => {
     logger.error('WebSocket connection error:', error);
@@ -64,8 +51,8 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
     const connectionId = nanoid();
     heartbeat.addConnection(connectionId, ws);
 
-    const initialMetadata = parseMetadata(httpRequest);
-    const grpcClient = createGrpcClient();
+    const initialMetadata = httpMetadataParser(httpRequest);
+    const grpcClient = grpcClientFactory();
     const connectionLogger = logger.child({ connectionId });
 
     ws.on('close', () => {
@@ -74,7 +61,7 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
       grpcClient.close();
     });
 
-    const wsSend = (data: Uint8Array) => {
+    const socketSend = (data: Uint8Array) => {
       if (ws.readyState === ws.OPEN) {
         ws.send(data);
       }
@@ -104,7 +91,7 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
         `Sending error for request "${requestId}": ${payload.status}, ${payload.message}`,
       );
 
-      wsSend(createErrorResponse(requestId, payload));
+      socketSend(createErrorResponse(requestId, payload));
     };
 
     const handleServerStreamResponse = (requestId: string, call: Call) => {
@@ -112,18 +99,18 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
 
       call.on('data', (response: Uint8Array) => {
         connectionLogger.info('Push data to stream', requestId);
-        wsSend(createPushResponse(requestId, response));
+        socketSend(createPushResponse(requestId, response));
       });
 
       call.on('end', () => {
         connectionLogger.info('Stream was ended', requestId);
-        wsSend(createEndResponse(requestId));
+        socketSend(createEndResponse(requestId));
         socketCalls.removeCall(ws, requestId);
       });
 
       call.on('close', () => {
         connectionLogger.info('Closing stream', requestId);
-        wsSend(createEndResponse(requestId));
+        socketSend(createEndResponse(requestId));
         socketCalls.removeCall(ws, requestId);
       });
 
@@ -165,8 +152,8 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
         if (responseType === ResponseType.STREAM) {
           const call = grpcClient.makeServerStreamRequest(
             path,
-            SERIALIZER,
-            DESERIALIZER,
+            serializeMessage,
+            deserializeMessage,
             payload,
             createMetadata(initialMetadata, metadata || {}),
           );
@@ -176,8 +163,8 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
         } else {
           const call = grpcClient.makeUnaryRequest(
             path,
-            SERIALIZER,
-            DESERIALIZER,
+            serializeMessage,
+            deserializeMessage,
             payload,
             createMetadata(initialMetadata, metadata || {}),
             {},
@@ -191,7 +178,7 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
                   'Send response for unary request',
                   requestId,
                 );
-                wsSend(createUnaryResponse(requestId, response));
+                socketSend(createUnaryResponse(requestId, response));
               }
             },
           );
@@ -207,8 +194,8 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
         if (responseType === ResponseType.STREAM) {
           const call = grpcClient.makeBidiStreamRequest(
             path,
-            SERIALIZER,
-            DESERIALIZER,
+            serializeMessage,
+            deserializeMessage,
             createMetadata(initialMetadata, metadata || {}),
             {},
           );
@@ -218,8 +205,8 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
         } else {
           const call = grpcClient.makeClientStreamRequest(
             path,
-            SERIALIZER,
-            DESERIALIZER,
+            serializeMessage,
+            deserializeMessage,
             createMetadata(initialMetadata, metadata || {}),
             {},
             (error, response) => {
@@ -232,7 +219,7 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
                   'Send unary response for a client stream',
                   requestId,
                 );
-                wsSend(createUnaryResponse(requestId, response));
+                socketSend(createUnaryResponse(requestId, response));
               }
             },
           );
@@ -263,7 +250,7 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
           );
 
           connectionLogger.error(error);
-          wsSend(createErrorResponseFromGrpcError(requestId, error));
+          socketSend(createErrorResponseFromGrpcError(requestId, error));
         }
       }
 
@@ -290,76 +277,10 @@ export function createServer(config: GrpcGatewayServerConfig): WebSocketServer {
       }
 
       if (request.service && request.service.ping) {
-        wsSend(SERVICE_PONG_RESPONSE);
+        socketSend(SERVICE_PONG_RESPONSE);
       }
     });
   });
 
   return wsServer;
-}
-
-function parseRequestMessage(message: Buffer | unknown): IRequest | void {
-  if (!(message instanceof Buffer)) {
-    throw new Error('Message should be ArrayBuffer');
-  }
-
-  const data = new Uint8Array(message);
-  let request;
-  try {
-    request = Request.decode(data);
-  } catch (error) {
-    const isEmptyPacketFromClientTransport =
-      data.length === 2 && data[0] === 1 && data[1] === 0;
-    if (isEmptyPacketFromClientTransport) {
-      return undefined;
-    }
-    throw error;
-  }
-
-  return Request.toObject(request);
-}
-
-function createServicePongResponse(): Uint8Array {
-  return Request.encode({
-    id: 'service',
-    service: { pong: {} },
-  }).finish();
-}
-
-function createErrorResponse(
-  requestId: string,
-  error: IErrorResponseBody,
-): Uint8Array {
-  return Response.encode({ id: requestId, error }).finish();
-}
-
-function createErrorResponseFromGrpcError(
-  requestId: string,
-  error: GrpcError,
-): Uint8Array {
-  return Response.encode({
-    id: requestId,
-    error: {
-      status: error.statusCode,
-      message: error.message,
-    },
-  }).finish();
-}
-
-function createUnaryResponse(
-  requestId: string,
-  payload: Uint8Array,
-): Uint8Array {
-  return Response.encode({ id: requestId, unary: { payload } }).finish();
-}
-
-function createPushResponse(
-  requestId: string,
-  payload: Uint8Array,
-): Uint8Array {
-  return Response.encode({ id: requestId, push: { payload } }).finish();
-}
-
-function createEndResponse(requestId: string): Uint8Array {
-  return Response.encode({ id: requestId, end: {} }).finish();
 }

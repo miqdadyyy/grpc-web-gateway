@@ -5,9 +5,10 @@ import { Request } from '@dlghq/grpc-web-gateway-signaling';
 import { debugLoggerDecorator, Logger, prefixLoggerDecorator } from './Logger';
 import { StatusfulTransport } from './transport';
 import { RpcError } from './RpcError';
+import eioClient, { Socket } from 'engine.io-client';
 import { unbindAll } from './utils/emitterUtils';
 
-export type WebSocketTransportConfig = {
+export type PollingTransportConfig = {
   heartbeatInterval?: number;
   logger?: Logger;
   debug?: boolean;
@@ -17,11 +18,11 @@ const PING = Request.encode({ id: 'service', service: { ping: {} } }).finish();
 const PONG = Request.encode({ id: 'service', service: { pong: {} } }).finish();
 const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 
-const DEFAULT_LOGGER_PREFIX = '[WS Transport]';
+const DEFAULT_LOGGER_PREFIX = '[Polling Transport]';
 
-export class WebSocketTransport implements StatusfulTransport {
+export class PollingTransport implements StatusfulTransport {
   private queue: Array<Uint8Array>;
-  private socket: WebSocket;
+  private socket: Socket;
   private emitter: Emitter<{
     open: () => void;
     message: (message: Uint8Array) => void;
@@ -29,6 +30,7 @@ export class WebSocketTransport implements StatusfulTransport {
     end: () => void;
   }>;
   private isAlive: boolean;
+  private readyState: 'connecting' | 'open' | 'closed';
   private logger: Logger;
 
   constructor(
@@ -37,7 +39,7 @@ export class WebSocketTransport implements StatusfulTransport {
       heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL,
       debug = false,
       logger = console,
-    }: WebSocketTransportConfig = {
+    }: PollingTransportConfig = {
       heartbeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
       debug: false,
       logger: console,
@@ -47,17 +49,26 @@ export class WebSocketTransport implements StatusfulTransport {
       debugLoggerDecorator(debug)(logger),
     );
 
-    const socket = new WebSocket(endpoint);
+    const socket = eioClient(endpoint, {
+      transports: ['polling'],
+    });
     socket.binaryType = 'arraybuffer';
-    socket.onopen = () => this.handleOpen();
+    socket.on('open', () => this.handleOpen());
+
     this.queue = [];
     this.socket = socket;
     this.emitter = createNanoEvents();
     this.isAlive = false;
+    this.readyState = 'connecting';
 
     const cancelPing = this.setupHeartbeat(heartbeatInterval);
 
-    this.socket.addEventListener('close', () => {
+    this.socket.on('open', () => {
+      this.readyState = 'open';
+    });
+
+    this.socket.on('close', () => {
+      this.readyState = 'closed';
       this.logger.log('Closed connection');
       this.emitter.emit(
         'error',
@@ -75,12 +86,12 @@ export class WebSocketTransport implements StatusfulTransport {
       cancelPing();
     });
 
-    this.socket.addEventListener('message', (event: MessageEvent) => {
-      this.logger.log('Message', event.data, event);
+    this.socket.on('message', (data) => {
+      this.logger.log('Message', data);
       this.isAlive = true;
 
-      if (event.data instanceof ArrayBuffer) {
-        const message = new Uint8Array(event.data);
+      if (data instanceof ArrayBuffer) {
+        const message = new Uint8Array(data);
         this.emitter.emit('message', message);
       } else {
         this.logger.error('Serialization mismatch');
@@ -163,12 +174,12 @@ export class WebSocketTransport implements StatusfulTransport {
   }
 
   send(message: Uint8Array): void {
-    switch (this.socket.readyState) {
-      case WebSocket.CONNECTING:
+    switch (this.readyState) {
+      case 'connecting':
         this.queue.push(message);
         break;
 
-      case WebSocket.OPEN:
+      case 'open':
         this.socket.send(message);
         break;
 
