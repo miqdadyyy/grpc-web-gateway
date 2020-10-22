@@ -3,7 +3,7 @@
 import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import { Request } from '@dlghq/grpc-web-gateway-signaling';
 import { debugLoggerDecorator, Logger, prefixLoggerDecorator } from './Logger';
-import { StatusfulTransport } from './transport';
+import { StatusfulTransport, TransportReadyState } from './transport';
 import { RpcError } from './RpcError';
 import { unbindAll } from './utils/emitterUtils';
 
@@ -93,6 +93,20 @@ export class WebSocketTransport implements StatusfulTransport {
         );
       }
     });
+  }
+
+  getReadyState(): TransportReadyState {
+    switch (this.socket.readyState) {
+      case 0:
+        return 'connecting';
+      case 1:
+        return 'open';
+      case 2:
+        return 'closing';
+      case 3:
+      default:
+        return 'closed';
+    }
   }
 
   setupHeartbeat(interval: number): () => void {

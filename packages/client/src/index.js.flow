@@ -70,7 +70,10 @@ export interface TransportWritable {
 
 export interface Transport extends TransportReadable, TransportWritable {}
 
+export type TransportReadyState = 'connecting' | 'open' | 'closing' | 'closed';
+
 export interface StatusfulTransport extends Transport {
+  getReadyState(): TransportReadyState;
   close(): void;
   onOpen(() => void): Unbind;
   onClose(() => void): Unbind;
@@ -204,6 +207,7 @@ declare export class WebSocketTransport implements StatusfulTransport {
     config?: WebSocketTransportConfig,
   ): WebSocketTransport;
 
+  getReadyState(): TransportReadyState;
   setupHeartbeat(interval: number): Unbind;
   ping(): void;
   pong(): void;
@@ -231,6 +235,7 @@ declare export class PollingTransport implements StatusfulTransport {
     config?: PollingTransportConfig,
   ): PollingTransport;
 
+  getReadyState(): TransportReadyState;
   setupHeartbeat(interval: number): Unbind;
   ping(): void;
   pong(): void;

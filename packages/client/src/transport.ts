@@ -15,7 +15,10 @@ export interface TransportWritable {
 
 export interface Transport extends TransportReadable, TransportWritable {}
 
+export type TransportReadyState = 'connecting' | 'open' | 'closing' | 'closed';
+
 export interface StatusfulTransport extends Transport {
+  getReadyState(): TransportReadyState;
   close(): void;
   onOpen(handler: () => void): Unbind;
   onClose(handler: () => void): Unbind;

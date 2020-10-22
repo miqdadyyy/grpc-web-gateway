@@ -3,7 +3,7 @@
 import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import { Request } from '@dlghq/grpc-web-gateway-signaling';
 import { debugLoggerDecorator, Logger, prefixLoggerDecorator } from './Logger';
-import { StatusfulTransport } from './transport';
+import { StatusfulTransport, TransportReadyState } from './transport';
 import { RpcError } from './RpcError';
 import eioClient, { Socket } from 'engine.io-client';
 import { unbindAll } from './utils/emitterUtils';
@@ -30,7 +30,7 @@ export class PollingTransport implements StatusfulTransport {
     end: () => void;
   }>;
   private isAlive: boolean;
-  private readyState: 'connecting' | 'open' | 'closed';
+  private readyState: TransportReadyState;
   private logger: Logger;
 
   constructor(
@@ -104,6 +104,10 @@ export class PollingTransport implements StatusfulTransport {
         );
       }
     });
+  }
+
+  getReadyState(): TransportReadyState {
+    return this.readyState;
   }
 
   setupHeartbeat(interval: number): () => void {
