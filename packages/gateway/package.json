@@ -35,7 +35,7 @@
     "clean": "rimraf dist",
     "watch": "tsc --build --watch",
     "build": "parcel build --no-cache .",
-    "prepublish": "npm-run-all -s clean build"
+    "prepublish": "npm run clean && npm run build"
   },
   "dependencies": {
     "@dlghq/grpc-web-gateway-signaling": "^3.0.11",
@@ -49,7 +49,6 @@
     "@types/engine.io": "3.1.4",
     "@types/pino": "6.3.2",
     "@types/ws": "7.2.7",
-    "npm-run-all": "4.1.5",
     "parcel": "2.0.0-nightly.427",
     "rimraf": "3.0.2",
     "typescript": "4.0.3"

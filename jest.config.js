@@ -9,7 +9,6 @@ module.exports = {
   collectCoverageFrom: [
     'packages/**/src/**/*.js',
     'packages/**/src/**/*.ts',
-    '!packages/example/**/*',
     '!packages/signaling/**/*',
   ],
 
