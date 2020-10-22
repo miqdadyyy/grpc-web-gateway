@@ -12,11 +12,13 @@ export type PollingTransportConfig = {
   heartbeatInterval?: number;
   logger?: Logger;
   debug?: boolean;
+  path?: string;
 };
 
 const PING = Request.encode({ id: 'service', service: { ping: {} } }).finish();
 const PONG = Request.encode({ id: 'service', service: { pong: {} } }).finish();
 const DEFAULT_HEARTBEAT_INTERVAL = 30000;
+const DEFAULT_PATH = '/polling';
 
 const DEFAULT_LOGGER_PREFIX = '[Polling Transport]';
 
@@ -33,23 +35,20 @@ export class PollingTransport implements StatusfulTransport {
   private readyState: TransportReadyState;
   private logger: Logger;
 
-  constructor(
-    endpoint: string,
-    {
+  constructor(endpoint: string, config: PollingTransportConfig) {
+    const {
       heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL,
       debug = false,
       logger = console,
-    }: PollingTransportConfig = {
-      heartbeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
-      debug: false,
-      logger: console,
-    },
-  ) {
+      path = DEFAULT_PATH,
+    } = config;
+
     this.logger = prefixLoggerDecorator(DEFAULT_LOGGER_PREFIX)(
       debugLoggerDecorator(debug)(logger),
     );
 
     const socket = eioClient(endpoint, {
+      path,
       transports: ['polling'],
     });
     socket.binaryType = 'arraybuffer';
