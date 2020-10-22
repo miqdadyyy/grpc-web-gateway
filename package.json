@@ -15,7 +15,8 @@
     "test:watch": "npm test -- --watch",
     "clean": "rimraf coverage .parcel-cache && lerna run clean",
     "build": "lerna run build",
-    "format": "prettier --write '**/**/*.{js,ts,js.flow,json,md}' --write"
+    "format": "prettier --write '**/**/*.{js,ts,js.flow,json,md}' --write",
+    "bump-version": "lerna version --no-git-tag-version --no-push --ignore-changes --exact"
   },
   "husky": {
     "hooks": {
