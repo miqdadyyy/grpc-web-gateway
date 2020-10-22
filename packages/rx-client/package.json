@@ -27,7 +27,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "tsc --build --watch",
     "build": "npm run build:compile && npm run build:flow",
-    "build:compile": "parcel build --no-cache --no-source-maps .",
+    "build:compile": "parcel build --no-cache .",
     "build:flow": "copyfiles -V -f src/index.js.flow dist",
     "prepublish": "npm run clean && npm run build"
   },

@@ -34,7 +34,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rimraf dist",
     "watch": "tsc --build --watch",
-    "build": "parcel build --no-cache --no-source-maps .",
+    "build": "parcel build --no-cache .",
     "prepublish": "npm run clean && npm run build"
   },
   "dependencies": {
