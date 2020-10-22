@@ -3,8 +3,11 @@ import {
   IRequest,
   Request,
   Response,
+  Status,
 } from '@dlghq/grpc-web-gateway-signaling';
+import { ServiceError } from '@grpc/grpc-js';
 import { GrpcError } from './GrpcError';
+import { normalizeGrpcMetadata } from './grpcMetadata';
 
 export function serializeMessage(value: Uint8Array): Buffer {
   return Buffer.from(value);
@@ -44,6 +47,25 @@ export function createServicePongResponse(): Uint8Array {
     id: 'service',
     service: { pong: {} },
   }).finish();
+}
+
+export function createErrorResponseBody(
+  error: Error | ServiceError,
+): IErrorResponseBody {
+  if ('code' in error) {
+    return {
+      status: error.code as number,
+      message: error.details,
+      metadata: error.metadata
+        ? normalizeGrpcMetadata(error.metadata)
+        : undefined,
+    };
+  }
+
+  return {
+    status: Status.UNKNOWN,
+    message: error.message,
+  };
 }
 
 export function createErrorResponse(
