@@ -22,7 +22,7 @@
     "dev": "nodemon --exec 'ts-node' src/index.ts",
     "start": "node dist/index.js",
     "clean": "rimraf dist",
-    "build": "parcel build --no-cache ."
+    "build": "parcel build --no-cache --no-source-maps ."
   },
   "nodemonConfig": {
     "ignoreRoot": [
