@@ -26,6 +26,8 @@ export function createPollingServer(params: {
     const grpcClient = grpcClientFactory();
     const connectionLogger = logger.child({ connectionId });
 
+    connectionLogger.info(`Polling socket is opened`);
+
     const socketSend = (data: Uint8Array) => {
       if (socket.readyState === 'open') {
         socket.send(data);
@@ -44,7 +46,7 @@ export function createPollingServer(params: {
     socket.on('message', handleSocketMessage);
 
     socket.on('close', () => {
-      logger.info('Polling transport is closed', connectionId);
+      connectionLogger.info(`Polling socket is closed`);
       socketCalls.cancelSocketCalls(socket);
       grpcClient.close();
     });

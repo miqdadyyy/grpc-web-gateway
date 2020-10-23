@@ -33,6 +33,8 @@ export function createWebSocketServer(params: {
     const grpcClient = grpcClientFactory();
     const connectionLogger = logger.child({ connectionId });
 
+    connectionLogger.info(`WebSocket socket is opened`);
+
     const socketSend: SocketSendMessage = (data: Uint8Array) => {
       if (ws.readyState === ws.OPEN) {
         ws.send(data);
@@ -51,7 +53,7 @@ export function createWebSocketServer(params: {
     ws.on('message', handleSocketMessage);
 
     ws.on('close', () => {
-      logger.info('WebSocket is closed', connectionId);
+      connectionLogger.info('WebSocket is closed');
       socketCalls.cancelSocketCalls(ws);
       grpcClient.close();
     });

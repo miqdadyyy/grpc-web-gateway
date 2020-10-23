@@ -57,21 +57,21 @@ export function createGrpcSocketProxy<Socket extends object>(params: {
   };
 
   const handleServerStreamResponse = (requestId: string, call: Call) => {
-    logger.info('Handler server stream', requestId);
+    logger.debug('Handler server stream', requestId);
 
     call.on('data', (response: Uint8Array) => {
-      logger.info('Push data to stream', requestId);
+      logger.debug('Push data to stream', requestId);
       socketSend(createPushResponse(requestId, response));
     });
 
     call.on('end', () => {
-      logger.info('Stream was ended', requestId);
+      logger.debug('Stream was ended', requestId);
       socketSend(createEndResponse(requestId));
       socketCalls.removeCall(socket, requestId);
     });
 
     call.on('close', () => {
-      logger.info('Closing stream', requestId);
+      logger.debug('Closing stream', requestId);
       socketSend(createEndResponse(requestId));
       socketCalls.removeCall(socket, requestId);
     });
@@ -200,15 +200,17 @@ export function createGrpcSocketProxy<Socket extends object>(params: {
         requestId,
       );
       if (call) {
-        logger.info('Push request', requestId);
+        logger.debug('Push request', requestId);
         call.write(payload);
       } else {
         const error = GrpcError.fromStatusName(
           'NOT_FOUND',
-          `There is no a call with id ${requestId}. Probably this is server problem`,
+          `There is no a call with id ${requestId}.`,
         );
 
-        logger.error(error);
+        // It is not error because a client could switch a transport.
+        logger.warn(error);
+
         socketSend(createErrorResponseFromGrpcError(requestId, error));
       }
     }
@@ -219,7 +221,7 @@ export function createGrpcSocketProxy<Socket extends object>(params: {
         requestId,
       );
       if (call) {
-        logger.info('End request', requestId);
+        logger.debug('End request', requestId);
         socketCalls.removeCall(socket, requestId);
         call.end();
       }
@@ -229,7 +231,7 @@ export function createGrpcSocketProxy<Socket extends object>(params: {
       const { reason } = request.cancel;
       const call = socketCalls.getCall(socket, requestId);
       if (call) {
-        logger.info('Cancel request', requestId, { reason });
+        logger.debug('Cancel request', requestId, { reason });
         socketCalls.removeCall(socket, requestId);
         call.cancel();
       }
