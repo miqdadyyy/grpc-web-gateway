@@ -74,12 +74,14 @@ function createCorsMiddleware(corsConfig: CorsConfig): HttpRequestMiddleware {
   const corsApp = express()
     .use(cors(corsConfig))
     .use(() => {
-      // Prevent 404 response, will handled by web app later.
+      // Prevent 404 response, will handled by the web app.
     });
 
   return (next) => (request, response) => {
     corsApp(request, response);
-    next(request, response);
+    if (request.method !== 'OPTIONS') {
+      next(request, response);
+    }
   };
 }
 
