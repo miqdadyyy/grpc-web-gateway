@@ -8,7 +8,7 @@
     "Mikhail Nasyrov <mikhail@mnasyrov.com>"
   ],
   "engines": {
-    "node": ">=12"
+    "node": ">=14"
   },
   "source": "src/index.ts",
   "main": "dist/index.js",
