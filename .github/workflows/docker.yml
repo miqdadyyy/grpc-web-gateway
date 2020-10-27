@@ -26,7 +26,6 @@ jobs:
       - name: Build Docker image
         run: |
           npm ci
-          npm audit fix
           npm run build
           docker build -t $DOCKER_IMAGE_NAME packages/platform-gateway
       - name: Docker login
