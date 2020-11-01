@@ -1,6 +1,6 @@
 {
   "name": "@dlghq/grpc-web-gateway-signaling",
-  "version": "4.0.0-alpha.10",
+  "version": "4.0.0",
   "description": "Signaling for grpc web gateway and its clients",
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "repository": {
