@@ -45,7 +45,10 @@ const observableFromUnaryCall = (makeCall: () => RpcCall): RxUnaryCall => {
 
         call.onCancel(() => observer.complete());
 
-        return () => cancelCall(call);
+        return () => {
+          cancelCall(call);
+          observer.unsubscribe();
+        };
       }).pipe(share());
     },
     cancel: (reason) => cancelCall(call, reason),
@@ -70,7 +73,10 @@ const observableFromClientStreamCall = (
 
         call.onCancel(() => observer.complete());
 
-        return () => cancelCall(call);
+        return () => {
+          cancelCall(call);
+          observer.unsubscribe();
+        };
       }).pipe(share());
     },
     send: (request) => (call ? call.send(request) : undefined),

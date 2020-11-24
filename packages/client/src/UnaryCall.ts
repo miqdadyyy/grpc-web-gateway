@@ -45,8 +45,6 @@ export class UnaryCall implements RpcCall {
         unary: { service, method, payload, metadata },
       }).finish();
 
-      this.transport.send(message);
-
       const unbindTransport = this.transport.onMessage((message) => {
         const res = Response.decode(message);
 
@@ -73,7 +71,12 @@ export class UnaryCall implements RpcCall {
       });
 
       this.emitter.on('end', unbindTransport);
+      this.emitter.on('cancel', unbindTransport);
+
       this.status = 'open';
+      this.transport.send(message);
+    } else if (this.status === 'closed' || this.status === 'cancelled') {
+      this.emitter.emit('cancel');
     }
 
     return this;
@@ -86,7 +89,10 @@ export class UnaryCall implements RpcCall {
         cancel: { reason },
       }).finish();
       this.transport.send(message);
-      this.emitter.emit('end');
+    }
+
+    if (this.status === 'initial' || this.status === 'open') {
+      this.emitter.emit('cancel');
     }
   }
 

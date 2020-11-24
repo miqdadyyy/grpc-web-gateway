@@ -182,8 +182,6 @@ declare export class RpcClient
   constructor(transport: Transport): RpcClient;
 
   setTransport(transport: Transport): void;
-  cancelRequest(id: string): void;
-  disposeRequest(id: string): void;
   makeUnaryRequest(request: UnaryRequest): UnaryCall;
   makeServerStreamRequest(request: UnaryRequest): ServerStreamCall;
   makeClientStreamRequest(request: StreamRequest): ClientStreamCall;
