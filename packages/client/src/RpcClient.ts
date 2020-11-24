@@ -18,12 +18,10 @@ import { ClientStreamCall } from './ClientStreamCall';
 
 export class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
   transport: Transport | undefined;
-  calls: Map<string, RpcCall>;
   seq: Sequence;
   emitter: Emitter<{ error: (error: RpcError) => void }>;
 
   constructor(transport: Transport) {
-    this.calls = new Map();
     this.seq = createSequence();
     this.emitter = createNanoEvents();
     this.setTransport(transport);
@@ -36,30 +34,13 @@ export class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
     });
   }
 
-  cancelRequest(id: string): void {
-    const call = this.calls.get(id);
-
-    if (call) {
-      call.cancel();
-    }
-  }
-
-  disposeRequest(id: string): void {
-    this.calls.delete(id);
-  }
-
   makeUnaryRequest(request: UnaryRequest): UnaryCall {
     if (!this.transport) {
       throw new Error('Transport is not set');
     }
 
     const id = this.seq.next();
-
     const call = new UnaryCall(id, this.transport);
-    this.calls.set(call.id, call);
-
-    call.onEnd(() => this.disposeRequest(call.id));
-    call.onCancel(() => this.disposeRequest(call.id));
 
     setImmediate(() => {
       call.start(request);
@@ -74,12 +55,7 @@ export class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
     }
 
     const id = this.seq.next();
-
     const call = new ServerStreamCall(id, this.transport);
-    this.calls.set(call.id, call);
-
-    call.onEnd(() => this.disposeRequest(call.id));
-    call.onCancel(() => this.disposeRequest(call.id));
 
     setImmediate(() => {
       call.start(request);
@@ -94,12 +70,7 @@ export class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
     }
 
     const id = this.seq.next();
-
     const call = new ClientStreamCall(id, this.transport);
-    this.calls.set(call.id, call);
-
-    call.onEnd(() => this.disposeRequest(call.id));
-    call.onCancel(() => this.disposeRequest(call.id));
 
     setImmediate(() => {
       call.start(request);
@@ -114,12 +85,7 @@ export class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
     }
 
     const id = this.seq.next();
-
     const call = new BidiStreamCall(id, this.transport);
-    this.calls.set(call.id, call);
-
-    call.onEnd(() => this.disposeRequest(call.id));
-    call.onCancel(() => this.disposeRequest(call.id));
 
     setImmediate(() => {
       call.start(request);
