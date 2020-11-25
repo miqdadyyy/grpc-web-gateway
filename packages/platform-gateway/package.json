@@ -1,7 +1,7 @@
 {
   "name": "@dlghq/web-platform-grpc-web-gateway",
   "private": true,
-  "version": "4.0.2",
+  "version": "4.0.3",
   "description": "Dialog Web Platform: gRPC Web Gateway",
   "author": "Nikita Gusakov <nkt@dlg.im>",
   "contributors": [
@@ -34,14 +34,14 @@
     ]
   },
   "dependencies": {
-    "@dlghq/grpc-web-gateway": "^4.0.2",
+    "@dlghq/grpc-web-gateway": "^4.0.3",
     "cors": "2.8.5",
     "engine.io": "4.0.4",
     "env-schema": "2.0.1",
     "express": "4.17.1"
   },
   "devDependencies": {
-    "@dlghq/grpc-web-gateway-signaling": "^4.0.2",
+    "@dlghq/grpc-web-gateway-signaling": "^4.0.3",
     "@types/cors": "2.8.8",
     "@types/express": "4.17.8",
     "nodemon": "2.0.5",
