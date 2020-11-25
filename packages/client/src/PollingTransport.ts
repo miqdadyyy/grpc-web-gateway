@@ -62,10 +62,6 @@ export class PollingTransport implements StatusfulTransport {
 
     const cancelPing = this.setupHeartbeat(heartbeatInterval);
 
-    this.socket.on('open', () => {
-      this.readyState = 'open';
-    });
-
     this.socket.on('close', () => {
       this.readyState = 'closed';
       this.logger.log('Closed connection');
@@ -147,6 +143,7 @@ export class PollingTransport implements StatusfulTransport {
   handleOpen(): void {
     this.logger.log('Connection opened');
     this.isAlive = true;
+    this.readyState = 'open';
     this.socket.send(new Uint8Array([1, 0]));
     this.emitter.emit('open');
 
