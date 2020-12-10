@@ -24,7 +24,7 @@ const DEFAULT_LOGGER_PREFIX = '[Polling Transport]';
 
 export class PollingTransport implements StatusfulTransport {
   private queue: Array<Uint8Array>;
-  private socket: Socket;
+  private socket: Socket | undefined;
   private emitter: Emitter<{
     open: () => void;
     message: (message: Uint8Array) => void;
@@ -34,6 +34,7 @@ export class PollingTransport implements StatusfulTransport {
   private isAlive: boolean;
   private readyState: TransportReadyState;
   private logger: Logger;
+  private cancelHeartbeat?: () => void;
 
   constructor(endpoint: string, config: PollingTransportConfig) {
     const {
@@ -47,20 +48,17 @@ export class PollingTransport implements StatusfulTransport {
       debugLoggerDecorator(debug)(logger),
     );
 
-    const socket = eioClient(endpoint, {
-      path,
-      transports: ['polling'],
-    });
-    socket.binaryType = 'arraybuffer';
-    socket.on('open', () => this.handleOpen());
-
     this.queue = [];
-    this.socket = socket;
     this.emitter = createNanoEvents();
     this.isAlive = false;
     this.readyState = 'connecting';
 
-    const cancelPing = this.setupHeartbeat(heartbeatInterval);
+    this.socket = eioClient(endpoint, {
+      path,
+      transports: ['polling'],
+    });
+    this.socket.binaryType = 'arraybuffer';
+    this.socket.on('open', () => this.handleOpen(heartbeatInterval));
 
     this.socket.on('close', () => {
       this.readyState = 'closed';
@@ -73,12 +71,6 @@ export class PollingTransport implements StatusfulTransport {
         ),
       );
       this.emitter.emit('end');
-    });
-
-    this.emitter.on('end', () => {
-      this.logger.log('Ended connection');
-      unbindAll(this.emitter);
-      cancelPing();
     });
 
     this.socket.on('message', (data) => {
@@ -99,6 +91,21 @@ export class PollingTransport implements StatusfulTransport {
         );
       }
     });
+
+    this.emitter.on('end', () => {
+      this.logger.log('Ended connection');
+
+      this.readyState = 'closed';
+
+      unbindAll(this.emitter);
+
+      if (this.cancelHeartbeat) {
+        this.cancelHeartbeat();
+        this.cancelHeartbeat = undefined;
+      }
+
+      this.socket = undefined;
+    });
   }
 
   getReadyState(): TransportReadyState {
@@ -106,9 +113,17 @@ export class PollingTransport implements StatusfulTransport {
   }
 
   setupHeartbeat(interval: number): () => void {
-    const iid = setInterval(() => {
+    let timerId: any;
+
+    const check = () => {
       this.logger.log('Is alive', this.isAlive);
-      if (!this.isAlive) {
+
+      if (this.isAlive) {
+        this.isAlive = false;
+        this.ping(() => {
+          timerId = setTimeout(check, interval);
+        });
+      } else {
         this.emitter.emit(
           'error',
           new RpcError(
@@ -117,35 +132,40 @@ export class PollingTransport implements StatusfulTransport {
           ),
         );
 
-        this.socket.close();
+        this.socket?.close();
         this.emitter.emit('end');
-
-        return;
       }
+    };
 
-      this.isAlive = false;
-      this.ping();
-    }, interval);
+    check();
 
-    return () => clearInterval(iid);
+    return () => {
+      if (timerId !== undefined) {
+        clearTimeout(timerId);
+        timerId = undefined;
+      }
+    };
   }
 
-  ping(): void {
+  ping(callback?: () => void): void {
     this.logger.log('Send ping');
-    this.socket.send(PING);
+    this.socket?.send(PING);
+    callback?.();
   }
 
   pong(): void {
     this.logger.log('Send pong');
-    this.socket.send(PONG);
+    this.socket?.send(PONG);
   }
 
-  handleOpen(): void {
+  handleOpen(heartbeatInterval: number): void {
     this.logger.log('Connection opened');
     this.isAlive = true;
     this.readyState = 'open';
-    this.socket.send(new Uint8Array([1, 0]));
+    this.socket?.send(new Uint8Array([1, 0]));
     this.emitter.emit('open');
+
+    this.cancelHeartbeat = this.setupHeartbeat(heartbeatInterval);
 
     if (this.queue.length) {
       this.queue.forEach((message) => this.send(message));
@@ -170,17 +190,17 @@ export class PollingTransport implements StatusfulTransport {
   }
 
   close(): void {
-    this.socket.close();
+    this.socket?.close();
   }
 
   send(message: Uint8Array): void {
-    switch (this.readyState) {
+    switch (this.socket && this.readyState) {
       case 'connecting':
         this.queue.push(message);
         break;
 
       case 'open':
-        this.socket.send(message);
+        this.socket?.send(message);
         break;
 
       default:
