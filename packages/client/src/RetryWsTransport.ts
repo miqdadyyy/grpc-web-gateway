@@ -3,7 +3,7 @@
 import { RpcError } from './RpcError';
 import { WebSocketTransport } from './WebSocketTransport';
 import { Transport } from './transport';
-import { Unsubscribe } from 'nanoevents';
+import { Unbind } from './types';
 
 type WsTransportFactory = () => WebSocketTransport;
 
@@ -60,11 +60,11 @@ export class RetryWsTransport implements Transport {
     this.origin.send(message);
   }
 
-  onError(handler: (error: RpcError) => void): Unsubscribe {
+  onError(handler: (error: RpcError) => void): Unbind {
     return this.origin.onError(handler);
   }
 
-  onMessage(handler: (message: Uint8Array) => void): Unsubscribe {
+  onMessage(handler: (message: Uint8Array) => void): Unbind {
     return this.origin.onMessage(handler);
   }
 }

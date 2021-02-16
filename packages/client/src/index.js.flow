@@ -50,11 +50,6 @@ export type Sequence = {
   next(): string,
 };
 
-export interface NanoEvents<T> {
-  on<K: $Keys<T>>(event: K, cb: ($ElementType<T, K>) => void): () => void;
-  emit<K: $Keys<T>>(event: K, data?: $ElementType<T, K>): void;
-}
-
 // Transport
 
 type Unbind = () => void;
@@ -84,22 +79,15 @@ export interface StatusfulTransport extends Transport {
 export interface RpcCall {
   status: RpcCallStatus;
   cancel(reason?: string): void;
-  onMessage(handler: (Uint8Array) => void): () => void;
-  onError(handler: (RpcError) => void): () => void;
-  onEnd(handler: () => void): () => void;
-  onCancel(handler: () => void): () => void;
+  onMessage(handler: (Uint8Array) => void): Unbind;
+  onError(handler: (RpcError) => void): Unbind;
+  onEnd(handler: () => void): Unbind;
+  onCancel(handler: () => void): Unbind;
 }
 
 declare export class UnaryCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: NanoEvents<{
-    message: Uint8Array,
-    error: RpcError,
-    end: void,
-    cancel: void,
-    ...
-  }>;
   status: RpcCallStatus;
 
   constructor(id: string, transport: Transport): UnaryCall;
@@ -111,20 +99,11 @@ declare export class UnaryCall implements RpcCall {
   onError(errorHandler: (error: RpcError) => void): Unbind;
   onEnd(handler: () => void): Unbind;
   onCancel(handler: () => void): Unbind;
-
-  toPromise(): Promise<Uint8Array>;
 }
 
 declare export class BidiStreamCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: NanoEvents<{
-    message: Uint8Array,
-    error: RpcError,
-    end: void,
-    cancel: void,
-    ...
-  }>;
   status: RpcCallStatus;
 
   constructor(id: string, transport: Transport): BidiStreamCall;
@@ -143,13 +122,6 @@ declare export class BidiStreamCall implements RpcCall {
 declare export class ServerStreamCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: NanoEvents<{
-    message: Uint8Array,
-    error: RpcError,
-    end: void,
-    cancel: void,
-    ...
-  }>;
   status: 'initial' | 'open' | 'closed' | 'cancelled';
 
   constructor(id: string, transport: Transport): ServerStreamCall;
@@ -177,7 +149,6 @@ declare export class RpcClient
   transport: Transport;
   calls: Map<string, RpcCall>;
   seq: Sequence;
-  emitter: NanoEvents<{ error: RpcError, ... }>;
 
   constructor(transport: Transport): RpcClient;
 
@@ -206,10 +177,8 @@ declare export class WebSocketTransport implements StatusfulTransport {
   ): WebSocketTransport;
 
   getReadyState(): TransportReadyState;
-  setupHeartbeat(interval: number): Unbind;
   ping(): void;
   pong(): void;
-  handleOpen(): void;
 
   onOpen(handler: () => void): Unbind;
   onMessage(handler: (message: Uint8Array) => void): Unbind;
@@ -234,10 +203,8 @@ declare export class PollingTransport implements StatusfulTransport {
   ): PollingTransport;
 
   getReadyState(): TransportReadyState;
-  setupHeartbeat(interval: number): Unbind;
   ping(): void;
   pong(): void;
-  handleOpen(): void;
 
   onOpen(handler: () => void): Unbind;
   onMessage(handler: (message: Uint8Array) => void): Unbind;

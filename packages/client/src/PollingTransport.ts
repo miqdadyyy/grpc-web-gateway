@@ -1,12 +1,13 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import { Request } from '@dlghq/grpc-web-gateway-signaling';
 import { debugLoggerDecorator, Logger, prefixLoggerDecorator } from './Logger';
 import { StatusfulTransport, TransportReadyState } from './transport';
 import { RpcError } from './RpcError';
-import eioClient, { Socket } from 'engine.io-client';
-import { unbindAll } from './utils/emitterUtils';
+import eioClient, { Socket, UpgradeError } from 'engine.io-client';
+import EventEmitter from 'eventemitter3';
+import { Unbind } from './types';
+import { bindEvent } from './utils/emitterUtils';
 
 export type PollingTransportConfig = {
   heartbeatInterval?: number;
@@ -20,21 +21,24 @@ const PONG = Request.encode({ id: 'service', service: { pong: {} } }).finish();
 const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 const DEFAULT_PATH = '/polling';
 
-const DEFAULT_LOGGER_PREFIX = '[Polling Transport]';
+let globalId = 0;
 
 export class PollingTransport implements StatusfulTransport {
+  private id = ++globalId;
+
   private queue: Array<Uint8Array>;
   private socket: Socket | undefined;
-  private emitter: Emitter<{
-    open: () => void;
-    message: (message: Uint8Array) => void;
-    error: (error: RpcError) => void;
-    end: () => void;
+  private emitter: EventEmitter<{
+    open: [];
+    message: [Uint8Array];
+    error: [RpcError];
+    end: [];
   }>;
-  private isAlive: boolean;
-  private readyState: TransportReadyState;
-  private logger: Logger;
+  private readonly logger: Logger;
   private cancelHeartbeat?: () => void;
+  private isAlive = false;
+  private readyState: TransportReadyState;
+  private socketSubscriptions: Array<() => void> = [];
 
   constructor(endpoint: string, config: PollingTransportConfig) {
     const {
@@ -44,13 +48,12 @@ export class PollingTransport implements StatusfulTransport {
       path = DEFAULT_PATH,
     } = config;
 
-    this.logger = prefixLoggerDecorator(DEFAULT_LOGGER_PREFIX)(
+    this.logger = prefixLoggerDecorator(`[Polling Transport #${this.id}]`)(
       debugLoggerDecorator(debug)(logger),
     );
 
     this.queue = [];
-    this.emitter = createNanoEvents();
-    this.isAlive = false;
+    this.emitter = new EventEmitter();
     this.readyState = 'connecting';
 
     this.socket = eioClient(endpoint, {
@@ -58,9 +61,12 @@ export class PollingTransport implements StatusfulTransport {
       transports: ['polling'],
     });
     this.socket.binaryType = 'arraybuffer';
-    this.socket.on('open', () => this.handleOpen(heartbeatInterval));
 
-    this.socket.on('close', () => {
+    this.bindSocketEvent('open', () =>
+      this.handleSocketOpen(heartbeatInterval),
+    );
+
+    this.bindSocketEvent('close', () => {
       this.readyState = 'closed';
       this.logger.log('Closed connection');
       this.emitter.emit(
@@ -70,10 +76,10 @@ export class PollingTransport implements StatusfulTransport {
           'Connection closed normally by the server.',
         ),
       );
-      this.emitter.emit('end');
+      this.close();
     });
 
-    this.socket.on('message', (data) => {
+    this.bindSocketEvent('message', (data) => {
       this.logger.log('Message', data);
       this.isAlive = true;
 
@@ -92,12 +98,23 @@ export class PollingTransport implements StatusfulTransport {
       }
     });
 
+    this.bindSocketEvent('error', (error) => {
+      this.logger.log('Closing by error', error);
+
+      this.emitter.emit(
+        'error',
+        new RpcError('CONNECTION_CLOSED', 'Transport error'),
+      );
+
+      this.close();
+    });
+
     this.emitter.on('end', () => {
       this.logger.log('Ended connection');
 
       this.readyState = 'closed';
 
-      unbindAll(this.emitter);
+      this.emitter.removeAllListeners();
 
       if (this.cancelHeartbeat) {
         this.cancelHeartbeat();
@@ -112,7 +129,8 @@ export class PollingTransport implements StatusfulTransport {
     return this.readyState;
   }
 
-  setupHeartbeat(interval: number): () => void {
+  private setupHeartbeat(interval: number): () => void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let timerId: any;
 
     const check = () => {
@@ -132,8 +150,7 @@ export class PollingTransport implements StatusfulTransport {
           ),
         );
 
-        this.socket?.close();
-        this.emitter.emit('end');
+        this.close();
       }
     };
 
@@ -158,7 +175,7 @@ export class PollingTransport implements StatusfulTransport {
     this.socket?.send(PONG);
   }
 
-  handleOpen(heartbeatInterval: number): void {
+  handleSocketOpen(heartbeatInterval: number): void {
     this.logger.log('Connection opened');
     this.isAlive = true;
     this.readyState = 'open';
@@ -173,24 +190,42 @@ export class PollingTransport implements StatusfulTransport {
     }
   }
 
-  onOpen(handler: () => void): Unsubscribe {
-    return this.emitter.on('open', handler);
+  onOpen(handler: () => void): Unbind {
+    return bindEvent(this.emitter, 'open', handler);
   }
 
-  onMessage(handler: (message: Uint8Array) => void): Unsubscribe {
-    return this.emitter.on('message', handler);
+  onMessage(handler: (message: Uint8Array) => void): Unbind {
+    return bindEvent(this.emitter, 'message', handler);
   }
 
-  onError(handler: (error: RpcError) => void): Unsubscribe {
-    return this.emitter.on('error', handler);
+  onError(handler: (error: RpcError) => void): Unbind {
+    return bindEvent(this.emitter, 'error', handler);
   }
 
-  onClose(handler: () => void): Unsubscribe {
-    return this.emitter.on('end', handler);
+  onClose(handler: () => void): Unbind {
+    return bindEvent(this.emitter, 'end', handler);
   }
 
   close(): void {
-    this.socket?.close();
+    if (this.cancelHeartbeat) {
+      this.logger.log('Stopping heartbeat...');
+      this.cancelHeartbeat();
+      this.cancelHeartbeat = undefined;
+    }
+
+    if (this.socket) {
+      this.logger.log('Closing socket...');
+
+      this.socketSubscriptions.forEach((teardown) => teardown());
+      this.socket.close();
+      this.socket = undefined;
+      this.socketSubscriptions = [];
+
+      this.logger.log('Closed connection');
+    }
+
+    this.emitter.emit('end');
+    this.emitter.removeAllListeners();
   }
 
   send(message: Uint8Array): void {
@@ -210,4 +245,31 @@ export class PollingTransport implements StatusfulTransport {
         );
     }
   }
+
+  private bindSocketEvent<K extends keyof EngineIoSocketEventMap>(
+    type: K,
+    listener: EngineIoSocketEventMap[K],
+  ) {
+    if (this.socket) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.socket.on(type as any, listener);
+      this.socketSubscriptions.push(() => {
+        // @ts-ignore: Poor typings for engine.io-client
+        this.socket?.off(type, listener);
+      });
+    }
+  }
 }
+
+type EngineIoSocketEventMap = {
+  open: () => void;
+  flush: () => void;
+  drain: () => void;
+  ping: () => void;
+  pong: () => void;
+  message: (data: string | ArrayBuffer) => void;
+  close: (mes: string, detail?: Error) => void;
+  error: (error: Error) => void;
+  upgradeError: (error: UpgradeError) => void;
+  upgrade: () => void;
+};

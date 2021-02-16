@@ -1,11 +1,12 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import { Request } from '@dlghq/grpc-web-gateway-signaling';
 import { debugLoggerDecorator, Logger, prefixLoggerDecorator } from './Logger';
 import { StatusfulTransport, TransportReadyState } from './transport';
 import { RpcError } from './RpcError';
-import { unbindAll } from './utils/emitterUtils';
+import EventEmitter from 'eventemitter3';
+import { Unbind } from './types';
+import { bindEvent } from './utils/emitterUtils';
 
 export type WebSocketTransportConfig = {
   heartbeatInterval?: number;
@@ -15,50 +16,51 @@ export type WebSocketTransportConfig = {
 
 const PING = Request.encode({ id: 'service', service: { ping: {} } }).finish();
 const PONG = Request.encode({ id: 'service', service: { pong: {} } }).finish();
+
 const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 
-const DEFAULT_LOGGER_PREFIX = '[WS Transport]';
+const WEBSOCKET_STATUS_CODE_NORMAL_CLOSURE = 1000;
+const WEBSOCKET_STATUS_CODE_PROTOCOL_ERROR = 1002;
+const WEBSOCKET_STATUS_CODE_ABNORMAL_CLOSURE = 1006;
+
+let globalId = 0;
 
 export class WebSocketTransport implements StatusfulTransport {
+  private id = ++globalId;
+
   private queue: Array<Uint8Array>;
   private socket: WebSocket | undefined;
-  private emitter: Emitter<{
-    open: () => void;
-    message: (message: Uint8Array) => void;
-    error: (error: RpcError) => void;
-    end: () => void;
+  private emitter: EventEmitter<{
+    open: [];
+    message: [Uint8Array];
+    error: [RpcError];
+    end: [];
   }>;
-  private isAlive: boolean;
-  private logger: Logger;
+  private readonly logger: Logger;
   private cancelHeartbeat?: () => void;
+  private isAlive = false;
+  private socketSubscriptions: Array<() => void> = [];
 
-  constructor(
-    endpoint: string,
-    {
+  constructor(endpoint: string, config: WebSocketTransportConfig = {}) {
+    const {
       heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL,
       debug = false,
       logger = console,
-    }: WebSocketTransportConfig = {
-      heartbeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
-      debug: false,
-      logger: console,
-    },
-  ) {
-    this.logger = prefixLoggerDecorator(DEFAULT_LOGGER_PREFIX)(
+    } = config;
+
+    this.logger = prefixLoggerDecorator(`[WS Transport #${this.id}]`)(
       debugLoggerDecorator(debug)(logger),
     );
 
     this.queue = [];
-    this.emitter = createNanoEvents();
-    this.isAlive = false;
+    this.emitter = new EventEmitter();
 
     this.socket = new WebSocket(endpoint);
     this.socket.binaryType = 'arraybuffer';
 
-    const onOpen = () => this.handleOpen(heartbeatInterval);
-    this.socket.addEventListener('open', onOpen);
+    this.bindSocketEvent('open', () => this.handleSocketOpen(heartbeatInterval));
 
-    const onClose = () => {
+    this.bindSocketEvent('close', () => {
       this.logger.log('Closed connection');
       this.emitter.emit(
         'error',
@@ -67,11 +69,10 @@ export class WebSocketTransport implements StatusfulTransport {
           'Connection closed normally by the server.',
         ),
       );
-      this.emitter.emit('end');
-    };
-    this.socket.addEventListener('close', onClose);
+      this.close(WEBSOCKET_STATUS_CODE_NORMAL_CLOSURE);
+    });
 
-    const onMessage = (event: MessageEvent) => {
+    this.bindSocketEvent('message', (event: MessageEvent) => {
       this.logger.log('Message', event.data, event);
       this.isAlive = true;
 
@@ -88,23 +89,17 @@ export class WebSocketTransport implements StatusfulTransport {
           ),
         );
       }
-    };
-    this.socket.addEventListener('message', onMessage);
+    });
 
-    this.emitter.on('end', () => {
-      this.logger.log('Ended connection');
+    this.bindSocketEvent('error', (event: Event) => {
+      this.logger.log('Closing by error', event);
 
-      unbindAll(this.emitter);
+      this.emitter.emit(
+        'error',
+        new RpcError('CONNECTION_CLOSED', 'Transport error'),
+      );
 
-      if (this.cancelHeartbeat) {
-        this.cancelHeartbeat();
-        this.cancelHeartbeat = undefined;
-      }
-
-      this.socket?.removeEventListener('open', onOpen);
-      this.socket?.removeEventListener('close', onClose);
-      this.socket?.removeEventListener('message', onMessage);
-      this.socket = undefined;
+      this.close(WEBSOCKET_STATUS_CODE_ABNORMAL_CLOSURE);
     });
   }
 
@@ -126,7 +121,8 @@ export class WebSocketTransport implements StatusfulTransport {
     }
   }
 
-  setupHeartbeat(interval: number): () => void {
+  private setupHeartbeat(interval: number): Unbind {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let timerId: any;
 
     const check = () => {
@@ -146,8 +142,7 @@ export class WebSocketTransport implements StatusfulTransport {
           ),
         );
 
-        this.socket?.close();
-        this.emitter.emit('end');
+        this.close(WEBSOCKET_STATUS_CODE_PROTOCOL_ERROR);
       }
     };
 
@@ -172,7 +167,7 @@ export class WebSocketTransport implements StatusfulTransport {
     this.socket?.send(PONG);
   }
 
-  handleOpen(heartbeatInterval: number): void {
+  private handleSocketOpen(heartbeatInterval: number): void {
     this.logger.log('Connection opened');
     this.isAlive = true;
     this.socket?.send(new Uint8Array([1, 0]));
@@ -186,24 +181,42 @@ export class WebSocketTransport implements StatusfulTransport {
     }
   }
 
-  onOpen(handler: () => void): Unsubscribe {
-    return this.emitter.on('open', handler);
+  onOpen(handler: () => void): Unbind {
+    return bindEvent(this.emitter, 'open', handler);
   }
 
-  onMessage(handler: (message: Uint8Array) => void): Unsubscribe {
-    return this.emitter.on('message', handler);
+  onMessage(handler: (message: Uint8Array) => void): Unbind {
+    return bindEvent(this.emitter, 'message', handler);
   }
 
-  onError(handler: (error: RpcError) => void): Unsubscribe {
-    return this.emitter.on('error', handler);
+  onError(handler: (error: RpcError) => void): Unbind {
+    return bindEvent(this.emitter, 'error', handler);
   }
 
-  onClose(handler: () => void): Unsubscribe {
-    return this.emitter.on('end', handler);
+  onClose(handler: () => void): Unbind {
+    return bindEvent(this.emitter, 'end', handler);
   }
 
-  close(): void {
-    this.socket?.close();
+  close(code?: number): void {
+    if (this.cancelHeartbeat) {
+      this.logger.log('Stopping heartbeat...');
+      this.cancelHeartbeat();
+      this.cancelHeartbeat = undefined;
+    }
+
+    if (this.socket) {
+      this.logger.log('Closing socket...');
+
+      this.socketSubscriptions.forEach((teardown) => teardown());
+      this.socket.close(code);
+      this.socket = undefined;
+      this.socketSubscriptions = [];
+
+      this.logger.log('Closed connection');
+    }
+
+    this.emitter.emit('end');
+    this.emitter.removeAllListeners();
   }
 
   send(message: Uint8Array): void {
@@ -221,6 +234,18 @@ export class WebSocketTransport implements StatusfulTransport {
           'error',
           new RpcError('CONNECTION_CLOSED', 'Connection closed'),
         );
+    }
+  }
+
+  private bindSocketEvent<K extends keyof WebSocketEventMap>(
+    type: K,
+    listener: (this: WebSocket, ev: WebSocketEventMap[K]) => void,
+  ) {
+    if (this.socket) {
+      this.socket.addEventListener(type, listener);
+      this.socketSubscriptions.push(() =>
+        this.socket?.removeEventListener(type, listener),
+      );
     }
   }
 }
