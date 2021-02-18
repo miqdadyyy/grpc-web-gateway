@@ -9,7 +9,7 @@ import {
 } from './types';
 import { Transport } from './transport';
 import { createSequence, Sequence } from './utils/sequence';
-import { RpcError } from './RpcError';
+import { createClientTransportRpcError, RpcError } from './RpcError';
 import { IRpcClient } from './IRpcClient';
 import { UnaryCall } from './UnaryCall';
 import { ServerStreamCall } from './ServerStreamCall';
@@ -32,7 +32,7 @@ export class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
   setTransport(transport: Transport): void {
     this.transport = transport;
     this.transport.onError((error) => {
-      this.emitter.emit('error', error);
+      this.emitter.emit('error', createClientTransportRpcError(error));
     });
   }
 

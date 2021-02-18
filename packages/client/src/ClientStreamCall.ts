@@ -9,7 +9,7 @@ import {
   Unbind,
 } from './types';
 import { Transport } from './transport';
-import { RpcError } from './RpcError';
+import { createClientTransportRpcError, RpcError } from './RpcError';
 import EventEmitter from 'eventemitter3';
 import { bindEvent } from './utils/emitterUtils';
 
@@ -40,7 +40,9 @@ export class ClientStreamCall implements RpcCall {
       this.emitter.removeAllListeners();
     });
 
-    this.transport.onError((error) => this.emitter.emit('error', error));
+    this.transport.onError((error) =>
+      this.emitter.emit('error', createClientTransportRpcError(error)),
+    );
   }
 
   start({ service, method, metadata }: StreamRequest): ClientStreamCall {

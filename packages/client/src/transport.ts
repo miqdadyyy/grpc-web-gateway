@@ -1,12 +1,19 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { RpcError } from './RpcError';
-
 type Unbind = () => void;
 
+export class TransportError extends Error {
+  reason: Error | undefined;
+
+  constructor(message: string, reason?: Error) {
+    super(message);
+    this.reason = reason;
+  }
+}
+
 export interface TransportReadable {
-  onMessage(messageHandler: (message: Uint8Array) => void): Unbind;
-  onError(errorHandler: (error: RpcError) => void): Unbind;
+  onMessage(handler: (message: Uint8Array) => void): Unbind;
+  onError(handler: (error: TransportError) => void): Unbind;
 }
 
 export interface TransportWritable {

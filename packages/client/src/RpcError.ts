@@ -8,3 +8,8 @@ export class RpcError extends Error {
     this.code = code;
   }
 }
+
+export function createClientTransportRpcError(error?: Error): RpcError {
+  const details = error?.message ? `: ${error?.message}` : '';
+  return new RpcError('14', 'Client transport error' + details);
+}

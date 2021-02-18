@@ -1,12 +1,21 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { Request } from '@dlghq/grpc-web-gateway-signaling';
 import { debugLoggerDecorator, Logger, prefixLoggerDecorator } from './Logger';
-import { StatusfulTransport, TransportReadyState } from './transport';
-import { RpcError } from './RpcError';
+import {
+  StatusfulTransport,
+  TransportError,
+  TransportReadyState,
+} from './transport';
 import EventEmitter from 'eventemitter3';
 import { Unbind } from './types';
 import { bindEvent } from './utils/emitterUtils';
+import {
+  SOCKET_CLOSE_CODE_HEARTBEAT_ERROR,
+  SOCKET_CLOSE_CODE_NORMAL,
+  SOCKET_CLOSE_CODE_SERIALIZATION_ERROR,
+  SOCKET_CLOSE_CODE_TRANSPORT_ERROR,
+  SERVICE_PING_MESSAGE,
+} from './transportUtils';
 
 export type WebSocketTransportConfig = {
   heartbeatInterval?: number;
@@ -14,14 +23,7 @@ export type WebSocketTransportConfig = {
   debug?: boolean;
 };
 
-const PING = Request.encode({ id: 'service', service: { ping: {} } }).finish();
-const PONG = Request.encode({ id: 'service', service: { pong: {} } }).finish();
-
 const DEFAULT_HEARTBEAT_INTERVAL = 30000;
-
-const WEBSOCKET_STATUS_CODE_NORMAL_CLOSURE = 1000;
-const WEBSOCKET_STATUS_CODE_PROTOCOL_ERROR = 1002;
-const WEBSOCKET_STATUS_CODE_ABNORMAL_CLOSURE = 1006;
 
 let globalId = 0;
 
@@ -30,11 +32,11 @@ export class WebSocketTransport implements StatusfulTransport {
 
   private queue: Array<Uint8Array>;
   private socket: WebSocket | undefined;
-  private emitter: EventEmitter<{
+  private readonly emitter: EventEmitter<{
     open: [];
     message: [Uint8Array];
-    error: [RpcError];
-    end: [];
+    error: [TransportError];
+    close: [];
   }>;
   private readonly logger: Logger;
   private cancelHeartbeat?: () => void;
@@ -58,18 +60,19 @@ export class WebSocketTransport implements StatusfulTransport {
     this.socket = new WebSocket(endpoint);
     this.socket.binaryType = 'arraybuffer';
 
-    this.bindSocketEvent('open', () => this.handleSocketOpen(heartbeatInterval));
+    this.bindSocketEvent('open', () =>
+      this.handleSocketOpen(heartbeatInterval),
+    );
 
     this.bindSocketEvent('close', () => {
-      this.logger.log('Closed connection');
-      this.emitter.emit(
-        'error',
-        new RpcError(
-          'CONNECTION_ERROR',
-          'Connection closed normally by the server.',
-        ),
-      );
-      this.close(WEBSOCKET_STATUS_CODE_NORMAL_CLOSURE);
+      this.logger.log('Connection was closed');
+      this.closeSocket();
+    });
+
+    this.bindSocketEvent('error', (event: Event) => {
+      this.logger.log('Socket error', event);
+      this.emitter.emit('error', new TransportError('Socket error'));
+      this.closeSocket(SOCKET_CLOSE_CODE_TRANSPORT_ERROR);
     });
 
     this.bindSocketEvent('message', (event: MessageEvent) => {
@@ -83,23 +86,12 @@ export class WebSocketTransport implements StatusfulTransport {
         this.logger.error('Serialization mismatch');
         this.emitter.emit(
           'error',
-          new RpcError(
-            'SERIALIZATION_MISMATCH',
-            'Incoming message should be ArrayBuffer',
+          new TransportError(
+            'Serialization error: incoming message must be ArrayBuffer',
           ),
         );
+        this.closeSocket(SOCKET_CLOSE_CODE_SERIALIZATION_ERROR);
       }
-    });
-
-    this.bindSocketEvent('error', (event: Event) => {
-      this.logger.log('Closing by error', event);
-
-      this.emitter.emit(
-        'error',
-        new RpcError('CONNECTION_CLOSED', 'Transport error'),
-      );
-
-      this.close(WEBSOCKET_STATUS_CODE_ABNORMAL_CLOSURE);
     });
   }
 
@@ -126,23 +118,20 @@ export class WebSocketTransport implements StatusfulTransport {
     let timerId: any;
 
     const check = () => {
-      this.logger.log('Is alive', this.isAlive);
+      this.logger.log('Heartbeat', this.isAlive);
 
       if (this.isAlive) {
         this.isAlive = false;
-        this.ping(() => {
-          timerId = setTimeout(check, interval);
-        });
+        this.sendPing();
+        timerId = setTimeout(check, interval);
       } else {
         this.emitter.emit(
           'error',
-          new RpcError(
-            'SERVER_CLOSED_CONNECTION',
-            "Server doesn't respond on client pings. That means server closed connection on their side.",
+          new TransportError(
+            'Heartbeat error: server does not respond on client pings',
           ),
         );
-
-        this.close(WEBSOCKET_STATUS_CODE_PROTOCOL_ERROR);
+        this.closeSocket(SOCKET_CLOSE_CODE_HEARTBEAT_ERROR);
       }
     };
 
@@ -156,21 +145,17 @@ export class WebSocketTransport implements StatusfulTransport {
     };
   }
 
-  ping(callback?: () => void): void {
-    this.logger.log('Send ping');
-    this.socket?.send(PING);
-    callback?.();
-  }
-
-  pong(): void {
-    this.logger.log('Send pong');
-    this.socket?.send(PONG);
+  private sendPing(): void {
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.logger.log('Send ping');
+      this.socket?.send(SERVICE_PING_MESSAGE);
+    }
   }
 
   private handleSocketOpen(heartbeatInterval: number): void {
     this.logger.log('Connection opened');
     this.isAlive = true;
-    this.socket?.send(new Uint8Array([1, 0]));
+    this.sendPing();
     this.emitter.emit('open');
 
     this.cancelHeartbeat = this.setupHeartbeat(heartbeatInterval);
@@ -189,34 +174,16 @@ export class WebSocketTransport implements StatusfulTransport {
     return bindEvent(this.emitter, 'message', handler);
   }
 
-  onError(handler: (error: RpcError) => void): Unbind {
+  onError(handler: (error: TransportError) => void): Unbind {
     return bindEvent(this.emitter, 'error', handler);
   }
 
   onClose(handler: () => void): Unbind {
-    return bindEvent(this.emitter, 'end', handler);
+    return bindEvent(this.emitter, 'close', handler);
   }
 
-  close(code?: number): void {
-    if (this.cancelHeartbeat) {
-      this.logger.log('Stopping heartbeat...');
-      this.cancelHeartbeat();
-      this.cancelHeartbeat = undefined;
-    }
-
-    if (this.socket) {
-      this.logger.log('Closing socket...');
-
-      this.socketSubscriptions.forEach((teardown) => teardown());
-      this.socket.close(code);
-      this.socket = undefined;
-      this.socketSubscriptions = [];
-
-      this.logger.log('Closed connection');
-    }
-
-    this.emitter.emit('end');
-    this.emitter.removeAllListeners();
+  close(): void {
+    this.closeSocket(SOCKET_CLOSE_CODE_NORMAL);
   }
 
   send(message: Uint8Array): void {
@@ -232,7 +199,7 @@ export class WebSocketTransport implements StatusfulTransport {
       default:
         this.emitter.emit(
           'error',
-          new RpcError('CONNECTION_CLOSED', 'Connection closed'),
+          new TransportError('Failed to send to the closed connection'),
         );
     }
   }
@@ -247,5 +214,32 @@ export class WebSocketTransport implements StatusfulTransport {
         this.socket?.removeEventListener(type, listener),
       );
     }
+  }
+
+  private closeSocket(code?: number) {
+    if (this.cancelHeartbeat) {
+      this.logger.log('Stopping heartbeat...');
+      this.cancelHeartbeat();
+      this.cancelHeartbeat = undefined;
+    }
+
+    if (this.socket) {
+      this.logger.log(`Closing socket ${code ? `(${code})` : ''}...`);
+
+      this.socketSubscriptions.forEach((teardown) => teardown());
+
+      const { readyState } = this.socket;
+      if (readyState !== WebSocket.CLOSING && readyState !== WebSocket.CLOSED) {
+        this.socket.close(code);
+      }
+
+      this.socket = undefined;
+      this.socketSubscriptions = [];
+
+      this.logger.log('Closed socket');
+    }
+
+    this.emitter.emit('close');
+    this.emitter.removeAllListeners();
   }
 }

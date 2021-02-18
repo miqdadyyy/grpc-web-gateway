@@ -3,7 +3,7 @@
 import { Request, Response } from '@dlghq/grpc-web-gateway-signaling';
 import { RpcCall, UnaryRequest, Unbind } from './types';
 import { Transport } from './transport';
-import { RpcError } from './RpcError';
+import { createClientTransportRpcError, RpcError } from './RpcError';
 import EventEmitter from 'eventemitter3';
 import { bindEvent } from './utils/emitterUtils';
 
@@ -34,7 +34,9 @@ export class ServerStreamCall implements RpcCall {
       this.emitter.removeAllListeners();
     });
 
-    this.transport.onError((error) => this.emitter.emit('error', error));
+    this.transport.onError((error) =>
+      this.emitter.emit('error', createClientTransportRpcError(error)),
+    );
   }
 
   start({

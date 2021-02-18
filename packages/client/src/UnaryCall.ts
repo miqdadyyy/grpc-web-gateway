@@ -1,7 +1,7 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
 import { Request, Response } from '@dlghq/grpc-web-gateway-signaling';
-import { RpcError } from './RpcError';
+import { createClientTransportRpcError, RpcError } from './RpcError';
 import type { RpcCall, RpcCallStatus, UnaryRequest, Unbind } from './types';
 import { Transport } from './transport';
 import EventEmitter from 'eventemitter3';
@@ -34,7 +34,9 @@ export class UnaryCall implements RpcCall {
       this.emitter.removeAllListeners();
     });
 
-    this.transport.onError((error) => this.emitter.emit('error', error));
+    this.transport.onError((error) =>
+      this.emitter.emit('error', createClientTransportRpcError(error)),
+    );
   }
 
   start({ service, method, payload, metadata }: UnaryRequest): UnaryCall {

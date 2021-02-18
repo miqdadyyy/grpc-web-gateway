@@ -1,13 +1,22 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { Request } from '@dlghq/grpc-web-gateway-signaling';
 import { debugLoggerDecorator, Logger, prefixLoggerDecorator } from './Logger';
-import { StatusfulTransport, TransportReadyState } from './transport';
-import { RpcError } from './RpcError';
+import {
+  StatusfulTransport,
+  TransportError,
+  TransportReadyState,
+} from './transport';
 import eioClient, { Socket, UpgradeError } from 'engine.io-client';
 import EventEmitter from 'eventemitter3';
 import { Unbind } from './types';
 import { bindEvent } from './utils/emitterUtils';
+import {
+  SERVICE_PING_MESSAGE,
+  SOCKET_CLOSE_CODE_HEARTBEAT_ERROR,
+  SOCKET_CLOSE_CODE_NORMAL,
+  SOCKET_CLOSE_CODE_SERIALIZATION_ERROR,
+  SOCKET_CLOSE_CODE_TRANSPORT_ERROR,
+} from './transportUtils';
 
 export type PollingTransportConfig = {
   heartbeatInterval?: number;
@@ -16,8 +25,6 @@ export type PollingTransportConfig = {
   path?: string;
 };
 
-const PING = Request.encode({ id: 'service', service: { ping: {} } }).finish();
-const PONG = Request.encode({ id: 'service', service: { pong: {} } }).finish();
 const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 const DEFAULT_PATH = '/polling';
 
@@ -28,11 +35,11 @@ export class PollingTransport implements StatusfulTransport {
 
   private queue: Array<Uint8Array>;
   private socket: Socket | undefined;
-  private emitter: EventEmitter<{
+  private readonly emitter: EventEmitter<{
     open: [];
     message: [Uint8Array];
-    error: [RpcError];
-    end: [];
+    error: [TransportError];
+    close: [];
   }>;
   private readonly logger: Logger;
   private cancelHeartbeat?: () => void;
@@ -67,16 +74,14 @@ export class PollingTransport implements StatusfulTransport {
     );
 
     this.bindSocketEvent('close', () => {
-      this.readyState = 'closed';
-      this.logger.log('Closed connection');
-      this.emitter.emit(
-        'error',
-        new RpcError(
-          'CONNECTION_ERROR',
-          'Connection closed normally by the server.',
-        ),
-      );
-      this.close();
+      this.logger.log('Connection was closed');
+      this.closeSocket();
+    });
+
+    this.bindSocketEvent('error', (error) => {
+      this.logger.log('Socket error', error);
+      this.emitter.emit('error', new TransportError('Socket error'));
+      this.closeSocket(SOCKET_CLOSE_CODE_TRANSPORT_ERROR);
     });
 
     this.bindSocketEvent('message', (data) => {
@@ -90,42 +95,20 @@ export class PollingTransport implements StatusfulTransport {
         this.logger.error('Serialization mismatch');
         this.emitter.emit(
           'error',
-          new RpcError(
-            'SERIALIZATION_MISMATCH',
-            'Incoming message should be ArrayBuffer',
+          new TransportError(
+            'Serialization error: incoming message must be ArrayBuffer',
           ),
         );
+        this.closeSocket(SOCKET_CLOSE_CODE_SERIALIZATION_ERROR);
       }
-    });
-
-    this.bindSocketEvent('error', (error) => {
-      this.logger.log('Closing by error', error);
-
-      this.emitter.emit(
-        'error',
-        new RpcError('CONNECTION_CLOSED', 'Transport error'),
-      );
-
-      this.close();
-    });
-
-    this.emitter.on('end', () => {
-      this.logger.log('Ended connection');
-
-      this.readyState = 'closed';
-
-      this.emitter.removeAllListeners();
-
-      if (this.cancelHeartbeat) {
-        this.cancelHeartbeat();
-        this.cancelHeartbeat = undefined;
-      }
-
-      this.socket = undefined;
     });
   }
 
   getReadyState(): TransportReadyState {
+    if (!this.socket) {
+      return 'closed';
+    }
+
     return this.readyState;
   }
 
@@ -134,23 +117,20 @@ export class PollingTransport implements StatusfulTransport {
     let timerId: any;
 
     const check = () => {
-      this.logger.log('Is alive', this.isAlive);
+      this.logger.log('Heartbeat', this.isAlive);
 
       if (this.isAlive) {
         this.isAlive = false;
-        this.ping(() => {
-          timerId = setTimeout(check, interval);
-        });
+        this.sendPing();
+        timerId = setTimeout(check, interval);
       } else {
         this.emitter.emit(
           'error',
-          new RpcError(
-            'SERVER_CLOSED_CONNECTION',
-            "Server doesn't respond on client pings. That means server closed connection on their side.",
+          new TransportError(
+            'Heartbeat error: server does not respond on client pings',
           ),
         );
-
-        this.close();
+        this.closeSocket(SOCKET_CLOSE_CODE_HEARTBEAT_ERROR);
       }
     };
 
@@ -164,22 +144,18 @@ export class PollingTransport implements StatusfulTransport {
     };
   }
 
-  ping(callback?: () => void): void {
-    this.logger.log('Send ping');
-    this.socket?.send(PING);
-    callback?.();
-  }
-
-  pong(): void {
-    this.logger.log('Send pong');
-    this.socket?.send(PONG);
+  private sendPing(): void {
+    if (this.getReadyState() === 'open') {
+      this.logger.log('Send ping');
+      this.socket?.send(SERVICE_PING_MESSAGE);
+    }
   }
 
   handleSocketOpen(heartbeatInterval: number): void {
     this.logger.log('Connection opened');
     this.isAlive = true;
     this.readyState = 'open';
-    this.socket?.send(new Uint8Array([1, 0]));
+    this.sendPing();
     this.emitter.emit('open');
 
     this.cancelHeartbeat = this.setupHeartbeat(heartbeatInterval);
@@ -198,34 +174,16 @@ export class PollingTransport implements StatusfulTransport {
     return bindEvent(this.emitter, 'message', handler);
   }
 
-  onError(handler: (error: RpcError) => void): Unbind {
+  onError(handler: (error: TransportError) => void): Unbind {
     return bindEvent(this.emitter, 'error', handler);
   }
 
   onClose(handler: () => void): Unbind {
-    return bindEvent(this.emitter, 'end', handler);
+    return bindEvent(this.emitter, 'close', handler);
   }
 
   close(): void {
-    if (this.cancelHeartbeat) {
-      this.logger.log('Stopping heartbeat...');
-      this.cancelHeartbeat();
-      this.cancelHeartbeat = undefined;
-    }
-
-    if (this.socket) {
-      this.logger.log('Closing socket...');
-
-      this.socketSubscriptions.forEach((teardown) => teardown());
-      this.socket.close();
-      this.socket = undefined;
-      this.socketSubscriptions = [];
-
-      this.logger.log('Closed connection');
-    }
-
-    this.emitter.emit('end');
-    this.emitter.removeAllListeners();
+    this.closeSocket(SOCKET_CLOSE_CODE_NORMAL);
   }
 
   send(message: Uint8Array): void {
@@ -241,7 +199,7 @@ export class PollingTransport implements StatusfulTransport {
       default:
         this.emitter.emit(
           'error',
-          new RpcError('CONNECTION_CLOSED', 'Connection closed'),
+          new TransportError('Failed to send to the closed connection'),
         );
     }
   }
@@ -258,6 +216,30 @@ export class PollingTransport implements StatusfulTransport {
         this.socket?.off(type, listener);
       });
     }
+  }
+
+  private closeSocket(code?: number) {
+    this.readyState = 'closed';
+
+    if (this.cancelHeartbeat) {
+      this.logger.log('Stopping heartbeat...');
+      this.cancelHeartbeat();
+      this.cancelHeartbeat = undefined;
+    }
+
+    if (this.socket) {
+      this.logger.log(`Closing socket ${code ? `(${code})` : ''}...`);
+
+      this.socketSubscriptions.forEach((teardown) => teardown());
+      this.socket.close();
+      this.socket = undefined;
+      this.socketSubscriptions = [];
+
+      this.logger.log('Closed socket');
+    }
+
+    this.emitter.emit('close');
+    this.emitter.removeAllListeners();
   }
 }
 

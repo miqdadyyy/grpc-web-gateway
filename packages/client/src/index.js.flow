@@ -54,6 +54,11 @@ export type Sequence = {
 
 type Unbind = () => void;
 
+declare export class TransportError extends Error {
+  reason: Error | undefined;
+  constructor(message: string, reason?: Error): TransportError;
+}
+
 export interface TransportReadable {
   onMessage(messageHandler: (message: Uint8Array) => void): Unbind;
   onError(errorHandler: (error: RpcError) => void): Unbind;
@@ -213,20 +218,4 @@ declare export class PollingTransport implements StatusfulTransport {
 
   close(): void;
   send(message: Uint8Array): void;
-}
-
-type WsTransportFactory = () => WebSocketTransport;
-type RetryWsTransportConfig = { debug: boolean, ... };
-
-declare export class RetryWsTransport implements Transport {
-  constructor(
-    factory: WsTransportFactory,
-    config?: RetryWsTransportConfig,
-  ): RetryWsTransport;
-
-  setupWsTransport(): void;
-  send(message: Uint8Array): void;
-
-  onError(handler: (RpcError) => void): Unbind;
-  onMessage(handler: (Uint8Array) => void): Unbind;
 }
