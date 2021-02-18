@@ -118,13 +118,12 @@ export class WebSocketTransport implements StatusfulTransport {
     let timerId: any;
 
     const check = () => {
-      this.logger.log('Heartbeat', this.isAlive);
-
       if (this.isAlive) {
         this.isAlive = false;
         this.sendPing();
         timerId = setTimeout(check, interval);
       } else {
+        this.logger.log('Heartbeat: not alive socket');
         this.emitter.emit(
           'error',
           new TransportError(
@@ -155,10 +154,9 @@ export class WebSocketTransport implements StatusfulTransport {
   private handleSocketOpen(heartbeatInterval: number): void {
     this.logger.log('Connection opened');
     this.isAlive = true;
-    this.sendPing();
-    this.emitter.emit('open');
-
     this.cancelHeartbeat = this.setupHeartbeat(heartbeatInterval);
+
+    this.emitter.emit('open');
 
     if (this.queue.length) {
       this.queue.forEach((message) => this.send(message));

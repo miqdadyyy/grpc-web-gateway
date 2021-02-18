@@ -31,11 +31,13 @@ export function parseRequestMessage(
   try {
     request = Request.decode(data);
   } catch (error) {
-    const isEmptyPacketFromClientTransport =
+    // Skips `[1, 0]` initial data packet from legacy clients which they send after connecting.
+    const isInitialPacketFromClientTransport =
       data.length === 2 && data[0] === 1 && data[1] === 0;
-    if (isEmptyPacketFromClientTransport) {
+    if (isInitialPacketFromClientTransport) {
       return undefined;
     }
+
     throw error;
   }
 

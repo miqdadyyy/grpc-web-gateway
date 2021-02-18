@@ -26,7 +26,7 @@ export type PollingTransportConfig = {
 };
 
 const DEFAULT_HEARTBEAT_INTERVAL = 30000;
-const DEFAULT_PATH = '/polling';
+const DEFAULT_POLLING_PATH = 'polling';
 
 let globalId = 0;
 
@@ -47,13 +47,17 @@ export class PollingTransport implements StatusfulTransport {
   private readyState: TransportReadyState;
   private socketSubscriptions: Array<() => void> = [];
 
-  constructor(endpoint: string, config: PollingTransportConfig) {
+  constructor(endpoint: string, config: PollingTransportConfig = {}) {
     const {
       heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL,
       debug = false,
       logger = console,
-      path = DEFAULT_PATH,
     } = config;
+
+    const { origin: transportUrl, pathname } = new URL(endpoint);
+    const transportPath =
+      config.path ??
+      `${pathname}${pathname.endsWith('/') ? '' : '/'}${DEFAULT_POLLING_PATH}`;
 
     this.logger = prefixLoggerDecorator(`[Polling Transport #${this.id}]`)(
       debugLoggerDecorator(debug)(logger),
@@ -63,8 +67,8 @@ export class PollingTransport implements StatusfulTransport {
     this.emitter = new EventEmitter();
     this.readyState = 'connecting';
 
-    this.socket = eioClient(endpoint, {
-      path,
+    this.socket = eioClient(transportUrl, {
+      path: transportPath,
       transports: ['polling'],
     });
     this.socket.binaryType = 'arraybuffer';
@@ -117,13 +121,12 @@ export class PollingTransport implements StatusfulTransport {
     let timerId: any;
 
     const check = () => {
-      this.logger.log('Heartbeat', this.isAlive);
-
       if (this.isAlive) {
         this.isAlive = false;
         this.sendPing();
         timerId = setTimeout(check, interval);
       } else {
+        this.logger.log('Heartbeat: not alive socket');
         this.emitter.emit(
           'error',
           new TransportError(
@@ -155,10 +158,9 @@ export class PollingTransport implements StatusfulTransport {
     this.logger.log('Connection opened');
     this.isAlive = true;
     this.readyState = 'open';
-    this.sendPing();
-    this.emitter.emit('open');
-
     this.cancelHeartbeat = this.setupHeartbeat(heartbeatInterval);
+
+    this.emitter.emit('open');
 
     if (this.queue.length) {
       this.queue.forEach((message) => this.send(message));
