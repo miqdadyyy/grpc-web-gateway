@@ -55,8 +55,12 @@ export type Sequence = {
 type Unbind = () => void;
 
 declare export class TransportError extends Error {
-  reason: Error | undefined;
+  reason: Error | void;
   constructor(message: string, reason?: Error): TransportError;
+}
+
+declare export class HeartbeatError extends HeartbeatError {
+  constructor(message: string): HeartbeatError;
 }
 
 export interface TransportReadable {
@@ -70,13 +74,19 @@ export interface TransportWritable {
 
 export interface Transport extends TransportReadable, TransportWritable {}
 
-export type TransportReadyState = 'connecting' | 'open' | 'closing' | 'closed';
+export type TransportReadyState =
+  | 'connecting'
+  | 'open'
+  | 'suspended'
+  | 'closing'
+  | 'closed';
 
 export interface StatusfulTransport extends Transport {
   getReadyState(): TransportReadyState;
   close(): void;
   onOpen(() => void): Unbind;
   onClose(() => void): Unbind;
+  onReadyState(handler: (readyState: TransportReadyState) => void): Unbind;
 }
 
 // Calls
@@ -168,8 +178,11 @@ declare export class RpcClient
 
 // Transport implementations
 
+export type IntervalOrProviderFn = number | ((attempt: number) => number);
+
 export type WebSocketTransportConfig = {
   heartbeatInterval?: number,
+  suspendedHeartbeatInterval?: IntervalOrProviderFn,
   logger?: Logger,
   debug?: boolean,
   ...
@@ -181,23 +194,24 @@ declare export class WebSocketTransport implements StatusfulTransport {
     config?: WebSocketTransportConfig,
   ): WebSocketTransport;
 
-  getReadyState(): TransportReadyState;
-  ping(): void;
-  pong(): void;
-
   onOpen(handler: () => void): Unbind;
   onMessage(handler: (message: Uint8Array) => void): Unbind;
   onError(handler: (error: RpcError) => void): Unbind;
   onClose(handler: (void) => void): Unbind;
+  onReadyState(handler: (readyState: TransportReadyState) => void): Unbind;
 
-  close(): void;
+  getReadyState(): TransportReadyState;
+  ping(): void;
   send(message: Uint8Array): void;
+  close(): void;
 }
 
 export type PollingTransportConfig = {
   heartbeatInterval?: number,
+  suspendedHeartbeatInterval?: IntervalOrProviderFn,
   logger?: Logger,
   debug?: boolean,
+  path?: string,
   ...
 };
 
@@ -207,15 +221,14 @@ declare export class PollingTransport implements StatusfulTransport {
     config?: PollingTransportConfig,
   ): PollingTransport;
 
-  getReadyState(): TransportReadyState;
-  ping(): void;
-  pong(): void;
-
   onOpen(handler: () => void): Unbind;
   onMessage(handler: (message: Uint8Array) => void): Unbind;
   onError(handler: (error: RpcError) => void): Unbind;
   onClose(handler: (void) => void): Unbind;
+  onReadyState(handler: (readyState: TransportReadyState) => void): Unbind;
 
-  close(): void;
+  getReadyState(): TransportReadyState;
+  ping(): void;
   send(message: Uint8Array): void;
+  close(): void;
 }

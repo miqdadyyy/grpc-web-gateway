@@ -2,6 +2,8 @@
 
 import { debugLoggerDecorator, Logger, prefixLoggerDecorator } from './Logger';
 import {
+  HeartbeatError,
+  IntervalOrProviderFn,
   StatusfulTransport,
   TransportError,
   TransportReadyState,
@@ -10,15 +12,16 @@ import EventEmitter from 'eventemitter3';
 import { Unbind } from './types';
 import { bindEvent } from './utils/emitterUtils';
 import {
-  SOCKET_CLOSE_CODE_HEARTBEAT_ERROR,
+  DEFAULT_SUSPENDED_HEARTBEAT_INTERVAL,
+  resolveInterval,
+  SERVICE_PING_MESSAGE,
   SOCKET_CLOSE_CODE_NORMAL,
   SOCKET_CLOSE_CODE_SERIALIZATION_ERROR,
-  SOCKET_CLOSE_CODE_TRANSPORT_ERROR,
-  SERVICE_PING_MESSAGE,
 } from './transportUtils';
 
 export type WebSocketTransportConfig = {
   heartbeatInterval?: number;
+  suspendedHeartbeatInterval?: IntervalOrProviderFn;
   logger?: Logger;
   debug?: boolean;
 };
@@ -28,7 +31,9 @@ const DEFAULT_HEARTBEAT_INTERVAL = 30000;
 let globalId = 0;
 
 export class WebSocketTransport implements StatusfulTransport {
-  private id = ++globalId;
+  private readonly id = ++globalId;
+  private readonly heartbeatInterval: number;
+  private readonly suspendedHeartbeatInterval: IntervalOrProviderFn;
 
   private queue: Array<Uint8Array>;
   private socket: WebSocket | undefined;
@@ -37,18 +42,24 @@ export class WebSocketTransport implements StatusfulTransport {
     message: [Uint8Array];
     error: [TransportError];
     close: [];
+    readyState: [TransportReadyState];
   }>;
   private readonly logger: Logger;
   private cancelHeartbeat?: () => void;
-  private isAlive = false;
+  private hasResponse = false;
+  private isSuspended = false;
   private socketSubscriptions: Array<() => void> = [];
 
   constructor(endpoint: string, config: WebSocketTransportConfig = {}) {
     const {
       heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL,
+      suspendedHeartbeatInterval = DEFAULT_SUSPENDED_HEARTBEAT_INTERVAL,
       debug = false,
       logger = console,
     } = config;
+
+    this.heartbeatInterval = heartbeatInterval;
+    this.suspendedHeartbeatInterval = suspendedHeartbeatInterval;
 
     this.logger = prefixLoggerDecorator(`[WS Transport #${this.id}]`)(
       debugLoggerDecorator(debug)(logger),
@@ -60,9 +71,7 @@ export class WebSocketTransport implements StatusfulTransport {
     this.socket = new WebSocket(endpoint);
     this.socket.binaryType = 'arraybuffer';
 
-    this.bindSocketEvent('open', () =>
-      this.handleSocketOpen(heartbeatInterval),
-    );
+    this.bindSocketEvent('open', () => this.handleSocketOpen());
 
     this.bindSocketEvent('close', () => {
       this.logger.log('Connection was closed');
@@ -72,12 +81,17 @@ export class WebSocketTransport implements StatusfulTransport {
     this.bindSocketEvent('error', (event: Event) => {
       this.logger.log('Socket error', event);
       this.emitter.emit('error', new TransportError('Socket error'));
-      this.closeSocket(SOCKET_CLOSE_CODE_TRANSPORT_ERROR);
+      this.emitReadyState();
     });
 
     this.bindSocketEvent('message', (event: MessageEvent) => {
       this.logger.log('Message', event.data, event);
-      this.isAlive = true;
+
+      this.hasResponse = true;
+      if (this.isSuspended) {
+        this.isSuspended = false;
+        this.emitter.emit('readyState', 'open');
+      }
 
       if (event.data instanceof ArrayBuffer) {
         const message = new Uint8Array(event.data);
@@ -101,36 +115,56 @@ export class WebSocketTransport implements StatusfulTransport {
     }
 
     switch (this.socket.readyState) {
-      case 0:
+      case WebSocket.CONNECTING:
         return 'connecting';
-      case 1:
-        return 'open';
-      case 2:
+      case WebSocket.OPEN:
+        return this.isSuspended ? 'suspended' : 'open';
+      case WebSocket.CLOSING:
         return 'closing';
-      case 3:
+      case WebSocket.CLOSED:
       default:
         return 'closed';
     }
   }
 
-  private setupHeartbeat(interval: number): Unbind {
+  private emitReadyState() {
+    this.emitter.emit('readyState', this.getReadyState());
+  }
+
+  private setupHeartbeat(): Unbind {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let timerId: any;
+    let suspendedAttempt = 0;
 
     const check = () => {
-      if (this.isAlive) {
-        this.isAlive = false;
-        this.sendPing();
-        timerId = setTimeout(check, interval);
+      if (this.hasResponse) {
+        this.hasResponse = false;
+        this.ping();
+        timerId = setTimeout(check, this.heartbeatInterval);
       } else {
-        this.logger.log('Heartbeat: not alive socket');
-        this.emitter.emit(
-          'error',
-          new TransportError(
-            'Heartbeat error: server does not respond on client pings',
-          ),
+        if (!this.isSuspended) {
+          this.logger.log('Heartbeat: suspended socket');
+          this.isSuspended = true;
+          suspendedAttempt = 0;
+
+          this.emitReadyState();
+          this.emitter.emit(
+            'error',
+            new HeartbeatError(
+              'Heartbeat error: server does not respond on client pings',
+            ),
+          );
+        }
+
+        this.emitReadyState();
+        this.ping();
+
+        const delay = resolveInterval(
+          this.suspendedHeartbeatInterval,
+          suspendedAttempt,
         );
-        this.closeSocket(SOCKET_CLOSE_CODE_HEARTBEAT_ERROR);
+        suspendedAttempt++;
+        timerId = setTimeout(check, delay);
       }
     };
 
@@ -144,19 +178,22 @@ export class WebSocketTransport implements StatusfulTransport {
     };
   }
 
-  private sendPing(): void {
-    if (this.socket?.readyState === WebSocket.OPEN) {
+  ping(): void {
+    const readyState = this.getReadyState();
+    if (readyState === 'open' || readyState === 'suspended') {
       this.logger.log('Send ping');
       this.socket?.send(SERVICE_PING_MESSAGE);
     }
   }
 
-  private handleSocketOpen(heartbeatInterval: number): void {
+  private handleSocketOpen(): void {
     this.logger.log('Connection opened');
-    this.isAlive = true;
-    this.cancelHeartbeat = this.setupHeartbeat(heartbeatInterval);
+    this.hasResponse = true;
+    this.isSuspended = false;
+    this.cancelHeartbeat = this.setupHeartbeat();
 
     this.emitter.emit('open');
+    this.emitReadyState();
 
     if (this.queue.length) {
       this.queue.forEach((message) => this.send(message));
@@ -178,6 +215,10 @@ export class WebSocketTransport implements StatusfulTransport {
 
   onClose(handler: () => void): Unbind {
     return bindEvent(this.emitter, 'close', handler);
+  }
+
+  onReadyState(handler: (readyState: TransportReadyState) => void): Unbind {
+    return bindEvent(this.emitter, 'readyState', handler);
   }
 
   close(): void {
@@ -237,6 +278,7 @@ export class WebSocketTransport implements StatusfulTransport {
       this.logger.log('Closed socket');
     }
 
+    this.emitReadyState();
     this.emitter.emit('close');
     this.emitter.removeAllListeners();
   }
