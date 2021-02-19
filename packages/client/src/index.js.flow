@@ -52,7 +52,7 @@ export type Sequence = {
 
 // Transport
 
-type Unbind = () => void;
+export type Unbind = () => void;
 
 declare export class TransportError extends Error {
   reason: Error | void;
@@ -63,17 +63,6 @@ declare export class HeartbeatError extends HeartbeatError {
   constructor(message: string): HeartbeatError;
 }
 
-export interface TransportReadable {
-  onMessage(messageHandler: (message: Uint8Array) => void): Unbind;
-  onError(errorHandler: (error: RpcError) => void): Unbind;
-}
-
-export interface TransportWritable {
-  send(message: Uint8Array): void;
-}
-
-export interface Transport extends TransportReadable, TransportWritable {}
-
 export type TransportReadyState =
   | 'connecting'
   | 'open'
@@ -81,15 +70,20 @@ export type TransportReadyState =
   | 'closing'
   | 'closed';
 
-export interface StatusfulTransport extends Transport {
-  getReadyState(): TransportReadyState;
+export interface Transport {
   close(): void;
-  onOpen(() => void): Unbind;
-  onClose(() => void): Unbind;
+  getReadyState(): TransportReadyState;
+  ping(): void;
+  send(message: Uint8Array): void;
+
+  onClose(handler: () => void): Unbind;
+  onError(handler: (error: TransportError) => void): Unbind;
+  onMessage(handler: (message: Uint8Array) => void): Unbind;
+  onOpen(handler: () => void): Unbind;
   onReadyState(handler: (readyState: TransportReadyState) => void): Unbind;
 }
 
-// Calls
+// RPC Calls
 
 export interface RpcCall {
   status: RpcCallStatus;
@@ -188,7 +182,7 @@ export type WebSocketTransportConfig = {
   ...
 };
 
-declare export class WebSocketTransport implements StatusfulTransport {
+declare export class WebSocketTransport implements Transport {
   constructor(
     endpoint: string,
     config?: WebSocketTransportConfig,
@@ -196,7 +190,7 @@ declare export class WebSocketTransport implements StatusfulTransport {
 
   onOpen(handler: () => void): Unbind;
   onMessage(handler: (message: Uint8Array) => void): Unbind;
-  onError(handler: (error: RpcError) => void): Unbind;
+  onError(handler: (error: TransportError) => void): Unbind;
   onClose(handler: (void) => void): Unbind;
   onReadyState(handler: (readyState: TransportReadyState) => void): Unbind;
 
@@ -215,7 +209,7 @@ export type PollingTransportConfig = {
   ...
 };
 
-declare export class PollingTransport implements StatusfulTransport {
+declare export class PollingTransport implements Transport {
   constructor(
     endpoint: string,
     config?: PollingTransportConfig,
@@ -223,7 +217,7 @@ declare export class PollingTransport implements StatusfulTransport {
 
   onOpen(handler: () => void): Unbind;
   onMessage(handler: (message: Uint8Array) => void): Unbind;
-  onError(handler: (error: RpcError) => void): Unbind;
+  onError(handler: (error: TransportError) => void): Unbind;
   onClose(handler: (void) => void): Unbind;
   onReadyState(handler: (readyState: TransportReadyState) => void): Unbind;
 

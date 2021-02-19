@@ -19,23 +19,17 @@ export class HeartbeatError extends TransportError {
 
 export type IntervalOrProviderFn = number | ((attempt: number) => number);
 
-export interface TransportReadable {
-  onMessage(handler: (message: Uint8Array) => void): Unbind;
-  onError(handler: (error: TransportError) => void): Unbind;
-}
-
-export interface TransportWritable {
-  send(message: Uint8Array): void;
-}
-
-export interface Transport extends TransportReadable, TransportWritable {}
-
 export type TransportReadyState = 'connecting' | 'open' | 'suspended' | 'closing' | 'closed';
 
-export interface StatusfulTransport extends Transport {
-  getReadyState(): TransportReadyState;
-  close(): void;
+export interface Transport {
   onOpen(handler: () => void): Unbind;
-  onClose(handler: () => void): Unbind;
   onReadyState(handler: (readyState: TransportReadyState) => void): Unbind;
+  onMessage(handler: (message: Uint8Array) => void): Unbind;
+  onError(handler: (error: TransportError) => void): Unbind;
+  onClose(handler: () => void): Unbind;
+
+  getReadyState(): TransportReadyState;
+  send(message: Uint8Array): void;
+  ping(): void;
+  close(): void;
 }
