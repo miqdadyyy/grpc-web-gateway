@@ -2,7 +2,6 @@
 
 import { debugLoggerDecorator, Logger, prefixLoggerDecorator } from './Logger';
 import {
-  HeartbeatError,
   IntervalOrProviderFn,
   Transport,
   TransportError,
@@ -182,14 +181,7 @@ export abstract class BaseTransport implements Transport {
           this.logger.log('Heartbeat: suspended socket');
           this.isSuspended = true;
           suspendedAttempt = 0;
-
           this.emitCurrentReadyState();
-          this.emitter.emit(
-            'error',
-            new HeartbeatError(
-              'Heartbeat error: server does not respond on client pings',
-            ),
-          );
         }
 
         this.emitCurrentReadyState();

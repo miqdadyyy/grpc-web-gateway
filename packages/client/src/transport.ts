@@ -11,15 +11,14 @@ export class TransportError extends Error {
   }
 }
 
-export class HeartbeatError extends TransportError {
-  constructor(message: string) {
-    super(message);
-  }
-}
-
 export type IntervalOrProviderFn = number | ((attempt: number) => number);
 
-export type TransportReadyState = 'connecting' | 'open' | 'suspended' | 'closing' | 'closed';
+export type TransportReadyState =
+  | 'connecting'
+  | 'open'
+  | 'suspended'
+  | 'closing'
+  | 'closed';
 
 export interface Transport {
   onOpen(handler: () => void): Unbind;

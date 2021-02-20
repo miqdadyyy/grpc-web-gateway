@@ -59,10 +59,6 @@ declare export class TransportError extends Error {
   constructor(message: string, reason?: Error): TransportError;
 }
 
-declare export class HeartbeatError extends HeartbeatError {
-  constructor(message: string): HeartbeatError;
-}
-
 export type TransportReadyState =
   | 'connecting'
   | 'open'
