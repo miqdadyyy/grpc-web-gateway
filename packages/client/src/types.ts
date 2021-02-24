@@ -37,3 +37,5 @@ export interface ClientStreamCall extends RpcCall {
   send(request: PushRequest): void;
   end(): void;
 }
+
+export type Unbind = () => void;

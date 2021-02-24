@@ -1,36 +1,38 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import {
   ClientStreamCall as IClientStreamCall,
   RpcCall,
   StreamRequest,
   UnaryRequest,
+  Unbind,
 } from './types';
 import { Transport } from './transport';
 import { createSequence, Sequence } from './utils/sequence';
-import { RpcError } from './RpcError';
+import { createClientTransportRpcError, RpcError } from './RpcError';
 import { IRpcClient } from './IRpcClient';
 import { UnaryCall } from './UnaryCall';
 import { ServerStreamCall } from './ServerStreamCall';
 import { BidiStreamCall } from './BidiStreamCall';
 import { ClientStreamCall } from './ClientStreamCall';
+import EventEmitter from 'eventemitter3';
+import { bindEvent } from './utils/emitterUtils';
 
 export class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
   transport: Transport | undefined;
   seq: Sequence;
-  emitter: Emitter<{ error: (error: RpcError) => void }>;
+  emitter: EventEmitter<{ error: [RpcError] }>;
 
   constructor(transport: Transport) {
     this.seq = createSequence();
-    this.emitter = createNanoEvents();
+    this.emitter = new EventEmitter();
     this.setTransport(transport);
   }
 
   setTransport(transport: Transport): void {
     this.transport = transport;
     this.transport.onError((error) => {
-      this.emitter.emit('error', error);
+      this.emitter.emit('error', createClientTransportRpcError(error));
     });
   }
 
@@ -94,7 +96,7 @@ export class RpcClient implements IRpcClient<RpcCall, IClientStreamCall> {
     return call;
   }
 
-  onError(errorHandler: (error: RpcError) => void): Unsubscribe {
-    return this.emitter.on('error', errorHandler);
+  onError(handler: (error: RpcError) => void): Unbind {
+    return bindEvent(this.emitter, 'error', handler);
   }
 }

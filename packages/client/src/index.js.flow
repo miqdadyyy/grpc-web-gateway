@@ -50,56 +50,49 @@ export type Sequence = {
   next(): string,
 };
 
-export interface NanoEvents<T> {
-  on<K: $Keys<T>>(event: K, cb: ($ElementType<T, K>) => void): () => void;
-  emit<K: $Keys<T>>(event: K, data?: $ElementType<T, K>): void;
-}
-
 // Transport
 
-type Unbind = () => void;
+export type Unbind = () => void;
 
-export interface TransportReadable {
-  onMessage(messageHandler: (message: Uint8Array) => void): Unbind;
-  onError(errorHandler: (error: RpcError) => void): Unbind;
+declare export class TransportError extends Error {
+  reason: Error | void;
+  constructor(message: string, reason?: Error): TransportError;
 }
 
-export interface TransportWritable {
-  send(message: Uint8Array): void;
-}
+export type TransportReadyState =
+  | 'connecting'
+  | 'open'
+  | 'suspended'
+  | 'closing'
+  | 'closed';
 
-export interface Transport extends TransportReadable, TransportWritable {}
-
-export type TransportReadyState = 'connecting' | 'open' | 'closing' | 'closed';
-
-export interface StatusfulTransport extends Transport {
-  getReadyState(): TransportReadyState;
+export interface Transport {
   close(): void;
-  onOpen(() => void): Unbind;
-  onClose(() => void): Unbind;
+  getReadyState(): TransportReadyState;
+  ping(): void;
+  send(message: Uint8Array): void;
+
+  onClose(handler: () => void): Unbind;
+  onError(handler: (error: TransportError) => void): Unbind;
+  onMessage(handler: (message: Uint8Array) => void): Unbind;
+  onOpen(handler: () => void): Unbind;
+  onReadyState(handler: (readyState: TransportReadyState) => void): Unbind;
 }
 
-// Calls
+// RPC Calls
 
 export interface RpcCall {
   status: RpcCallStatus;
   cancel(reason?: string): void;
-  onMessage(handler: (Uint8Array) => void): () => void;
-  onError(handler: (RpcError) => void): () => void;
-  onEnd(handler: () => void): () => void;
-  onCancel(handler: () => void): () => void;
+  onMessage(handler: (Uint8Array) => void): Unbind;
+  onError(handler: (RpcError) => void): Unbind;
+  onEnd(handler: () => void): Unbind;
+  onCancel(handler: () => void): Unbind;
 }
 
 declare export class UnaryCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: NanoEvents<{
-    message: Uint8Array,
-    error: RpcError,
-    end: void,
-    cancel: void,
-    ...
-  }>;
   status: RpcCallStatus;
 
   constructor(id: string, transport: Transport): UnaryCall;
@@ -111,20 +104,11 @@ declare export class UnaryCall implements RpcCall {
   onError(errorHandler: (error: RpcError) => void): Unbind;
   onEnd(handler: () => void): Unbind;
   onCancel(handler: () => void): Unbind;
-
-  toPromise(): Promise<Uint8Array>;
 }
 
 declare export class BidiStreamCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: NanoEvents<{
-    message: Uint8Array,
-    error: RpcError,
-    end: void,
-    cancel: void,
-    ...
-  }>;
   status: RpcCallStatus;
 
   constructor(id: string, transport: Transport): BidiStreamCall;
@@ -143,13 +127,6 @@ declare export class BidiStreamCall implements RpcCall {
 declare export class ServerStreamCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: NanoEvents<{
-    message: Uint8Array,
-    error: RpcError,
-    end: void,
-    cancel: void,
-    ...
-  }>;
   status: 'initial' | 'open' | 'closed' | 'cancelled';
 
   constructor(id: string, transport: Transport): ServerStreamCall;
@@ -177,7 +154,6 @@ declare export class RpcClient
   transport: Transport;
   calls: Map<string, RpcCall>;
   seq: Sequence;
-  emitter: NanoEvents<{ error: RpcError, ... }>;
 
   constructor(transport: Transport): RpcClient;
 
@@ -192,74 +168,57 @@ declare export class RpcClient
 
 // Transport implementations
 
+export type IntervalOrProviderFn = number | ((attempt: number) => number);
+
 export type WebSocketTransportConfig = {
   heartbeatInterval?: number,
+  suspendedHeartbeatInterval?: IntervalOrProviderFn,
   logger?: Logger,
   debug?: boolean,
   ...
 };
 
-declare export class WebSocketTransport implements StatusfulTransport {
+declare export class WebSocketTransport implements Transport {
   constructor(
     endpoint: string,
     config?: WebSocketTransportConfig,
   ): WebSocketTransport;
 
-  getReadyState(): TransportReadyState;
-  setupHeartbeat(interval: number): Unbind;
-  ping(): void;
-  pong(): void;
-  handleOpen(): void;
-
   onOpen(handler: () => void): Unbind;
   onMessage(handler: (message: Uint8Array) => void): Unbind;
-  onError(handler: (error: RpcError) => void): Unbind;
+  onError(handler: (error: TransportError) => void): Unbind;
   onClose(handler: (void) => void): Unbind;
+  onReadyState(handler: (readyState: TransportReadyState) => void): Unbind;
 
-  close(): void;
+  getReadyState(): TransportReadyState;
+  ping(): void;
   send(message: Uint8Array): void;
+  close(): void;
 }
 
 export type PollingTransportConfig = {
   heartbeatInterval?: number,
+  suspendedHeartbeatInterval?: IntervalOrProviderFn,
   logger?: Logger,
   debug?: boolean,
+  path?: string,
   ...
 };
 
-declare export class PollingTransport implements StatusfulTransport {
+declare export class PollingTransport implements Transport {
   constructor(
     endpoint: string,
     config?: PollingTransportConfig,
   ): PollingTransport;
 
-  getReadyState(): TransportReadyState;
-  setupHeartbeat(interval: number): Unbind;
-  ping(): void;
-  pong(): void;
-  handleOpen(): void;
-
   onOpen(handler: () => void): Unbind;
   onMessage(handler: (message: Uint8Array) => void): Unbind;
-  onError(handler: (error: RpcError) => void): Unbind;
+  onError(handler: (error: TransportError) => void): Unbind;
   onClose(handler: (void) => void): Unbind;
+  onReadyState(handler: (readyState: TransportReadyState) => void): Unbind;
 
+  getReadyState(): TransportReadyState;
+  ping(): void;
+  send(message: Uint8Array): void;
   close(): void;
-  send(message: Uint8Array): void;
-}
-
-type WsTransportFactory = () => WebSocketTransport;
-type RetryWsTransportConfig = { debug: boolean, ... };
-
-declare export class RetryWsTransport implements Transport {
-  constructor(
-    factory: WsTransportFactory,
-    config?: RetryWsTransportConfig,
-  ): RetryWsTransport;
-
-  setupWsTransport(): void;
-  send(message: Uint8Array): void;
-
-  onError(handler: (RpcError) => void): Unbind;
-  onMessage(handler: (Uint8Array) => void): Unbind;
 }

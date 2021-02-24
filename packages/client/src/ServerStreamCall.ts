@@ -1,40 +1,42 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import { Request, Response } from '@dlghq/grpc-web-gateway-signaling';
-import { RpcCall, UnaryRequest } from './types';
+import { RpcCall, UnaryRequest, Unbind } from './types';
 import { Transport } from './transport';
-import { RpcError } from './RpcError';
-import { unbindAll } from './utils/emitterUtils';
+import { createClientTransportRpcError, RpcError } from './RpcError';
+import EventEmitter from 'eventemitter3';
+import { bindEvent } from './utils/emitterUtils';
 
 export class ServerStreamCall implements RpcCall {
   id: string;
   transport: Transport;
-  emitter: Emitter<{
-    message: (message: Uint8Array) => void;
-    error: (error: RpcError) => void;
-    end: () => void;
-    cancel: () => void;
+  emitter: EventEmitter<{
+    message: [Uint8Array];
+    error: [RpcError];
+    end: [];
+    cancel: [];
   }>;
   status: 'initial' | 'open' | 'closed' | 'cancelled';
 
   constructor(id: string, transport: Transport) {
     this.id = id;
     this.transport = transport;
-    this.emitter = createNanoEvents();
+    this.emitter = new EventEmitter();
     this.status = 'initial';
 
     this.emitter.on('end', () => {
       this.status = 'closed';
-      unbindAll(this.emitter);
+      this.emitter.removeAllListeners();
     });
 
     this.emitter.on('cancel', () => {
       this.status = 'cancelled';
-      unbindAll(this.emitter);
+      this.emitter.removeAllListeners();
     });
 
-    this.transport.onError((error) => this.emitter.emit('error', error));
+    this.transport.onError((error) =>
+      this.emitter.emit('error', createClientTransportRpcError(error)),
+    );
   }
 
   start({
@@ -108,19 +110,19 @@ export class ServerStreamCall implements RpcCall {
     }
   }
 
-  onMessage(handler: (response: Uint8Array) => void): Unsubscribe {
-    return this.emitter.on('message', handler);
+  onMessage(handler: (response: Uint8Array) => void): Unbind {
+    return bindEvent(this.emitter, 'message', handler);
   }
 
-  onError(errorHandler: (error: RpcError) => void): Unsubscribe {
-    return this.emitter.on('error', errorHandler);
+  onError(handler: (error: RpcError) => void): Unbind {
+    return bindEvent(this.emitter, 'error', handler);
   }
 
-  onEnd(handler: () => void): Unsubscribe {
-    return this.emitter.on('end', handler);
+  onEnd(handler: () => void): Unbind {
+    return bindEvent(this.emitter, 'end', handler);
   }
 
-  onCancel(handler: () => void): Unsubscribe {
-    return this.emitter.on('cancel', handler);
+  onCancel(handler: () => void): Unbind {
+    return bindEvent(this.emitter, 'cancel', handler);
   }
 }

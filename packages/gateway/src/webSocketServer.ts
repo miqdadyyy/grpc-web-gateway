@@ -25,8 +25,10 @@ export function createWebSocketServer(params: {
     logger.error('WebSocket connection error:', error);
   });
 
+  let globalConnectionId = 0;
+
   wsServer.on('connection', (ws, httpRequest: IncomingMessage) => {
-    const connectionId = nanoid();
+    const connectionId = `${nanoid()}-${String(++globalConnectionId)}`;
     heartbeat.addConnection(connectionId, ws);
 
     const initialMetadata = httpMetadataParser(httpRequest);
@@ -50,10 +52,14 @@ export function createWebSocketServer(params: {
       socketSend,
     });
 
-    ws.on('message', handleSocketMessage);
+    ws.on('message', (message) => {
+      if (ws.readyState === ws.OPEN) {
+        handleSocketMessage(message);
+      }
+    });
 
-    ws.on('close', () => {
-      connectionLogger.info('WebSocket is closed');
+    ws.on('close', (code) => {
+      connectionLogger.info('WebSocket is closed' + (code ? ` (${code})` : ''));
       socketCalls.cancelSocketCalls(ws);
       grpcClient.close();
     });

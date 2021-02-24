@@ -19,8 +19,10 @@ export function createPollingServer(params: {
     perMessageDeflate: false,
   });
 
+  let globalConnectionId = 0;
+
   server.on('connection', (socket) => {
-    const connectionId = nanoid();
+    const connectionId = `${nanoid()}-${String(++globalConnectionId)}`;
 
     const initialMetadata = httpMetadataParser(socket.request);
     const grpcClient = grpcClientFactory();
@@ -43,10 +45,14 @@ export function createPollingServer(params: {
       socketSend,
     });
 
-    socket.on('message', handleSocketMessage);
+    socket.on('message', (message) => {
+      if (socket.readyState === 'open') {
+        handleSocketMessage(message);
+      }
+    });
 
-    socket.on('close', () => {
-      connectionLogger.info(`Polling socket is closed`);
+    socket.on('close', (reason) => {
+      connectionLogger.info('Polling socket is closed' + (reason ? ` (${reason})` : ''));
       socketCalls.cancelSocketCalls(socket);
       grpcClient.close();
     });

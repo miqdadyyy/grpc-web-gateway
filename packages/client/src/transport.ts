@@ -1,25 +1,34 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { RpcError } from './RpcError';
-
 type Unbind = () => void;
 
-export interface TransportReadable {
-  onMessage(messageHandler: (message: Uint8Array) => void): Unbind;
-  onError(errorHandler: (error: RpcError) => void): Unbind;
+export class TransportError extends Error {
+  reason: Error | undefined;
+
+  constructor(message: string, reason?: Error) {
+    super(message);
+    this.reason = reason;
+  }
 }
 
-export interface TransportWritable {
-  send(message: Uint8Array): void;
-}
+export type IntervalOrProviderFn = number | ((attempt: number) => number);
 
-export interface Transport extends TransportReadable, TransportWritable {}
+export type TransportReadyState =
+  | 'connecting'
+  | 'open'
+  | 'suspended'
+  | 'closing'
+  | 'closed';
 
-export type TransportReadyState = 'connecting' | 'open' | 'closing' | 'closed';
-
-export interface StatusfulTransport extends Transport {
-  getReadyState(): TransportReadyState;
-  close(): void;
+export interface Transport {
   onOpen(handler: () => void): Unbind;
+  onReadyState(handler: (readyState: TransportReadyState) => void): Unbind;
+  onMessage(handler: (message: Uint8Array) => void): Unbind;
+  onError(handler: (error: TransportError) => void): Unbind;
   onClose(handler: () => void): Unbind;
+
+  getReadyState(): TransportReadyState;
+  send(message: Uint8Array): void;
+  ping(): void;
+  close(): void;
 }
