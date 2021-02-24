@@ -1,6 +1,6 @@
 {
   "name": "@dlghq/grpc-web-gateway",
-  "version": "4.0.4",
+  "version": "4.0.5",
   "description": "Dialog grpc gateway web server",
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "repository": {
@@ -38,7 +38,7 @@
     "prepublish": "npm run clean && npm run build"
   },
   "dependencies": {
-    "@dlghq/grpc-web-gateway-signaling": "^4.0.4",
+    "@dlghq/grpc-web-gateway-signaling": "^4.0.5",
     "@grpc/grpc-js": "1.1.7",
     "nanoid": "3.1.12",
     "pino": "6.7.0",
