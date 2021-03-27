@@ -63,6 +63,7 @@ export function createGrpcSocketProxy<Socket extends object>(params: {
       error.code === BANDWIDTH_CODE &&
       error.details === BANDWIDTH_ERROR
     ) {
+      logger.info(`${BANDWIDTH_ERROR} -> process.exit`);
       process.exit();
     }
   };
