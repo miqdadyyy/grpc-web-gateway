@@ -5,7 +5,7 @@ import {
   Response,
   Status,
 } from '@dlghq/grpc-web-gateway-signaling';
-import { ServiceError } from '@grpc/grpc-js';
+import { ServiceError } from '@dlghq/grpc-js';
 import { GrpcError } from './GrpcError';
 import { normalizeGrpcMetadata } from './grpcMetadata';
 

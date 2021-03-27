@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@dlghq/grpc-web-gateway-signaling": "^4.0.5",
-    "@grpc/grpc-js": "1.1.7",
+    "@dlghq/grpc-js": "1.2.6",
     "nanoid": "3.1.12",
     "pino": "6.7.0",
     "pino-pretty": "4.3.0",

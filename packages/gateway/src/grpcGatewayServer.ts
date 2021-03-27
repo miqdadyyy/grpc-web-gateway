@@ -3,7 +3,7 @@
 import type { Server as HttpServer } from 'http';
 import type { Server as HttpsServer } from 'https';
 import url from 'url';
-import { Client } from '@grpc/grpc-js';
+import { Client } from '@dlghq/grpc-js';
 import { createMetadataParser, HeaderFilter } from './metadataParser';
 import { createCredentials, CredentialsConfig } from './credentials';
 import { createWebSocketServer } from './webSocketServer';
@@ -70,7 +70,8 @@ export function createGrpcGatewayMiddlewares(
   const httpMetadataParser = createMetadataParser(config.filterHeaders);
 
   const grpcCredentials = createCredentials(config.credentials);
-  const grpcClientFactory = () => new Client(config.api, grpcCredentials, {});
+  const grpcClientFactory = () =>
+    new Client(config.api, grpcCredentials, { 'grpc.max_session_memory': 50 });
 
   const wsServer = createWebSocketServer({
     heartbeatInterval,

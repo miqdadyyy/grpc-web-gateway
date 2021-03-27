@@ -17,7 +17,7 @@ import {
   ClientWritableStream,
   Metadata,
   ServiceError,
-} from '@grpc/grpc-js';
+} from '@dlghq/grpc-js';
 import { ResponseType } from '@dlghq/grpc-web-gateway-signaling';
 import { createMetadata } from './grpcMetadata';
 import { GrpcError } from './GrpcError';
