@@ -26,6 +26,9 @@ import { Logger } from 'pino';
 export type GrpcSocketProxy = (message: Buffer | unknown) => void;
 export type SocketSendMessage = (data: Uint8Array) => void;
 
+const BANDWIDTH_CODE = 8;
+const BANDWIDTH_ERROR = 'Bandwidth exhausted';
+
 export function createGrpcSocketProxy<Socket extends object>(params: {
   logger: Logger;
   grpcClient: Client;
@@ -57,8 +60,8 @@ export function createGrpcSocketProxy<Socket extends object>(params: {
 
     if (
       'code' in error &&
-      error.code === 8 &&
-      error.details === 'Bandwidth exhausted'
+      error.code === BANDWIDTH_CODE &&
+      error.details === BANDWIDTH_ERROR
     ) {
       process.exit();
     }
