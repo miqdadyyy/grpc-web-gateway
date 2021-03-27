@@ -1,6 +1,6 @@
 {
   "name": "@dlghq/grpc-web-gateway-client",
-  "version": "4.0.5",
+  "version": "4.0.6",
   "description": "Dialog grpc web gateway client",
   "homepage": "https://github.com/dialogs/grpc-web-gateway#readme",
   "repository": {
@@ -32,7 +32,7 @@
     "prepublish": "npm run clean && npm run build"
   },
   "dependencies": {
-    "@dlghq/grpc-web-gateway-signaling": "^4.0.5",
+    "@dlghq/grpc-web-gateway-signaling": "^4.0.6",
     "engine.io-client": "4.1.1",
     "eventemitter3": "4.0.7",
     "nanoid": "3.1.12"
