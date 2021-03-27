@@ -1,4 +1,4 @@
-import { Call } from '@grpc/grpc-js';
+import { Call } from '@dlghq/grpc-js';
 
 export class SocketCalls<Socket extends object> {
   _socketCalls: WeakMap<Socket, Map<string, Call>> = new WeakMap();

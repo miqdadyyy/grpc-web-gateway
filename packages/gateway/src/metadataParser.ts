@@ -1,6 +1,6 @@
 // Copyright 2018 dialog LLC <info@dlg.im>
 
-import { Metadata } from '@grpc/grpc-js';
+import { Metadata } from '@dlghq/grpc-js';
 import { IncomingMessage } from 'http';
 
 export type MetadataParser = (message: IncomingMessage) => Metadata;

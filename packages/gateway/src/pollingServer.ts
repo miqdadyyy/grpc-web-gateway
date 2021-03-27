@@ -1,7 +1,7 @@
 import { Server, Socket } from 'engine.io';
 import { SocketCalls } from './socketCalls';
 import { nanoid } from 'nanoid';
-import { Client } from '@grpc/grpc-js';
+import { Client } from '@dlghq/grpc-js';
 import { MetadataParser } from './metadataParser';
 import { logger } from './logger';
 import { createGrpcSocketProxy } from './grpcSocketProxy';
@@ -52,7 +52,9 @@ export function createPollingServer(params: {
     });
 
     socket.on('close', (reason) => {
-      connectionLogger.info('Polling socket is closed' + (reason ? ` (${reason})` : ''));
+      connectionLogger.info(
+        'Polling socket is closed' + (reason ? ` (${reason})` : ''),
+      );
       socketCalls.cancelSocketCalls(socket);
       grpcClient.close();
     });

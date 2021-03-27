@@ -1,7 +1,7 @@
 import { logger } from './logger';
 import { IncomingMessage } from 'http';
 import { nanoid } from 'nanoid';
-import { Client } from '@grpc/grpc-js';
+import { Client } from '@dlghq/grpc-js';
 import { Server as WebSocketServer } from 'ws';
 import { SocketCalls } from './socketCalls';
 import { setupPingConnections } from './heartbeat';
