@@ -54,6 +54,14 @@ export function createGrpcSocketProxy<Socket extends object>(params: {
     );
 
     socketSend(createErrorResponse(requestId, payload));
+
+    if (
+      'code' in error &&
+      error.code === 8 &&
+      error.details === 'Bandwidth exhausted'
+    ) {
+      process.exit();
+    }
   };
 
   const handleServerStreamResponse = (requestId: string, call: Call) => {
