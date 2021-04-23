@@ -53,6 +53,7 @@ message Response {
     PushResponseBody push = 3;
     EndResponseBody end = 4;
     ErrorResponseBody error = 5;
+    MetadataResponseBody metadata = 6;
   }
 }
 
@@ -66,6 +67,10 @@ message ErrorResponseBody {
   Status status = 1;
   string message = 2;
   map<string, string> metadata = 3;
+}
+
+message MetadataResponseBody {
+  map<string, string> metadata = 1;
 }
 
 enum Status {
