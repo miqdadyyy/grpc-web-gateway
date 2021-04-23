@@ -155,8 +155,9 @@ export function createGrpcSocketProxy<Socket extends object>(params: {
           },
         );
 
-        call.on('metadata', (metadata: { [k: string]: string }) => {
-          socketSend(createMetadataResponse(requestId, metadata));
+        call.on('metadata', (metadata: Metadata) => {
+          const metadataMap = metadata.getMap();
+          socketSend(createMetadataResponse(requestId, metadataMap));
         });
 
         socketCalls.setCall(socket, requestId, call);
