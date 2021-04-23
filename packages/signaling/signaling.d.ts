@@ -1005,6 +1005,9 @@ export interface IResponse {
 
   /** Response error */
   error?: IErrorResponseBody | null;
+
+  /** Response metadata */
+  metadata?: IMetadataResponseBody | null;
 }
 
 /** Represents a Response. */
@@ -1030,8 +1033,11 @@ export class Response implements IResponse {
   /** Response error. */
   public error?: IErrorResponseBody | null;
 
+  /** Response metadata. */
+  public metadata?: IMetadataResponseBody | null;
+
   /** Response body. */
-  public body?: 'unary' | 'push' | 'end' | 'error';
+  public body?: 'unary' | 'push' | 'end' | 'error' | 'metadata';
 
   /**
    * Creates a new Response instance using the specified properties.
@@ -1527,6 +1533,110 @@ export class ErrorResponseBody implements IErrorResponseBody {
 
   /**
    * Converts this ErrorResponseBody to JSON.
+   * @returns JSON object
+   */
+  public toJSON(): { [k: string]: any };
+}
+
+/** Properties of a MetadataResponseBody. */
+export interface IMetadataResponseBody {
+  /** MetadataResponseBody metadata */
+  metadata?: { [k: string]: string } | null;
+}
+
+/** Represents a MetadataResponseBody. */
+export class MetadataResponseBody implements IMetadataResponseBody {
+  /**
+   * Constructs a new MetadataResponseBody.
+   * @param [properties] Properties to set
+   */
+  constructor(properties?: IMetadataResponseBody);
+
+  /** MetadataResponseBody metadata. */
+  public metadata: { [k: string]: string };
+
+  /**
+   * Creates a new MetadataResponseBody instance using the specified properties.
+   * @param [properties] Properties to set
+   * @returns MetadataResponseBody instance
+   */
+  public static create(
+    properties?: IMetadataResponseBody,
+  ): MetadataResponseBody;
+
+  /**
+   * Encodes the specified MetadataResponseBody message. Does not implicitly {@link MetadataResponseBody.verify|verify} messages.
+   * @param message MetadataResponseBody message or plain object to encode
+   * @param [writer] Writer to encode to
+   * @returns Writer
+   */
+  public static encode(
+    message: IMetadataResponseBody,
+    writer?: $protobuf.Writer,
+  ): $protobuf.Writer;
+
+  /**
+   * Encodes the specified MetadataResponseBody message, length delimited. Does not implicitly {@link MetadataResponseBody.verify|verify} messages.
+   * @param message MetadataResponseBody message or plain object to encode
+   * @param [writer] Writer to encode to
+   * @returns Writer
+   */
+  public static encodeDelimited(
+    message: IMetadataResponseBody,
+    writer?: $protobuf.Writer,
+  ): $protobuf.Writer;
+
+  /**
+   * Decodes a MetadataResponseBody message from the specified reader or buffer.
+   * @param reader Reader or buffer to decode from
+   * @param [length] Message length if known beforehand
+   * @returns MetadataResponseBody
+   * @throws {Error} If the payload is not a reader or valid buffer
+   * @throws {$protobuf.util.ProtocolError} If required fields are missing
+   */
+  public static decode(
+    reader: $protobuf.Reader | Uint8Array,
+    length?: number,
+  ): MetadataResponseBody;
+
+  /**
+   * Decodes a MetadataResponseBody message from the specified reader or buffer, length delimited.
+   * @param reader Reader or buffer to decode from
+   * @returns MetadataResponseBody
+   * @throws {Error} If the payload is not a reader or valid buffer
+   * @throws {$protobuf.util.ProtocolError} If required fields are missing
+   */
+  public static decodeDelimited(
+    reader: $protobuf.Reader | Uint8Array,
+  ): MetadataResponseBody;
+
+  /**
+   * Verifies a MetadataResponseBody message.
+   * @param message Plain object to verify
+   * @returns `null` if valid, otherwise the reason why it is not
+   */
+  public static verify(message: { [k: string]: any }): string | null;
+
+  /**
+   * Creates a MetadataResponseBody message from a plain object. Also converts values to their respective internal types.
+   * @param object Plain object
+   * @returns MetadataResponseBody
+   */
+  public static fromObject(object: { [k: string]: any }): MetadataResponseBody;
+
+  /**
+   * Creates a plain object from a MetadataResponseBody message. Also converts values to other types if specified.
+   * @param message MetadataResponseBody
+   * @param [options] Conversion options
+   * @returns Plain object
+   */
+  public static toObject(
+    message: MetadataResponseBody,
+    options?: $protobuf.IConversionOptions,
+  ): { [k: string]: any };
+
+  /**
+   * Converts this MetadataResponseBody to JSON.
    * @returns JSON object
    */
   public toJSON(): { [k: string]: any };

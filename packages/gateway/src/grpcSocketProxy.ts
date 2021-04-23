@@ -6,6 +6,7 @@ import {
   createErrorResponseFromGrpcError,
   createPushResponse,
   createUnaryResponse,
+  createMetadataResponse,
   deserializeMessage,
   parseRequestMessage,
   serializeMessage,
@@ -153,6 +154,10 @@ export function createGrpcSocketProxy<Socket extends object>(params: {
             }
           },
         );
+
+        call.on('metadata', (metadata: { [k: string]: string }) => {
+          socketSend(createMetadataResponse(requestId, metadata));
+        });
 
         socketCalls.setCall(socket, requestId, call);
       }

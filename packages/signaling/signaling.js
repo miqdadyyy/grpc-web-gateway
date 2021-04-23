@@ -2244,6 +2244,7 @@
          * @property {IPushResponseBody|null} [push] Response push
          * @property {IEndResponseBody|null} [end] Response end
          * @property {IErrorResponseBody|null} [error] Response error
+         * @property {IMetadataResponseBody|null} [metadata] Response metadata
          */
     
         /**
@@ -2301,17 +2302,25 @@
          */
         Response.prototype.error = null;
     
+        /**
+         * Response metadata.
+         * @member {IMetadataResponseBody|null|undefined} metadata
+         * @memberof Response
+         * @instance
+         */
+        Response.prototype.metadata = null;
+    
         // OneOf field names bound to virtual getters and setters
         var $oneOfFields;
     
         /**
          * Response body.
-         * @member {"unary"|"push"|"end"|"error"|undefined} body
+         * @member {"unary"|"push"|"end"|"error"|"metadata"|undefined} body
          * @memberof Response
          * @instance
          */
         Object.defineProperty(Response.prototype, "body", {
-            get: $util.oneOfGetter($oneOfFields = ["unary", "push", "end", "error"]),
+            get: $util.oneOfGetter($oneOfFields = ["unary", "push", "end", "error", "metadata"]),
             set: $util.oneOfSetter($oneOfFields)
         });
     
@@ -2349,6 +2358,8 @@
                 $root.EndResponseBody.encode(message.end, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
             if (message.error != null && Object.hasOwnProperty.call(message, "error"))
                 $root.ErrorResponseBody.encode(message.error, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+            if (message.metadata != null && Object.hasOwnProperty.call(message, "metadata"))
+                $root.MetadataResponseBody.encode(message.metadata, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
             return writer;
         };
     
@@ -2397,6 +2408,9 @@
                     break;
                 case 5:
                     message.error = $root.ErrorResponseBody.decode(reader, reader.uint32());
+                    break;
+                case 6:
+                    message.metadata = $root.MetadataResponseBody.decode(reader, reader.uint32());
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -2475,6 +2489,16 @@
                         return "error." + error;
                 }
             }
+            if (message.metadata != null && message.hasOwnProperty("metadata")) {
+                if (properties.body === 1)
+                    return "body: multiple values";
+                properties.body = 1;
+                {
+                    var error = $root.MetadataResponseBody.verify(message.metadata);
+                    if (error)
+                        return "metadata." + error;
+                }
+            }
             return null;
         };
     
@@ -2511,6 +2535,11 @@
                 if (typeof object.error !== "object")
                     throw TypeError(".Response.error: object expected");
                 message.error = $root.ErrorResponseBody.fromObject(object.error);
+            }
+            if (object.metadata != null) {
+                if (typeof object.metadata !== "object")
+                    throw TypeError(".Response.metadata: object expected");
+                message.metadata = $root.MetadataResponseBody.fromObject(object.metadata);
             }
             return message;
         };
@@ -2551,6 +2580,11 @@
                 object.error = $root.ErrorResponseBody.toObject(message.error, options);
                 if (options.oneofs)
                     object.body = "error";
+            }
+            if (message.metadata != null && message.hasOwnProperty("metadata")) {
+                object.metadata = $root.MetadataResponseBody.toObject(message.metadata, options);
+                if (options.oneofs)
+                    object.body = "metadata";
             }
             return object;
         };
@@ -3475,6 +3509,228 @@
         };
     
         return ErrorResponseBody;
+    })();
+    
+    $root.MetadataResponseBody = (function() {
+    
+        /**
+         * Properties of a MetadataResponseBody.
+         * @exports IMetadataResponseBody
+         * @interface IMetadataResponseBody
+         * @property {Object.<string,string>|null} [metadata] MetadataResponseBody metadata
+         */
+    
+        /**
+         * Constructs a new MetadataResponseBody.
+         * @exports MetadataResponseBody
+         * @classdesc Represents a MetadataResponseBody.
+         * @implements IMetadataResponseBody
+         * @constructor
+         * @param {IMetadataResponseBody=} [properties] Properties to set
+         */
+        function MetadataResponseBody(properties) {
+            this.metadata = {};
+            if (properties)
+                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+    
+        /**
+         * MetadataResponseBody metadata.
+         * @member {Object.<string,string>} metadata
+         * @memberof MetadataResponseBody
+         * @instance
+         */
+        MetadataResponseBody.prototype.metadata = $util.emptyObject;
+    
+        /**
+         * Creates a new MetadataResponseBody instance using the specified properties.
+         * @function create
+         * @memberof MetadataResponseBody
+         * @static
+         * @param {IMetadataResponseBody=} [properties] Properties to set
+         * @returns {MetadataResponseBody} MetadataResponseBody instance
+         */
+        MetadataResponseBody.create = function create(properties) {
+            return new MetadataResponseBody(properties);
+        };
+    
+        /**
+         * Encodes the specified MetadataResponseBody message. Does not implicitly {@link MetadataResponseBody.verify|verify} messages.
+         * @function encode
+         * @memberof MetadataResponseBody
+         * @static
+         * @param {IMetadataResponseBody} message MetadataResponseBody message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        MetadataResponseBody.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.metadata != null && Object.hasOwnProperty.call(message, "metadata"))
+                for (var keys = Object.keys(message.metadata), i = 0; i < keys.length; ++i)
+                    writer.uint32(/* id 1, wireType 2 =*/10).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.metadata[keys[i]]).ldelim();
+            return writer;
+        };
+    
+        /**
+         * Encodes the specified MetadataResponseBody message, length delimited. Does not implicitly {@link MetadataResponseBody.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof MetadataResponseBody
+         * @static
+         * @param {IMetadataResponseBody} message MetadataResponseBody message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        MetadataResponseBody.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+    
+        /**
+         * Decodes a MetadataResponseBody message from the specified reader or buffer.
+         * @function decode
+         * @memberof MetadataResponseBody
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {MetadataResponseBody} MetadataResponseBody
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        MetadataResponseBody.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.MetadataResponseBody(), key, value;
+            while (reader.pos < end) {
+                var tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    if (message.metadata === $util.emptyObject)
+                        message.metadata = {};
+                    var end2 = reader.uint32() + reader.pos;
+                    key = "";
+                    value = "";
+                    while (reader.pos < end2) {
+                        var tag2 = reader.uint32();
+                        switch (tag2 >>> 3) {
+                        case 1:
+                            key = reader.string();
+                            break;
+                        case 2:
+                            value = reader.string();
+                            break;
+                        default:
+                            reader.skipType(tag2 & 7);
+                            break;
+                        }
+                    }
+                    message.metadata[key] = value;
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Decodes a MetadataResponseBody message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof MetadataResponseBody
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {MetadataResponseBody} MetadataResponseBody
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        MetadataResponseBody.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+    
+        /**
+         * Verifies a MetadataResponseBody message.
+         * @function verify
+         * @memberof MetadataResponseBody
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        MetadataResponseBody.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.metadata != null && message.hasOwnProperty("metadata")) {
+                if (!$util.isObject(message.metadata))
+                    return "metadata: object expected";
+                var key = Object.keys(message.metadata);
+                for (var i = 0; i < key.length; ++i)
+                    if (!$util.isString(message.metadata[key[i]]))
+                        return "metadata: string{k:string} expected";
+            }
+            return null;
+        };
+    
+        /**
+         * Creates a MetadataResponseBody message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof MetadataResponseBody
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {MetadataResponseBody} MetadataResponseBody
+         */
+        MetadataResponseBody.fromObject = function fromObject(object) {
+            if (object instanceof $root.MetadataResponseBody)
+                return object;
+            var message = new $root.MetadataResponseBody();
+            if (object.metadata) {
+                if (typeof object.metadata !== "object")
+                    throw TypeError(".MetadataResponseBody.metadata: object expected");
+                message.metadata = {};
+                for (var keys = Object.keys(object.metadata), i = 0; i < keys.length; ++i)
+                    message.metadata[keys[i]] = String(object.metadata[keys[i]]);
+            }
+            return message;
+        };
+    
+        /**
+         * Creates a plain object from a MetadataResponseBody message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof MetadataResponseBody
+         * @static
+         * @param {MetadataResponseBody} message MetadataResponseBody
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        MetadataResponseBody.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            var object = {};
+            if (options.objects || options.defaults)
+                object.metadata = {};
+            var keys2;
+            if (message.metadata && (keys2 = Object.keys(message.metadata)).length) {
+                object.metadata = {};
+                for (var j = 0; j < keys2.length; ++j)
+                    object.metadata[keys2[j]] = message.metadata[keys2[j]];
+            }
+            return object;
+        };
+    
+        /**
+         * Converts this MetadataResponseBody to JSON.
+         * @function toJSON
+         * @memberof MetadataResponseBody
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        MetadataResponseBody.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+    
+        return MetadataResponseBody;
     })();
     
     /**

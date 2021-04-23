@@ -97,6 +97,16 @@ export function createUnaryResponse(
   return Response.encode({ id: requestId, unary: { payload } }).finish();
 }
 
+export function createMetadataResponse(
+  requestId: string,
+  metadata?: { [k: string]: string },
+): Uint8Array {
+  return Response.encode({
+    id: requestId,
+    metadata,
+  }).finish();
+}
+
 export function createPushResponse(
   requestId: string,
   payload: Uint8Array,
