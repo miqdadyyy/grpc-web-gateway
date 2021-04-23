@@ -5,7 +5,7 @@ import {
   Response,
   Status,
 } from '@dlghq/grpc-web-gateway-signaling';
-import { ServiceError } from '@dlghq/grpc-js';
+import { ServiceError, MetadataValue } from '@dlghq/grpc-js';
 import { GrpcError } from './GrpcError';
 import { normalizeGrpcMetadata } from './grpcMetadata';
 
@@ -99,11 +99,21 @@ export function createUnaryResponse(
 
 export function createMetadataResponse(
   requestId: string,
-  metadata?: { [k: string]: string },
+  metadata: { [k: string]: MetadataValue },
 ): Uint8Array {
+  const metadataMap = Object.keys(metadata).reduce((acc, curr: string) => {
+    const value = metadata[curr];
+
+    if (typeof value === 'string') {
+      acc[curr] = value;
+    }
+
+    return acc;
+  }, {} as Record<string, string>);
+
   return Response.encode({
     id: requestId,
-    metadata,
+    metadata: { metadata: metadataMap },
   }).finish();
 }
 
