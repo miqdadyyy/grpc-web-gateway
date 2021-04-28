@@ -3,11 +3,17 @@ import { IncomingMessage } from 'http';
 import { nanoid } from 'nanoid';
 import { Client } from '@dlghq/grpc-js';
 import { Server as WebSocketServer } from 'ws';
+import client from 'prom-client';
 import { SocketCalls } from './socketCalls';
 import { setupPingConnections } from './heartbeat';
 import { MetadataParser } from './metadataParser';
 import { WebSocket } from './types';
 import { createGrpcSocketProxy, SocketSendMessage } from './grpcSocketProxy';
+
+const gauge = new client.Gauge({
+  name: 'node_ws_connection_count',
+  help: 'node_ws_connection_count_help',
+});
 
 export function createWebSocketServer(params: {
   heartbeatInterval: number;
@@ -30,6 +36,9 @@ export function createWebSocketServer(params: {
   wsServer.on('connection', (ws, httpRequest: IncomingMessage) => {
     const connectionId = `${nanoid()}-${String(++globalConnectionId)}`;
     heartbeat.addConnection(connectionId, ws);
+    const countConnection = heartbeat.getAliveConnections();
+
+    gauge.set(countConnection);
 
     const initialMetadata = httpMetadataParser(httpRequest);
     const grpcClient = grpcClientFactory();
@@ -62,6 +71,7 @@ export function createWebSocketServer(params: {
       connectionLogger.info('WebSocket is closed' + (code ? ` (${code})` : ''));
       socketCalls.cancelSocketCalls(ws);
       grpcClient.close();
+      gauge.set(countConnection);
     });
   });
 

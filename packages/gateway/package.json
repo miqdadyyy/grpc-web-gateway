@@ -43,6 +43,7 @@
     "nanoid": "3.1.12",
     "pino": "6.7.0",
     "pino-pretty": "4.3.0",
+    "prom-client": "13.1.0",
     "ws": "7.4.3"
   },
   "devDependencies": {
