@@ -7,6 +7,7 @@ import { WebSocket } from './types';
 
 export type HeartbeatController = {
   addConnection(connectionId: string, connection: WebSocket): void;
+  getAliveConnections(): number;
   stop(): void;
 };
 
@@ -14,10 +15,10 @@ export function setupPingConnections(
   wss: Server,
   heartbeatInterval: number,
 ): HeartbeatController {
-  const connectionsMap: WeakMap<
+  const connectionsMap: Map<
     WebSocket,
     { isAlive: boolean; id: string }
-  > = new WeakMap();
+  > = new Map();
 
   function heartbeat(this: WebSocket) {
     const wsMeta = connectionsMap.get(this);
@@ -51,6 +52,11 @@ export function setupPingConnections(
     addConnection: (connectionId: string, connection: WebSocket) => {
       connectionsMap.set(connection, { isAlive: true, id: connectionId });
       connection.on('pong', heartbeat);
+    },
+    getAliveConnections: () => {
+      return Array.from(connectionsMap.values()).filter(
+        (connection) => connection.isAlive,
+      ).length;
     },
     stop: () => clearInterval(iid),
   };
