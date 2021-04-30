@@ -2,9 +2,15 @@ import { Server, Socket } from 'engine.io';
 import { SocketCalls } from './socketCalls';
 import { nanoid } from 'nanoid';
 import { Client } from '@dlghq/grpc-js';
+import client from 'prom-client';
 import { MetadataParser } from './metadataParser';
 import { logger } from './logger';
 import { createGrpcSocketProxy } from './grpcSocketProxy';
+
+const pollingConnectionsCount = new client.Gauge({
+  name: 'node_polling_connection_count',
+  help: 'node_polling_connection_count_help',
+});
 
 export function createPollingServer(params: {
   grpcClientFactory: () => Client;
@@ -29,6 +35,8 @@ export function createPollingServer(params: {
     const connectionLogger = logger.child({ connectionId });
 
     connectionLogger.info(`Polling socket is opened`);
+
+    pollingConnectionsCount.inc();
 
     const socketSend = (data: Uint8Array) => {
       if (socket.readyState === 'open') {
@@ -57,6 +65,7 @@ export function createPollingServer(params: {
       );
       socketCalls.cancelSocketCalls(socket);
       grpcClient.close();
+      pollingConnectionsCount.dec();
     });
   });
 
