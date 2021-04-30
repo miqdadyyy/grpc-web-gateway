@@ -103,8 +103,8 @@ function createWebAppMiddleware(): HttpRequestMiddleware {
     try {
       res.set('Content-Type', register.contentType);
       res.end(await register.metrics());
-    } catch (ex) {
-      res.status(500).end(ex);
+    } catch (error) {
+      res.status(500).end(error);
     }
   });
 
