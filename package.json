@@ -1,11 +1,12 @@
 {
   "name": "grpc-gateway",
-  "private": true,
+  "private": false,
+  "version": "v1.0.2",
   "description": "gRPC for web",
   "author": "Nikita Gusakov <gusnkt@gmail.com>",
   "contributors": [
     "Mikhail Nasyrov <mikhail@mnasyrov.com>",
-    "Miqdad Farcha <miqdad.farcha@gmail.com>",
+    "Miqdad Farcha <miqdad.farcha@gmail.com>"
   ],
   "scripts": {
     "postinstall": "lerna bootstrap",
